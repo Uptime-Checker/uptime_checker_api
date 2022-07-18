@@ -1,4 +1,4 @@
-defmodule UptimeCheckerWeb.UserController do
+defmodule UptimeCheckerWeb.Api.V1.UserController do
   use UptimeCheckerWeb, :controller
 
   alias UptimeChecker.Customer

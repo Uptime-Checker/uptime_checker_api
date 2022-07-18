@@ -4,9 +4,9 @@ defmodule UptimeChecker.Customer.User do
 
   schema "users" do
     field :email, :string
-    field :firebase_uid, :string
     field :name, :string
     field :password_hash, :string
+    field :firebase_uid, :string
     field :provider, :integer
 
     timestamps()

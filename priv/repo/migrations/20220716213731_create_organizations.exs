@@ -3,8 +3,8 @@ defmodule UptimeChecker.Repo.Migrations.CreateOrganizations do
 
   def change do
     create table(:organizations) do
-      add :name, :string
-      add :key, :string
+      add :name, :string, null: false
+      add :slug, :string, null: false
 
       timestamps()
     end

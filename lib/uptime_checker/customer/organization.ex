@@ -3,8 +3,8 @@ defmodule UptimeChecker.Customer.Organization do
   import Ecto.Changeset
 
   schema "organizations" do
-    field :key, :string
     field :name, :string
+    field :slug, :string
 
     timestamps()
   end
@@ -12,7 +12,7 @@ defmodule UptimeChecker.Customer.Organization do
   @doc false
   def changeset(organization, attrs) do
     organization
-    |> cast(attrs, [:name, :key])
-    |> validate_required([:name, :key])
+    |> cast(attrs, [:name, :slug])
+    |> validate_required([:name, :slug])
   end
 end

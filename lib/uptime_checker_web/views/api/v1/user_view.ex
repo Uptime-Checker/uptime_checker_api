@@ -1,6 +1,6 @@
-defmodule UptimeCheckerWeb.UserView do
+defmodule UptimeCheckerWeb.Api.V1.UserView do
   use UptimeCheckerWeb, :view
-  alias UptimeCheckerWeb.UserView
+  alias UptimeCheckerWeb.Api.V1.UserView
 
   def render("index.json", %{users: users}) do
     %{data: render_many(users, UserView, "user.json")}
@@ -14,10 +14,7 @@ defmodule UptimeCheckerWeb.UserView do
     %{
       id: user.id,
       name: user.name,
-      email: user.email,
-      password_hash: user.password_hash,
-      firebase_uid: user.firebase_uid,
-      provider: user.provider
+      email: user.email
     }
   end
 end

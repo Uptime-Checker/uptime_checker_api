@@ -1,6 +1,6 @@
-defmodule UptimeCheckerWeb.OrganizationView do
+defmodule UptimeCheckerWeb.Api.V1.OrganizationView do
   use UptimeCheckerWeb, :view
-  alias UptimeCheckerWeb.OrganizationView
+  alias UptimeCheckerWeb.Api.V1.OrganizationView
 
   def render("index.json", %{organizations: organizations}) do
     %{data: render_many(organizations, OrganizationView, "organization.json")}
@@ -14,7 +14,7 @@ defmodule UptimeCheckerWeb.OrganizationView do
     %{
       id: organization.id,
       name: organization.name,
-      key: organization.key
+      slug: organization.slug
     }
   end
 end
