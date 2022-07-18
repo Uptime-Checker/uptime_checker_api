@@ -2,7 +2,7 @@ defmodule UptimeChecker.Guardian.AuthPipeline do
   @claims %{typ: "access"}
 
   use Guardian.Plug.Pipeline,
-    otp_app: :todor_api,
+    otp_app: :uptime_checker,
     module: UptimeChecker.Guardian,
     error_handler: UptimeChecker.Guardian.AuthErrorHandler
 

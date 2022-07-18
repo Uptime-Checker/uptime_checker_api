@@ -16,6 +16,7 @@ defmodule UptimeCheckerWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug UptimeCheckerWeb.Plugs.HeaderAuth
   end
 
   scope "/", UptimeCheckerWeb do
