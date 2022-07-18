@@ -10,6 +10,10 @@ defmodule UptimeCheckerWeb.Router do
     plug :put_secure_browser_headers
   end
 
+  pipeline :auth do
+    plug UptimeChecker.Guardian.AuthPipeline
+  end
+
   pipeline :api do
     plug :accepts, ["json"]
   end
@@ -18,6 +22,23 @@ defmodule UptimeCheckerWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :index
+  end
+
+  scope "/api", UptimeCheckerWeb.Api, as: :api do
+    scope "/v1", V1, as: :v1_open do
+      pipe_through :api
+
+      get "/status", SettingsController, :status
+
+      post "/register", UserController, :register
+      post "/login", UserController, :login
+    end
+
+    scope "/v1", V1, as: :v1_auth do
+      pipe_through [:api, :auth]
+
+      get "/me", UserController, :me
+    end
   end
 
   # Other scopes may use custom stacks.
