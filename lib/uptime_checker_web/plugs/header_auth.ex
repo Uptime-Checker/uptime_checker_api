@@ -7,8 +7,11 @@ defmodule UptimeCheckerWeb.Plugs.HeaderAuth do
   def init(opts), do: opts
 
   def call(conn, _opts) do
-    cond do
-      List.first(get_req_header(conn, String.downcase(@api_key))) != System.get_env(@api_key) ->
+    get_req_header(conn, String.downcase(@api_key))
+    |> List.first()
+    |> match_key()
+    |> case do
+      false ->
         conn
         |> put_resp_content_type("application/json")
         |> send_resp(:unauthorized, Jason.encode!(%{error: "unauthorized"}))
@@ -17,5 +20,9 @@ defmodule UptimeCheckerWeb.Plugs.HeaderAuth do
       true ->
         conn
     end
+  end
+
+  defp match_key(header_key) do
+    header_key == System.get_env(@api_key)
   end
 end
