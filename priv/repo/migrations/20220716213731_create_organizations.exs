@@ -9,6 +9,6 @@ defmodule UptimeChecker.Repo.Migrations.CreateOrganizations do
       timestamps()
     end
 
-    create unique_index(:users, [:slug])
+    create unique_index(:organizations, [:slug])
   end
 end

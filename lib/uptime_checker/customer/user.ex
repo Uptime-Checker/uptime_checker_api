@@ -24,6 +24,12 @@ defmodule UptimeChecker.Customer.User do
     |> encrypt_and_put_password()
   end
 
+  def changeset(user, attrs) do
+    user
+    |> cast(attrs, [:name, :email, :password, :firebase_uid, :provider, :organization_id])
+    |> validate_required([:name, :email, :firebase_uid, :provider, :organization_id])
+  end
+
   defp encrypt_and_put_password(user) do
     with password <- fetch_field!(user, :password) do
       encrypted_password = Bcrypt.Base.hash_password(password, Bcrypt.Base.gen_salt(12, true))

@@ -40,6 +40,8 @@ defmodule UptimeCheckerWeb.Router do
       pipe_through [:api, :auth]
 
       get "/me", UserController, :me
+
+      post "/organization", OrganizationController, :create
     end
   end
 

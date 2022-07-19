@@ -3,13 +3,14 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
 
   alias UptimeChecker.Customer
   alias UptimeChecker.Guardian
+  alias UptimeChecker.Customer.User
 
   action_fallback UptimeCheckerWeb.FallbackController
 
   def register(conn, params) do
     updated_params = Map.put(params, "name", name_from_email(params["email"]))
 
-    with {:ok, user} <- Customer.create_user(updated_params) do
+    with {:ok, %User{} = user} <- Customer.create_user(updated_params) do
       {:ok, access_token, _claims} = encode_and_sign(user)
 
       conn

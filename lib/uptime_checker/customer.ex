@@ -2,7 +2,6 @@ defmodule UptimeChecker.Customer do
   @moduledoc """
   The Customer context.
   """
-
   import Ecto.Query, warn: false
   alias UptimeChecker.Repo
 
@@ -15,10 +14,20 @@ defmodule UptimeChecker.Customer do
     Organization |> Repo.get_by(slug: slug, skip_org_id: true)
   end
 
-  def create_organization(attrs \\ %{}) do
-    %Organization{}
-    |> Organization.changeset(attrs)
-    |> Repo.insert()
+  def create_organization(attrs \\ %{}, user) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:organization, Organization.changeset(%Organization{}, attrs))
+    |> Ecto.Multi.update(:user, fn %{organization: organization} ->
+      Ecto.Changeset.change(user, organization_id: organization.id)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{organization: organization, user: user}} ->
+        {:ok, organization, user}
+
+      {:error, _name, _value, _changes_so_far} ->
+        {:error, "Transsaction Error"}
+    end
   end
 
   def list_users do
