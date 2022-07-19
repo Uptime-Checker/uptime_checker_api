@@ -19,7 +19,4 @@ defmodule UptimeCheckerWeb.Plugs.HeaderAuth do
       conn
     end
   end
-
-  # defp unauthorizedResp() do
-  # end
 end
