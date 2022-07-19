@@ -9,6 +9,8 @@ defmodule UptimeChecker.Customer.User do
     field :firebase_uid, :string
     field :provider, :integer
 
+    belongs_to :organization, UptimeChecker.Customer.Organization
+
     timestamps()
   end
 

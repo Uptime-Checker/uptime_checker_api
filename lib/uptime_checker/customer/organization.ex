@@ -6,6 +6,8 @@ defmodule UptimeChecker.Customer.Organization do
     field :name, :string
     field :slug, :string
 
+    has_many :users, UptimeChecker.Customer.User
+
     timestamps()
   end
 
@@ -14,5 +16,6 @@ defmodule UptimeChecker.Customer.Organization do
     organization
     |> cast(attrs, [:name, :slug])
     |> validate_required([:name, :slug])
+    |> unique_constraint(:slug)
   end
 end

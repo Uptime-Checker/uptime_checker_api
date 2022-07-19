@@ -125,14 +125,14 @@ defmodule UptimeChecker.Customer do
   def get_by_email(email) do
     query = from u in User, where: u.email == ^email
 
-    case Repo.one(query) do
+    case Repo.one(query, skip_org_id: true) do
       nil -> {:error, :not_found}
       user -> {:ok, user}
     end
   end
 
-  def get_by_id!(id) do
-    User |> Repo.get!(id)
+  def get_by_id(id) do
+    User |> Repo.get(id, skip_org_id: true)
   end
 
   def authenticate_user(email, password) do

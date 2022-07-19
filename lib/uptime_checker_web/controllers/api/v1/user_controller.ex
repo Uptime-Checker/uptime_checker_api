@@ -10,8 +10,7 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
     updated_params = Map.put(params, "name", name_from_email(params["email"]))
 
     with {:ok, user} <- Customer.create_user(updated_params) do
-      {:ok, access_token, _claims} =
-        Guardian.encode_and_sign(user, %{}, token_type: "access", ttl: {180, :day})
+      {:ok, access_token, _claims} = encode_and_sign(user)
 
       conn
       |> put_status(:created)
@@ -22,8 +21,7 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
   def login(conn, %{"email" => email, "password" => password}) do
     case Customer.authenticate_user(email, password) do
       {:ok, user} ->
-        {:ok, access_token, _claims} =
-          Guardian.encode_and_sign(user, %{}, token_type: "access", ttl: {180, :day})
+        {:ok, access_token, _claims} = encode_and_sign(user)
 
         conn
         |> put_status(:created)
@@ -37,5 +35,9 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
 
   def me(conn, _params) do
     render(conn, "show.json", user: current_user(conn))
+  end
+
+  defp encode_and_sign(user) do
+    Guardian.encode_and_sign(user, %{}, token_type: "access", ttl: {180, :day})
   end
 end
