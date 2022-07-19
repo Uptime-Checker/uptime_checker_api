@@ -1,6 +1,5 @@
 defmodule UptimeCheckerWeb.Plugs.HeaderAuth do
   import Plug.Conn
-  require Logger
 
   @api_key "X_API_KEY"
 
@@ -13,7 +12,6 @@ defmodule UptimeCheckerWeb.Plugs.HeaderAuth do
     |> case do
       false ->
         conn
-        |> put_resp_content_type("application/json")
         |> send_resp(:unauthorized, Jason.encode!(%{error: "unauthorized"}))
         |> halt()
 

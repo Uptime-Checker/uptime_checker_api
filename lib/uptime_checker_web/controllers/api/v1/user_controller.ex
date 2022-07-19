@@ -30,10 +30,8 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
         |> json(%{access_token: access_token})
 
       {:error, :unauthorized} ->
-        body = Jason.encode!(%{error: "unauthorized"})
-
         conn
-        |> send_resp(401, body)
+        |> send_resp(:unauthorized, Jason.encode!(%{error: "unauthorized"}))
     end
   end
 
