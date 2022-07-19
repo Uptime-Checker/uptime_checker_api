@@ -51,7 +51,8 @@ defmodule UptimeChecker.MixProject do
       {:plug_cowboy, "~> 2.5"},
       {:bcrypt_elixir, "~> 3.0"},
       {:guardian, "~> 2.0"},
-      {:vapor, "~> 0.10"}
+      {:vapor, "~> 0.10"},
+      {:useful, "~> 1.0"}
     ]
   end
 
