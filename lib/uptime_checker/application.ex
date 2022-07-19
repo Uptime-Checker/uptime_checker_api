@@ -7,6 +7,8 @@ defmodule UptimeChecker.Application do
 
   @impl true
   def start(_type, _args) do
+    Vapor.load!([%Vapor.Provider.Dotenv{}])
+
     children = [
       # Start the Ecto repository
       UptimeChecker.Repo,
