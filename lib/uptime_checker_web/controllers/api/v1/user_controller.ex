@@ -2,42 +2,42 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
   use UptimeCheckerWeb, :controller
 
   alias UptimeChecker.Customer
-  alias UptimeChecker.Customer.User
+  alias UptimeChecker.Guardian
 
   action_fallback UptimeCheckerWeb.FallbackController
 
-  def index(conn, _params) do
-    users = Customer.list_users()
-    render(conn, "index.json", users: users)
-  end
+  def register(conn, params) do
+    updated_params = Map.put(params, "name", name_from_email(params["email"]))
 
-  def create(conn, %{"user" => user_params}) do
-    with {:ok, %User{} = user} <- Customer.create_user(user_params) do
+    with {:ok, user} <- Customer.create_user(updated_params) do
+      {:ok, access_token, _claims} =
+        Guardian.encode_and_sign(user, %{}, token_type: "access", ttl: {180, :day})
+
       conn
       |> put_status(:created)
-      |> put_resp_header("location", Routes.user_path(conn, :show, user))
-      |> render("show.json", user: user)
+      |> json(%{access_token: access_token})
     end
   end
 
-  def show(conn, %{"id" => id}) do
-    user = Customer.get_user!(id)
-    render(conn, "show.json", user: user)
-  end
+  def login(conn, %{"email" => email, "password" => password}) do
+    case Customer.authenticate_user(email, password) do
+      {:ok, user} ->
+        {:ok, access_token, _claims} =
+          Guardian.encode_and_sign(user, %{}, token_type: "access", ttl: {180, :day})
 
-  def update(conn, %{"id" => id, "user" => user_params}) do
-    user = Customer.get_user!(id)
+        conn
+        |> put_status(:created)
+        |> json(%{access_token: access_token})
 
-    with {:ok, %User{} = user} <- Customer.update_user(user, user_params) do
-      render(conn, "show.json", user: user)
+      {:error, :unauthorized} ->
+        body = Jason.encode!(%{error: "unauthorized"})
+
+        conn
+        |> send_resp(401, body)
     end
   end
 
-  def delete(conn, %{"id" => id}) do
-    user = Customer.get_user!(id)
-
-    with {:ok, %User{}} <- Customer.delete_user(user) do
-      send_resp(conn, :no_content, "")
-    end
+  def me(conn, _params) do
+    render(conn, "show.json", user: current_user(conn))
   end
 end
