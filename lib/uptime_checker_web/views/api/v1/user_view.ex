@@ -16,7 +16,13 @@ defmodule UptimeCheckerWeb.Api.V1.UserView do
       id: user.id,
       name: user.name,
       email: user.email,
-      organization: render_one(user.organization, OrganizationView, "organization.json")
+      organization: render_org(user.organization)
     }
   end
+
+  defp render_org(%{:id => _id} = org) do
+    render_one(org, OrganizationView, "organization.json")
+  end
+
+  defp render_org(_org), do: nil
 end

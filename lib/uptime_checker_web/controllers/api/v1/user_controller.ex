@@ -35,11 +35,16 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
 
   def me(conn, _params) do
     user = current_user(conn)
-    user = Map.put(user, :organization, Customer.get_organization(user.organization_id))
-    render(conn, "show.json", user: user)
+    render(conn, "show.json", user: set_org(user, user.organization_id))
   end
 
   defp encode_and_sign(user) do
     Guardian.encode_and_sign(user, %{}, token_type: "access", ttl: {180, :day})
+  end
+
+  defp set_org(user, nil), do: user
+
+  defp set_org(user, org_id) do
+    Map.put(user, :organization, Customer.get_organization(org_id))
   end
 end
