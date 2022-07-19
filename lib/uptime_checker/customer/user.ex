@@ -17,7 +17,8 @@ defmodule UptimeChecker.Customer.User do
     |> cast(attrs, [:name, :email, :password, :firebase_uid, :provider])
     |> validate_required([:name, :email, :firebase_uid, :provider])
     |> validate_format(:email, ~r/@/)
-    |> unique_constraint([:email, :firebase_uid])
+    |> unique_constraint(:email)
+    |> unique_constraint(:firebase_uid)
     |> encrypt_and_put_password()
   end
 
