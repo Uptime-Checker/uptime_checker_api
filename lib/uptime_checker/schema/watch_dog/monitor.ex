@@ -3,6 +3,7 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
   import Ecto.Changeset
 
   alias UptimeChecker.Schema.Customer.{Organization, User}
+  alias UptimeChecker.Schema.{Region, StatusCode, MonitorRegion, MonitorStatusCode}
 
   schema "monitors" do
     field :name, :string
@@ -27,6 +28,9 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
 
     belongs_to :user, User
     belongs_to :organization, Organization
+
+    many_to_many :regions, Region, join_through: MonitorRegion, on_replace: :delete
+    many_to_many :status_codes, StatusCode, join_through: MonitorStatusCode, on_replace: :delete
 
     timestamps()
   end

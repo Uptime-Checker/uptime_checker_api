@@ -2,6 +2,8 @@ defmodule UptimeChecker.Schema.Customer.User do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias UptimeChecker.Schema.Customer.Organization
+
   schema "users" do
     field :email, :string
     field :name, :string
@@ -9,7 +11,7 @@ defmodule UptimeChecker.Schema.Customer.User do
     field :firebase_uid, :string
     field :provider, Ecto.Enum, values: [:email, :google, :apple, :github]
 
-    belongs_to :organization, UptimeChecker.Customer.Organization
+    belongs_to :organization, Organization
 
     timestamps()
   end
