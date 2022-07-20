@@ -28,4 +28,20 @@ defmodule UptimeChecker.WatchDogFixtures do
 
     monitor
   end
+
+  @doc """
+  Generate a region.
+  """
+  def region_fixture(attrs \\ %{}) do
+    {:ok, region} =
+      attrs
+      |> Enum.into(%{
+        ip_address: "some ip_address",
+        key: "some key",
+        name: "some name"
+      })
+      |> UptimeChecker.WatchDog.create_region()
+
+    region
+  end
 end
