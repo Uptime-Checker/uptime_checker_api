@@ -3,18 +3,28 @@ defmodule UptimeChecker.WatchDog.Monitor do
   import Ecto.Changeset
 
   schema "monitors" do
+    field :name, :string
+    field :url, :string
+    field :method, Ecto.Enum, values: [:GET, :POST, :PUT, :DELETE, :PATCH]
+    field :status_codes, {:array, :integer}
+    field :interval, :integer
+    field :timeout, :integer
+
     field :body, :string
     field :contains, :string
-    field :interval, :integer
+    field :headers, :map, default: %{}
+    field :on, :boolean
+    field :follow_redirects, :boolean
+
+    field :resolve_threshold, :integer
+    field :error_threshold, :integer
+
     field :last_checked_at, :utc_datetime
     field :last_failed_at, :utc_datetime
-    field :method, :integer
-    field :name, :string
-    field :resolve_threshold, :integer
-    field :state, :integer
-    field :status_codes, {:array, :integer}
-    field :timeout, :integer
-    field :url, :string
+    field :deleted_at, :utc_datetime
+
+    belongs_to :user, UptimeChecker.Customer.User
+    belongs_to :organization, UptimeChecker.Customer.Organization
 
     timestamps()
   end
@@ -22,7 +32,28 @@ defmodule UptimeChecker.WatchDog.Monitor do
   @doc false
   def changeset(monitor, attrs) do
     monitor
-    |> cast(attrs, [:name, :url, :method, :status_codes, :interval, :timeout, :last_checked_at, :last_failed_at, :resolve_threshold, :body, :contains, :state])
-    |> validate_required([:name, :url, :method, :status_codes, :interval, :timeout, :last_checked_at, :last_failed_at, :resolve_threshold, :body, :contains, :state])
+    |> cast(attrs, [
+      :name,
+      :url,
+      :method,
+      :status_codes,
+      :interval,
+      :timeout,
+      :body,
+      :contains,
+      :headers,
+      :on,
+      :follow_redirects,
+      :resolve_threshold,
+      :error_threshold,
+      :last_checked_at,
+      :last_failed_at,
+      :deleted_at
+    ])
+    |> validate_required([
+      :url,
+      :method,
+      :interval
+    ])
   end
 end

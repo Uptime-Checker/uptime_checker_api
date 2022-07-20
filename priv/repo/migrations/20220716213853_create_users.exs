@@ -9,12 +9,12 @@ defmodule UptimeChecker.Repo.Migrations.CreateUsers do
     execute(create_query, drop_query)
 
     create table(:users) do
-      add :name, :string
+      add :name, :string, null: false
       add :email, :string, null: false
       add :password, :string
 
       add :firebase_uid, :string
-      add :provider, :provider_name
+      add :provider, :provider_name, null: false
 
       add :organization_id, references(:organizations)
 
