@@ -14,6 +14,7 @@ defmodule UptimeChecker.WatchDog.Monitor do
     field :contains, :string
     field :headers, :map, default: %{}
     field :on, :boolean
+    field :check_ssl, :boolean
     field :follow_redirects, :boolean
 
     field :resolve_threshold, :integer
@@ -43,6 +44,7 @@ defmodule UptimeChecker.WatchDog.Monitor do
       :contains,
       :headers,
       :on,
+      :check_ssl,
       :follow_redirects,
       :resolve_threshold,
       :error_threshold,

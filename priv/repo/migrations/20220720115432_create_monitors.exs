@@ -20,6 +20,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateMonitors do
       add :contains, :string
       add :headers, :map, default: %{}
       add :on, :boolean, default: true
+      add :check_ssl, :boolean, default: false
       add :follow_redirects, :boolean, default: false
 
       add :resolve_threshold, :integer, default: 1
