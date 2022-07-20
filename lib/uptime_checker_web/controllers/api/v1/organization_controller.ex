@@ -4,7 +4,7 @@ defmodule UptimeCheckerWeb.Api.V1.OrganizationController do
   alias UptimeChecker.Customer
   alias UptimeChecker.Customer.Organization
 
-  action_fallback UptimeCheckerWeb.FallbackControlle
+  action_fallback UptimeCheckerWeb.FallbackController
 
   def create(conn, params) do
     user = current_user(conn)

@@ -25,8 +25,8 @@ defmodule UptimeChecker.Customer do
       {:ok, %{organization: organization, user: user}} ->
         {:ok, organization, user}
 
-      {:error, _name, _value, _changes_so_far} ->
-        {:error, "Transsaction Error"}
+      {:error, _name, changeset, _changes_so_far} ->
+        {:error, changeset}
     end
   end
 
