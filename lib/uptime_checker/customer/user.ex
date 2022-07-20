@@ -7,7 +7,7 @@ defmodule UptimeChecker.Customer.User do
     field :name, :string
     field :password, :string
     field :firebase_uid, :string
-    field :provider, :integer
+    field :provider, Ecto.Enum, values: [:email, :google, :apple, :github]
 
     belongs_to :organization, UptimeChecker.Customer.Organization
 
