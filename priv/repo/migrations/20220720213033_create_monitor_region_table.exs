@@ -3,8 +3,8 @@ defmodule UptimeChecker.Repo.Migrations.CreateMonitorRegionTable do
 
   def change do
     create table(:monitor_region_junction) do
-      add :monitor_id, references(:monitors)
-      add :region_id, references(:regions)
+      add :monitor_id, references(:monitors, on_delete: :delete_all)
+      add :region_id, references(:regions, on_delete: :delete_all)
 
       timestamps()
     end

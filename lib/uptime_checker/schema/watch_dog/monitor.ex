@@ -24,7 +24,6 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
 
     field :last_checked_at, :utc_datetime
     field :last_failed_at, :utc_datetime
-    field :deleted_at, :utc_datetime
 
     belongs_to :user, User
     belongs_to :organization, Organization

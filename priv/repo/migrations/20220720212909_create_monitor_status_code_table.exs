@@ -3,8 +3,8 @@ defmodule UptimeChecker.Repo.Migrations.CreateMonitorStatusCodeTable do
 
   def change do
     create table(:monitor_status_code_junction) do
-      add :monitor_id, references(:monitors)
-      add :status_code_id, references(:status_codes)
+      add :monitor_id, references(:monitors, on_delete: :delete_all)
+      add :status_code_id, references(:status_codes, on_delete: :delete_all)
 
       timestamps()
     end

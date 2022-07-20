@@ -28,7 +28,6 @@ defmodule UptimeChecker.Repo.Migrations.CreateMonitors do
 
       add :last_checked_at, :utc_datetime
       add :last_failed_at, :utc_datetime
-      add :deleted_at, :utc_datetime
 
       add :user_id, references(:users)
       add :organization_id, references(:organizations)
