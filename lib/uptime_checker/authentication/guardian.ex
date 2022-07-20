@@ -14,8 +14,15 @@ defmodule UptimeChecker.Guardian do
 
   def resource_from_claims(%{"sub" => id}) do
     customer = Customer.get_by_id(id)
-    set_org_id(customer.organization_id)
-    {:ok, customer}
+
+    case customer do
+      %{id: _id} ->
+        set_org_id(customer.organization_id)
+        {:ok, customer}
+
+      nil ->
+        {:error, nil}
+    end
   end
 
   def resource_from_claims(_claims) do
