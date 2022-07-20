@@ -136,4 +136,60 @@ defmodule UptimeChecker.WatchDogTest do
       assert %Ecto.Changeset{} = WatchDog.change_region(region)
     end
   end
+
+  describe "checks" do
+    alias UptimeChecker.WatchDog.Check
+
+    import UptimeChecker.WatchDogFixtures
+
+    @invalid_attrs %{duration: nil, success: nil}
+
+    test "list_checks/0 returns all checks" do
+      check = check_fixture()
+      assert WatchDog.list_checks() == [check]
+    end
+
+    test "get_check!/1 returns the check with given id" do
+      check = check_fixture()
+      assert WatchDog.get_check!(check.id) == check
+    end
+
+    test "create_check/1 with valid data creates a check" do
+      valid_attrs = %{duration: 120.5, success: true}
+
+      assert {:ok, %Check{} = check} = WatchDog.create_check(valid_attrs)
+      assert check.duration == 120.5
+      assert check.success == true
+    end
+
+    test "create_check/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = WatchDog.create_check(@invalid_attrs)
+    end
+
+    test "update_check/2 with valid data updates the check" do
+      check = check_fixture()
+      update_attrs = %{duration: 456.7, success: false}
+
+      assert {:ok, %Check{} = check} = WatchDog.update_check(check, update_attrs)
+      assert check.duration == 456.7
+      assert check.success == false
+    end
+
+    test "update_check/2 with invalid data returns error changeset" do
+      check = check_fixture()
+      assert {:error, %Ecto.Changeset{}} = WatchDog.update_check(check, @invalid_attrs)
+      assert check == WatchDog.get_check!(check.id)
+    end
+
+    test "delete_check/1 deletes the check" do
+      check = check_fixture()
+      assert {:ok, %Check{}} = WatchDog.delete_check(check)
+      assert_raise Ecto.NoResultsError, fn -> WatchDog.get_check!(check.id) end
+    end
+
+    test "change_check/1 returns a check changeset" do
+      check = check_fixture()
+      assert %Ecto.Changeset{} = WatchDog.change_check(check)
+    end
+  end
 end

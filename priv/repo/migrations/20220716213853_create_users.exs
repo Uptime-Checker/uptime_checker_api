@@ -16,7 +16,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateUsers do
       add :firebase_uid, :string
       add :provider, :provider_name, null: false
 
-      add :organization_id, references(:organizations)
+      add :organization_id, references(:organizations, on_delete: :delete_all)
 
       timestamps()
     end

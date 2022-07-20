@@ -1,4 +1,4 @@
-defmodule UptimeChecker.Repo.Migrations.CreateMonitorStatusCodeTable do
+defmodule UptimeChecker.Repo.Migrations.CreateMonitorStatusCode do
   use Ecto.Migration
 
   def change do
