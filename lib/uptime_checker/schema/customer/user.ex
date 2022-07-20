@@ -1,4 +1,4 @@
-defmodule UptimeChecker.Customer.User do
+defmodule UptimeChecker.Schema.Customer.User do
   use Ecto.Schema
   import Ecto.Changeset
 

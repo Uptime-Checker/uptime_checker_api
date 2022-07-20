@@ -1,12 +1,13 @@
-defmodule UptimeChecker.Customer.Organization do
+defmodule UptimeChecker.Schema.Customer.Organization do
   use Ecto.Schema
   import Ecto.Changeset
+  alias UptimeChecker.Schema.Customer.User
 
   schema "organizations" do
     field :name, :string
     field :slug, :string
 
-    has_many :users, UptimeChecker.Customer.User
+    has_many :users, User
 
     timestamps()
   end

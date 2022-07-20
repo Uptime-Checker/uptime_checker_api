@@ -1,8 +1,8 @@
-defmodule UptimeCheckerWeb.MonitorController do
+defmodule UptimeCheckerWeb.Api.V1.MonitorController do
   use UptimeCheckerWeb, :controller
 
   alias UptimeChecker.WatchDog
-  alias UptimeChecker.WatchDog.Monitor
+  alias UptimeChecker.Schema.WatchDog.Monitor
 
   action_fallback UptimeCheckerWeb.FallbackController
 

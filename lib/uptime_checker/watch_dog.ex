@@ -6,7 +6,7 @@ defmodule UptimeChecker.WatchDog do
   import Ecto.Query, warn: false
   alias UptimeChecker.Repo
 
-  alias UptimeChecker.WatchDog.Monitor
+  alias UptimeChecker.Schema.WatchDog.Monitor
 
   @doc """
   Returns the list of monitors.
@@ -102,7 +102,7 @@ defmodule UptimeChecker.WatchDog do
     Monitor.changeset(monitor, attrs)
   end
 
-  alias UptimeChecker.WatchDog.Region
+  alias UptimeChecker.Schema.Region
 
   @doc """
   Returns the list of regions.

@@ -1,11 +1,11 @@
-defmodule UptimeChecker.WatchDog.Region do
+defmodule UptimeChecker.Schema.StatusCode do
   use Ecto.Schema
   import Ecto.Changeset
 
-  schema "regions" do
-    field :ip_address, :string
-    field :key, :string
+  schema "status_codes" do
     field :name, :string
+    field :code, :integer
+    field :descripition, :string
 
     timestamps()
   end

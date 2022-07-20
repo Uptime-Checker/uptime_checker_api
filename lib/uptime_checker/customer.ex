@@ -4,9 +4,7 @@ defmodule UptimeChecker.Customer do
   """
   import Ecto.Query, warn: false
   alias UptimeChecker.Repo
-
-  alias UptimeChecker.Customer.User
-  alias UptimeChecker.Customer.Organization
+  alias UptimeChecker.Schema.Customer.{Organization, User}
 
   def get_organization(id), do: Repo.get(Organization, id, skip_org_id: true)
 

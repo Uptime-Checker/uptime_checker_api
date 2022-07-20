@@ -1,12 +1,13 @@
-defmodule UptimeChecker.WatchDog.Monitor do
+defmodule UptimeChecker.Schema.WatchDog.Monitor do
   use Ecto.Schema
   import Ecto.Changeset
+
+  alias UptimeChecker.Schema.Customer.{Organization, User}
 
   schema "monitors" do
     field :name, :string
     field :url, :string
     field :method, Ecto.Enum, values: [:GET, :POST, :PUT, :DELETE, :PATCH]
-    field :status_codes, {:array, :integer}
     field :interval, :integer
     field :timeout, :integer
 
@@ -24,8 +25,8 @@ defmodule UptimeChecker.WatchDog.Monitor do
     field :last_failed_at, :utc_datetime
     field :deleted_at, :utc_datetime
 
-    belongs_to :user, UptimeChecker.Customer.User
-    belongs_to :organization, UptimeChecker.Customer.Organization
+    belongs_to :user, User
+    belongs_to :organization, Organization
 
     timestamps()
   end

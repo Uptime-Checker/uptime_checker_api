@@ -1,4 +1,4 @@
-defmodule UptimeCheckerWeb.RegionView do
+defmodule UptimeCheckerWeb.Api.V1.RegionView do
   use UptimeCheckerWeb, :view
   alias UptimeCheckerWeb.RegionView
 

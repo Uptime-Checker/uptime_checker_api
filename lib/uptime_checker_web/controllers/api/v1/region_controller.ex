@@ -1,8 +1,8 @@
-defmodule UptimeCheckerWeb.RegionController do
+defmodule UptimeCheckerWeb.Api.V1.RegionController do
   use UptimeCheckerWeb, :controller
 
   alias UptimeChecker.WatchDog
-  alias UptimeChecker.WatchDog.Region
+  alias UptimeChecker.Schema.Region
 
   action_fallback UptimeCheckerWeb.FallbackController
 

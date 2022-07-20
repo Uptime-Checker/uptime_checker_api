@@ -3,7 +3,7 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
 
   alias UptimeChecker.Customer
   alias UptimeChecker.Guardian
-  alias UptimeChecker.Customer.User
+  alias UptimeChecker.Schema.Customer.User
 
   action_fallback UptimeCheckerWeb.FallbackController
 

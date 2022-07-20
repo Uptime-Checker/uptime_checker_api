@@ -2,7 +2,7 @@ defmodule UptimeCheckerWeb.Api.V1.OrganizationController do
   use UptimeCheckerWeb, :controller
 
   alias UptimeChecker.Customer
-  alias UptimeChecker.Customer.Organization
+  alias UptimeChecker.Schema.Customer.Organization
 
   action_fallback UptimeCheckerWeb.FallbackController
 
