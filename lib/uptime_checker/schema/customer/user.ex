@@ -13,7 +13,7 @@ defmodule UptimeChecker.Schema.Customer.User do
 
     belongs_to :organization, Organization
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   def registration_changeset(user, attrs) do

@@ -2,6 +2,7 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias UptimeChecker.Schema.WatchDog.Check
   alias UptimeChecker.Schema.Customer.{Organization, User}
   alias UptimeChecker.Schema.{Region, StatusCode, MonitorRegion, MonitorStatusCode}
 
@@ -28,10 +29,12 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
     belongs_to :user, User
     belongs_to :organization, Organization
 
+    has_many :checks, Check
+
     many_to_many :regions, Region, join_through: MonitorRegion, on_replace: :delete
     many_to_many :status_codes, StatusCode, join_through: MonitorStatusCode, on_replace: :delete
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false

@@ -7,7 +7,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateRegions do
       add :key, :string, null: false
       add :ip_address, :string
 
-      timestamps()
+      timestamps(type: :timestamptz)
     end
   end
 end

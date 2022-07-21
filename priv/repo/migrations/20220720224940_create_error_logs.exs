@@ -10,10 +10,10 @@ defmodule UptimeChecker.Repo.Migrations.CreateErrorLog do
       add :check_id, references(:checks, on_delete: :delete_all)
       add :organization_id, references(:organizations, on_delete: :delete_all)
 
-      timestamps()
+      timestamps(type: :timestamptz)
     end
 
-    create index(:checks, [:check_id])
-    create index(:checks, [:organization_id])
+    create index(:error_logs, [:check_id])
+    create index(:error_logs, [:organization_id])
   end
 end

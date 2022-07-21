@@ -6,7 +6,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateMonitorStatusCode do
       add :monitor_id, references(:monitors, on_delete: :delete_all)
       add :status_code_id, references(:status_codes, on_delete: :delete_all)
 
-      timestamps()
+      timestamps(type: :timestamptz)
     end
 
     create index(:monitor_status_code_junction, [:monitor_id])

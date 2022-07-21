@@ -7,7 +7,7 @@ defmodule UptimeChecker.Schema.Region do
     field :key, :string
     field :name, :string
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false

@@ -8,6 +8,6 @@ defmodule UptimeChecker.Schema.MonitorStatusCode do
     belongs_to(:monitor, Monitor)
     belongs_to(:status_code, StatusCode)
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 end

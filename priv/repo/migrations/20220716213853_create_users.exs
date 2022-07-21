@@ -18,7 +18,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateUsers do
 
       add :organization_id, references(:organizations, on_delete: :delete_all)
 
-      timestamps()
+      timestamps(type: :timestamptz)
     end
 
     create unique_index(:users, [:email])

@@ -2,7 +2,7 @@ defmodule UptimeCheckerWeb.CheckController do
   use UptimeCheckerWeb, :controller
 
   alias UptimeChecker.WatchDog
-  alias UptimeChecker.WatchDog.Check
+  alias UptimeChecker.Schema.WatchDog.Check
 
   action_fallback UptimeCheckerWeb.FallbackController
 

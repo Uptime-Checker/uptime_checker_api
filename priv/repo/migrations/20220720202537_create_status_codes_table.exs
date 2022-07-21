@@ -7,7 +7,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateStatusCodesTable do
       add :code, :integer, null: false
       add :descripition, :string, null: false
 
-      timestamps()
+      timestamps(type: :timestamptz)
     end
   end
 end

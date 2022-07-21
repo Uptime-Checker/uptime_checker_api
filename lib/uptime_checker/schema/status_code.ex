@@ -7,7 +7,7 @@ defmodule UptimeChecker.Schema.StatusCode do
     field :code, :integer
     field :descripition, :string
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false

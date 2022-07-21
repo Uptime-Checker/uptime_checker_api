@@ -198,7 +198,7 @@ defmodule UptimeChecker.WatchDog do
     Region.changeset(region, attrs)
   end
 
-  alias UptimeChecker.WatchDog.Check
+  alias UptimeChecker.Schema.WatchDog.Check
 
   @doc """
   Returns the list of checks.

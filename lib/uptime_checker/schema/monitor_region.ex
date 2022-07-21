@@ -8,6 +8,6 @@ defmodule UptimeChecker.Schema.MonitorRegion do
     belongs_to(:monitor, Monitor)
     belongs_to(:region, Region)
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 end
