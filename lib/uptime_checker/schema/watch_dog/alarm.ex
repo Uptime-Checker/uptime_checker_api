@@ -8,10 +8,10 @@ defmodule UptimeChecker.Schema.WatchDog.Alarm do
     field :ongoing, :boolean, default: false
     field :resolved_at, :utc_datetime
 
-    belongs_to :monitor, Monitor
+    belongs_to :triggered_by, Check, foreign_key: :triggered_by_check_id
+    belongs_to :resolved_by, Check, foreign_key: :resolved_by_check_id
 
-    has_one :triggered_by, Check, foreign_key: :triggered_by_check_id
-    has_one :resolved_by, Check, foreign_key: :resolved_by_check_id
+    belongs_to :monitor, Monitor
 
     timestamps(type: :utc_datetime)
   end
