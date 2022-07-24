@@ -44,7 +44,6 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
       :name,
       :url,
       :method,
-      :status_codes,
       :interval,
       :timeout,
       :body,
@@ -56,8 +55,7 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
       :resolve_threshold,
       :error_threshold,
       :last_checked_at,
-      :last_failed_at,
-      :deleted_at
+      :last_failed_at
     ])
     |> validate_required([
       :url,
