@@ -3,9 +3,9 @@ defmodule UptimeChecker.Schema.Region do
   import Ecto.Changeset
 
   schema "regions" do
-    field :ip_address, :string
-    field :key, :string
     field :name, :string
+    field :key, :string
+    field :ip_address, :string
 
     timestamps(type: :utc_datetime)
   end

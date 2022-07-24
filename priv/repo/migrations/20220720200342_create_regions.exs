@@ -9,5 +9,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateRegions do
 
       timestamps(type: :timestamptz)
     end
+
+    create unique_index(:regions, [:key])
   end
 end
