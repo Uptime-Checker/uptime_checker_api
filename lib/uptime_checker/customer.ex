@@ -48,8 +48,9 @@ defmodule UptimeChecker.Customer do
   end
 
   def get_by_id(id) do
-    query = from u in User, where: u.id == ^id, join: org in assoc(u, :organization), preload: [organization: org]
-    Repo.one(query, skip_org_id: true)
+    User
+    |> Repo.get(id, skip_org_id: true)
+    |> Repo.preload([:organization], skip_org_id: true)
   end
 
   def authenticate_user(email, password) do
