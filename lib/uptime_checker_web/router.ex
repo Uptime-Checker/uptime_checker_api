@@ -42,6 +42,7 @@ defmodule UptimeCheckerWeb.Router do
       get "/me", UserController, :me
 
       post "/organization", OrganizationController, :create
+      resources "/monitors", MonitorController, only: [:create]
     end
   end
 

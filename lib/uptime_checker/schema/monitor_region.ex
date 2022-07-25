@@ -1,5 +1,6 @@
 defmodule UptimeChecker.Schema.MonitorRegion do
   use Ecto.Schema
+  import Ecto.Changeset
 
   alias UptimeChecker.Schema.Region
   alias UptimeChecker.Schema.WatchDog.Monitor
@@ -14,5 +15,11 @@ defmodule UptimeChecker.Schema.MonitorRegion do
     belongs_to(:region, Region)
 
     timestamps(type: :utc_datetime)
+  end
+
+  @doc false
+  def changeset(monitor_region, attrs) do
+    monitor_region
+    |> cast(attrs, [:last_checked_at, :next_check_at, :consequtive_failure, :consequtive_recovery])
   end
 end

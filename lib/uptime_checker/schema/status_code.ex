@@ -13,7 +13,8 @@ defmodule UptimeChecker.Schema.StatusCode do
   @doc false
   def changeset(region, attrs) do
     region
-    |> cast(attrs, [:name, :key, :ip_address])
-    |> validate_required([:name, :key, :ip_address])
+    |> cast(attrs, [:name, :code, :descripition])
+    |> validate_required([:name, :code, :descripition])
+    |> validate_inclusion(:code, 200..499)
   end
 end

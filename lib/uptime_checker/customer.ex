@@ -9,7 +9,7 @@ defmodule UptimeChecker.Customer do
   def get_organization(id), do: Repo.get(Organization, id, skip_org_id: true)
 
   def get_organization_by_slug(slug) do
-    Organization |> Repo.get_by(slug: slug, skip_org_id: true)
+    Organization |> Repo.get_by([slug: slug], skip_org_id: true)
   end
 
   def create_organization(attrs \\ %{}, user) do
@@ -48,7 +48,8 @@ defmodule UptimeChecker.Customer do
   end
 
   def get_by_id(id) do
-    User |> Repo.get(id, skip_org_id: true)
+    query = from(u in User, where: u.id == ^id, join: org in assoc(u, :organization), preload: [organization: org])
+    Repo.one(query, skip_org_id: true)
   end
 
   def authenticate_user(email, password) do

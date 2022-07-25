@@ -71,9 +71,9 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
 
   def validate_url(changeset, field, options \\ []) do
     validate_change(changeset, field, fn _, url ->
-      case url |> String.to_charlist() |> URI.parse() do
+      case UptimeChecker.Helper.UrlValidator.cast(url) do
         {:ok, _} -> []
-        {:error, msg} -> [{field, options[:message] || "invalid url: #{inspect(msg)}"}]
+        {:error} -> [{field, options[:message] || "invalid url: #{inspect(field)}"}]
       end
     end)
   end

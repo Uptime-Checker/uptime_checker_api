@@ -6,6 +6,7 @@ defmodule UptimeChecker.Schema.Region do
     field :name, :string
     field :key, :string
     field :ip_address, :string
+    field :default, :boolean, default: false
 
     timestamps(type: :utc_datetime)
   end
