@@ -47,10 +47,12 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+# Guardian for auth
 config :uptime_checker, UptimeChecker.Guardian,
   issuer: "uptime_checker",
   secret_key: "J3sSZ0fy5ksV4pNvFD+E7RoLqcxiB3eJii7CwIkmr/BQf8vZGXYzm5pgPNrgZkar"
 
+# Quantum for cron
 config :uptime_checker, UptimeChecker.Scheduler,
   jobs: [
     check_monitor: [
@@ -60,6 +62,12 @@ config :uptime_checker, UptimeChecker.Scheduler,
       run_strategy: {Quantum.RunStrategy.All, :cluster}
     ]
   ]
+
+# Oban for tasks
+config :uptime_checker, Oban,
+  repo: UptimeChecker.Repo,
+  plugins: [Oban.Plugins.Pruner],
+  queues: [default: 10]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

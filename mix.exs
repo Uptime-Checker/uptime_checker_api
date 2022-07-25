@@ -54,7 +54,8 @@ defmodule UptimeChecker.MixProject do
       {:vapor, "~> 0.10"},
       {:useful, "~> 1.0"},
       {:timex, "~> 3.7"},
-      {:quantum, "~> 3.0"}
+      {:quantum, "~> 3.0"},
+      {:oban, "~> 2.13"}
     ]
   end
 

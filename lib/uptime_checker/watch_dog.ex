@@ -54,7 +54,7 @@ defmodule UptimeChecker.WatchDog do
           (mr.next_check_at > ^prev and mr.next_check_at < ^later and
              mr.last_checked_at < ^prev) or is_nil(mr.last_checked_at)
 
-    Repo.all(query, skip_org_id: true)
+    Repo.all(query)
   end
 
   @doc """

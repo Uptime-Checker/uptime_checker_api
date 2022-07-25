@@ -6,10 +6,10 @@ defmodule UptimeChecker.Customer do
   alias UptimeChecker.Repo
   alias UptimeChecker.Schema.Customer.{Organization, User}
 
-  def get_organization(id), do: Repo.get(Organization, id, skip_org_id: true)
+  def get_organization(id), do: Repo.get(Organization, id)
 
   def get_organization_by_slug(slug) do
-    Organization |> Repo.get_by([slug: slug], skip_org_id: true)
+    Organization |> Repo.get_by(slug: slug)
   end
 
   def create_organization(attrs \\ %{}, user) do
@@ -41,7 +41,7 @@ defmodule UptimeChecker.Customer do
   def get_by_email(email) do
     query = from u in User, where: u.email == ^email
 
-    case Repo.one(query, skip_org_id: true) do
+    case Repo.one(query) do
       nil -> {:error, :not_found}
       user -> {:ok, user}
     end
@@ -49,8 +49,8 @@ defmodule UptimeChecker.Customer do
 
   def get_by_id(id) do
     User
-    |> Repo.get(id, skip_org_id: true)
-    |> Repo.preload([:organization], skip_org_id: true)
+    |> Repo.get(id)
+    |> Repo.preload([:organization])
   end
 
   def authenticate_user(email, password) do

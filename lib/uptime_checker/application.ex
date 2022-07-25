@@ -19,7 +19,9 @@ defmodule UptimeChecker.Application do
       # Start the Endpoint (http/https)
       UptimeCheckerWeb.Endpoint,
       # Scheduler
-      UptimeChecker.Scheduler
+      UptimeChecker.Scheduler,
+      # Oban
+      {Oban, Application.fetch_env!(:uptime_checker, Oban)}
       # Start a worker by calling: UptimeChecker.Worker.start_link(arg)
       # {UptimeChecker.Worker, arg}
     ]

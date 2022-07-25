@@ -4,6 +4,6 @@ defmodule UptimeChecker.Region_S do
   alias UptimeChecker.Schema.Region
 
   def get_default_region() do
-    Region |> Repo.get_by([default: true], skip_org_id: true)
+    Region |> Repo.get_by(default: true)
   end
 end
