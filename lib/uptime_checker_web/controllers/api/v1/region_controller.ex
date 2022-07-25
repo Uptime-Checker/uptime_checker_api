@@ -15,7 +15,6 @@ defmodule UptimeCheckerWeb.Api.V1.RegionController do
     with {:ok, %Region{} = region} <- WatchDog.create_region(region_params) do
       conn
       |> put_status(:created)
-      |> put_resp_header("location", Routes.region_path(conn, :show, region))
       |> render("show.json", region: region)
     end
   end

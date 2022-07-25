@@ -1,4 +1,4 @@
-defmodule UptimeCheckerWeb.CheckController do
+defmodule UptimeCheckerWeb.Api.V1.CheckController do
   use UptimeCheckerWeb, :controller
 
   alias UptimeChecker.WatchDog
@@ -15,7 +15,6 @@ defmodule UptimeCheckerWeb.CheckController do
     with {:ok, %Check{} = check} <- WatchDog.create_check(check_params) do
       conn
       |> put_status(:created)
-      |> put_resp_header("location", Routes.check_path(conn, :show, check))
       |> render("show.json", check: check)
     end
   end
