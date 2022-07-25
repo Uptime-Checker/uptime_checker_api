@@ -67,6 +67,8 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
     |> validate_inclusion(:timeout, 1..10)
     |> validate_inclusion(:resolve_threshold, 1..10)
     |> validate_inclusion(:error_threshold, 1..10)
+    |> put_assoc(:user, attrs.user)
+    |> put_assoc(:organization, attrs.user.organization)
   end
 
   def validate_url(changeset, field, options \\ []) do

@@ -12,7 +12,7 @@ defmodule UptimeCheckerWeb.Api.V1.MonitorController do
   end
 
   def create(conn, params) do
-    with {:ok, %Monitor{} = monitor} <- WatchDog.create_monitor(params) do
+    with {:ok, %Monitor{} = monitor} <- WatchDog.create_monitor(params, current_user(conn)) do
       conn
       |> put_status(:created)
       |> render("show.json", monitor: monitor)
