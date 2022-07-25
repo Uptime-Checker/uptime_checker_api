@@ -54,9 +54,10 @@ config :uptime_checker, UptimeChecker.Guardian,
 config :uptime_checker, UptimeChecker.Scheduler,
   jobs: [
     check_monitor: [
-      # Every every 15 seconds
-      schedule: {:extended, "*/15", run_strategy: {Quantum.RunStrategy.All, :cluster}},
-      task: {UptimeChecker.Cron.CheckMonitor, :work, []}
+      # Every every 10 seconds
+      schedule: {:extended, "*/10"},
+      task: {UptimeChecker.Cron.CheckMonitor, :work, []},
+      run_strategy: {Quantum.RunStrategy.All, :cluster}
     ]
   ]
 

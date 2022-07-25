@@ -12,33 +12,10 @@ defmodule UptimeChecker.WatchDog do
   alias UptimeChecker.Schema.MonitorRegion
   alias UptimeChecker.Schema.WatchDog.Monitor
 
-  @doc """
-  Returns the list of monitors.
-
-  ## Examples
-
-      iex> list_monitors()
-      [%Monitor{}, ...]
-
-  """
   def list_monitors do
     Repo.all(Monitor)
   end
 
-  @doc """
-  Gets a single monitor.
-
-  Raises `Ecto.NoResultsError` if the Monitor does not exist.
-
-  ## Examples
-
-      iex> get_monitor!(123)
-      %Monitor{}
-
-      iex> get_monitor!(456)
-      ** (Ecto.NoResultsError)
-
-  """
   def get_monitor(id), do: Repo.get(Monitor, id)
 
   def create_monitor(attrs \\ %{}, user) do
@@ -64,6 +41,20 @@ defmodule UptimeChecker.WatchDog do
       {:error, _name, changeset, _changes_so_far} ->
         {:error, changeset}
     end
+  end
+
+  def list_monitor_region(from, to) do
+    now = NaiveDateTime.utc_now()
+    prev = Timex.shift(now, seconds: from)
+    later = Timex.shift(now, seconds: to)
+
+    query =
+      from mr in MonitorRegion,
+        where:
+          (mr.next_check_at > ^prev and mr.next_check_at < ^later and
+             mr.last_checked_at < ^prev) or is_nil(mr.last_checked_at)
+
+    Repo.all(query, skip_org_id: true)
   end
 
   @doc """
