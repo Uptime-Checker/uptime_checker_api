@@ -48,7 +48,7 @@ defmodule UptimeChecker.Customer do
   end
 
   def get_by_id(id) do
-    query = from(u in User, where: u.id == ^id, join: org in assoc(u, :organization), preload: [organization: org])
+    query = from u in User, where: u.id == ^id, join: org in assoc(u, :organization), preload: [organization: org]
     Repo.one(query, skip_org_id: true)
   end
 
