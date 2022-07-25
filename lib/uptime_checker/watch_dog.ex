@@ -2,10 +2,14 @@ defmodule UptimeChecker.WatchDog do
   @moduledoc """
   The WatchDog context.
   """
+  use Timex
 
+  import UptimeChecker.Helper.Util
   import Ecto.Query, warn: false
   alias UptimeChecker.Repo
 
+  alias UptimeChecker.Region_S
+  alias UptimeChecker.Schema.MonitorRegion
   alias UptimeChecker.Schema.WatchDog.Monitor
 
   @doc """
@@ -35,24 +39,31 @@ defmodule UptimeChecker.WatchDog do
       ** (Ecto.NoResultsError)
 
   """
-  def get_monitor!(id), do: Repo.get!(Monitor, id)
+  def get_monitor(id), do: Repo.get(Monitor, id)
 
-  @doc """
-  Creates a monitor.
+  def create_monitor(attrs \\ %{}, user) do
+    params = key_to_atom(attrs) |> Map.put(:user, user)
 
-  ## Examples
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:monitor, Monitor.changeset(%Monitor{}, params))
+    |> Ecto.Multi.insert(:monitor_region, fn %{monitor: updated_monitor} ->
+      region = Region_S.get_default_region()
 
-      iex> create_monitor(%{field: value})
-      {:ok, %Monitor{}}
+      %MonitorRegion{}
+      |> MonitorRegion.changeset(%{
+        region_id: region.id,
+        next_check_at: Timex.shift(NaiveDateTime.utc_now(), minutes: +1)
+      })
+      |> Ecto.Changeset.put_assoc(:monitor, updated_monitor)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{monitor: monitor, monitor_region: monitor_region}} ->
+        {:ok, get_monitor(monitor.id), monitor_region}
 
-      iex> create_monitor(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_monitor(attrs \\ %{}) do
-    %Monitor{}
-    |> Monitor.changeset(attrs)
-    |> Repo.insert()
+      {:error, _name, changeset, _changes_so_far} ->
+        {:error, changeset}
+    end
   end
 
   @doc """
