@@ -20,6 +20,13 @@ defmodule UptimeChecker.Schema.MonitorRegion do
   @doc false
   def changeset(monitor_region, attrs) do
     monitor_region
-    |> cast(attrs, [:last_checked_at, :next_check_at, :consequtive_failure, :consequtive_recovery])
+    |> cast(attrs, [
+      :monitor_id,
+      :region_id,
+      :last_checked_at,
+      :next_check_at,
+      :consequtive_failure,
+      :consequtive_recovery
+    ])
   end
 end

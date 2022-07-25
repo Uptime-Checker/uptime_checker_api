@@ -63,6 +63,7 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
       :interval
     ])
     |> validate_url(:url)
+    |> unique_constraint(:url)
     |> validate_inclusion(:interval, 15..86400)
     |> validate_inclusion(:timeout, 1..10)
     |> validate_inclusion(:resolve_threshold, 1..10)
@@ -75,7 +76,7 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
     validate_change(changeset, field, fn _, url ->
       case UptimeChecker.Helper.UrlValidator.cast(url) do
         {:ok, _} -> []
-        {:error} -> [{field, options[:message] || "invalid url: #{inspect(field)}"}]
+        :error -> [{field, options[:message] || "invalid url: #{inspect(url)}"}]
       end
     end)
   end
