@@ -8,7 +8,7 @@ defmodule UptimeChecker.Cron.CheckMonitor do
     monitor_regions = WatchDog.list_monitor_region(-5, +10)
 
     Enum.map(monitor_regions, fn monitor_region ->
-      monitor_region |> Worker.HitApi.enqueue()
+      monitor_region |> Worker.HitApiAsync.enqueue()
     end)
   end
 end

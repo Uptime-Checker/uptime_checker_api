@@ -1,13 +1,11 @@
-defmodule UptimeChecker.Worker.HitApi do
-  use Oban.Worker
+defmodule UptimeChecker.Worker.HitApiAsync do
+  use Oban.Worker, max_attempts: 1
 
   alias UptimeChecker.Schema.MonitorRegion
 
   @impl true
   def perform(%Oban.Job{args: %{"monitor_region_id" => monitor_region_id}}) do
-    IO.puts("Starting work...")
-    IO.puts(monitor_region_id)
-    IO.puts("...Finished work")
+    UptimeChecker.Job.HitApi.work(monitor_region_id)
   end
 
   def enqueue(%MonitorRegion{id: id}) do
