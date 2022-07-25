@@ -63,6 +63,10 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
       :interval
     ])
     |> validate_url(:url)
+    |> validate_inclusion(:interval, 15..86400)
+    |> validate_inclusion(:timeout, 1..10)
+    |> validate_inclusion(:resolve_threshold, 1..10)
+    |> validate_inclusion(:error_threshold, 1..10)
   end
 
   def validate_url(changeset, field, options \\ []) do
