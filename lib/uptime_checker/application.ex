@@ -17,7 +17,9 @@ defmodule UptimeChecker.Application do
       # Start the PubSub system
       {Phoenix.PubSub, name: UptimeChecker.PubSub},
       # Start the Endpoint (http/https)
-      UptimeCheckerWeb.Endpoint
+      UptimeCheckerWeb.Endpoint,
+      # Scheduler
+      UptimeChecker.Scheduler
       # Start a worker by calling: UptimeChecker.Worker.start_link(arg)
       # {UptimeChecker.Worker, arg}
     ]
