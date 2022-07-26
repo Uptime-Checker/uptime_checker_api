@@ -1,4 +1,4 @@
-defmodule UptimeChecker.Helper.UrlValidator do
+defmodule UptimeChecker.Http.UrlValidator do
   @behaviour Ecto.Type
 
   def type, do: :string

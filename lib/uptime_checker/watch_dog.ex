@@ -18,7 +18,14 @@ defmodule UptimeChecker.WatchDog do
 
   def get_monitor(id), do: Repo.get(Monitor, id)
 
-  def get_monitor_region(id), do: Repo.get(MonitorRegion, id)
+  def get_monitor_with_status_codes(id) do
+    Repo.get(Monitor, id)
+    |> Repo.preload([:status_codes])
+  end
+
+  def get_monitor_region(id) do
+    Repo.get(MonitorRegion, id)
+  end
 
   def create_monitor(attrs \\ %{}, user) do
     params = key_to_atom(attrs) |> Map.put(:user, user)

@@ -1,4 +1,4 @@
-defmodule UptimeChecker.Helper.Tls do
+defmodule UptimeChecker.Http.Tls do
   def check(url) do
     uri = URI.parse(url)
     host = to_charlist(uri.host)
