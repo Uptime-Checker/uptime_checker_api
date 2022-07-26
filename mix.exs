@@ -57,6 +57,7 @@ defmodule UptimeChecker.MixProject do
       {:quantum, "~> 3.0"},
       {:oban, "~> 2.13"},
       {:x509, "~> 0.8"},
+      {:httpoison, "~> 1.8"},
       {:tls_certificate_check, "~> 1.15"}
     ]
   end

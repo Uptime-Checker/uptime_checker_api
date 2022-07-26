@@ -24,7 +24,7 @@ config :uptime_checker, UptimeCheckerWeb.Endpoint,
 #
 # For production it's recommended to configure a different adapter
 # at the `config/runtime.exs`.
-config :uptime_checker, UptimeChecker.Mailer, adapter: Swoosh.Adapters.Local
+config :uptime_checker, UptimeChecker.Module.Mailer, adapter: Swoosh.Adapters.Local
 
 # Swoosh API client is needed for adapters other than SMTP.
 config :swoosh, :api_client, false
@@ -53,7 +53,7 @@ config :uptime_checker, UptimeChecker.Guardian,
   secret_key: "J3sSZ0fy5ksV4pNvFD+E7RoLqcxiB3eJii7CwIkmr/BQf8vZGXYzm5pgPNrgZkar"
 
 # Quantum for cron
-config :uptime_checker, UptimeChecker.Scheduler,
+config :uptime_checker, UptimeChecker.Module.Scheduler,
   jobs: [
     check_monitor: [
       # Every every 10 seconds

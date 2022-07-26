@@ -21,7 +21,7 @@ config :uptime_checker, UptimeCheckerWeb.Endpoint,
   server: false
 
 # In test we don't send emails.
-config :uptime_checker, UptimeChecker.Mailer, adapter: Swoosh.Adapters.Test
+config :uptime_checker, UptimeChecker.Module.Mailer, adapter: Swoosh.Adapters.Test
 
 # Print only warnings and errors during test
 config :logger, level: :warn
