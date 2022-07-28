@@ -20,7 +20,8 @@ defmodule UptimeChecker.Schema.WatchDog.Check do
   @doc false
   def changeset(check, attrs) do
     check
-    |> cast(attrs, [:success, :duration])
-    |> validate_required([:success, :duration])
+    |> cast(attrs, [:success])
+    |> put_assoc(:monitor, attrs.monitor)
+    |> put_assoc(:region, attrs.region)
   end
 end
