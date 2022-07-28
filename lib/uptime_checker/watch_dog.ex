@@ -4,13 +4,14 @@ defmodule UptimeChecker.WatchDog do
   """
   use Timex
 
-  import UptimeChecker.Helper.Util
   import Ecto.Query, warn: false
-  alias UptimeChecker.Repo
+  import UptimeChecker.Helper.Util
 
+  alias UptimeChecker.Repo
   alias UptimeChecker.Region_S
+  alias UptimeChecker.Schema.Region
   alias UptimeChecker.Schema.MonitorRegion
-  alias UptimeChecker.Schema.WatchDog.Monitor
+  alias UptimeChecker.Schema.WatchDog.{Monitor, Check}
 
   def list_monitors do
     Repo.all(Monitor)
@@ -105,8 +106,6 @@ defmodule UptimeChecker.WatchDog do
     Monitor.changeset(monitor, attrs)
   end
 
-  alias UptimeChecker.Schema.Region
-
   def list_regions do
     Repo.all(Region)
   end
@@ -132,8 +131,6 @@ defmodule UptimeChecker.WatchDog do
   def change_region(%Region{} = region, attrs \\ %{}) do
     Region.changeset(region, attrs)
   end
-
-  alias UptimeChecker.Schema.WatchDog.Check
 
   def list_checks do
     Repo.all(Check)
@@ -168,18 +165,6 @@ defmodule UptimeChecker.WatchDog do
     end
   end
 
-  @doc """
-  Updates a check.
-
-  ## Examples
-
-      iex> update_check(check, %{field: new_value})
-      {:ok, %Check{}}
-
-      iex> update_check(check, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
   def update_check(%Check{} = check, attrs) do
     check
     |> Check.update_changeset(attrs)
