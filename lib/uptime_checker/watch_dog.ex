@@ -25,7 +25,6 @@ defmodule UptimeChecker.WatchDog do
 
   def get_monitor_region(id) do
     Repo.get(MonitorRegion, id)
-    |> Repo.preload([:monitor])
     |> Repo.preload([:region])
   end
 
@@ -168,7 +167,7 @@ defmodule UptimeChecker.WatchDog do
   """
   def update_check(%Check{} = check, attrs) do
     check
-    |> Check.changeset(attrs)
+    |> Check.update_changeset(attrs)
     |> Repo.update()
   end
 

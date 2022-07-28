@@ -27,4 +27,10 @@ defmodule UptimeChecker.Schema.WatchDog.Check do
     |> put_assoc(:region, attrs.region)
     |> put_assoc(:organization, attrs.organization)
   end
+
+  def update_changeset(check, attrs) do
+    check
+    |> cast(attrs, [:success, :duration])
+    |> validate_required([:success, :duration])
+  end
 end
