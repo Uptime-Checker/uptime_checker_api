@@ -28,7 +28,7 @@ defmodule UptimeChecker.Job.HitApi do
   end
 
   defp handle_response(monitor, monitor_region, check, duration, %HTTPoison.Response{} = response) do
-    Logger.info("Got response with status code ==> #{response.status_code}")
+    Logger.info("RESPONSE #{monitor.url} CODE ==> #{response.status_code}")
 
     if(response.status_code >= code(:ok) && response.status_code < code(:bad_request)) do
       if is_nil(List.first(monitor.status_codes)) do
