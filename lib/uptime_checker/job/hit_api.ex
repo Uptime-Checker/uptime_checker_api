@@ -27,12 +27,26 @@ defmodule UptimeChecker.Job.HitApi do
   end
 
   defp handle_response(monitor, check, duration, %HTTPoison.Response{} = response) do
+    Logger.info("Response with status code #{response.status_code}")
+
     if(response.status_code >= code(:ok) && response.status_code < code(:bad_request)) do
-      WatchDog.update_check(check, %{
-        success: true,
-        duration: duration
-      })
+      if is_nil(List.first(monitor.status_codes)) do
+        handle_success_response(monitor, check, duration)
+      else
+        success_status_codes = Enum.map(monitor.status_codes, fn status_code -> status_code.code end)
+
+        if Enum.member?(success_status_codes, response.status_code) do
+          handle_success_response(monitor, check, duration)
+        end
+      end
     end
+  end
+
+  defp handle_success_response(monitor, check, duration) do
+    WatchDog.update_check(check, %{
+      success: true,
+      duration: duration
+    })
   end
 
   defp hit_api(monitor) do
