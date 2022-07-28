@@ -142,8 +142,12 @@ defmodule UptimeChecker.WatchDog do
 
   def get_check!(id), do: Repo.get!(Check, id)
 
-  def create_check(attrs \\ %{}, monitor, region) do
-    params = attrs |> Map.put(:monitor, monitor) |> Map.put(:region, region)
+  def create_check(attrs \\ %{}, monitor, region, organization) do
+    params =
+      attrs
+      |> Map.put(:monitor, monitor)
+      |> Map.put(:region, region)
+      |> Map.put(:organization, organization)
 
     %Check{}
     |> Check.changeset(params)
