@@ -15,11 +15,7 @@ defmodule UptimeCheckerWeb.Api.V1.MonitorController do
 
   def create(conn, params) do
     with {:ok, %Monitor{} = monitor} <- WatchDog.create_monitor(params, current_user(conn)) do
-      Task.Supervisor.start_child(
-        UptimeChecker.TaskSupervisor,
-        fn ->
-          WatchDog.create_monitor_regions(monitor)
-        end,
+      Task.Supervisor.start_child(UptimeChecker.TaskSupervisor, WatchDog, :create_monitor_regions, [monitor],
         restart: :transient
       )
 
