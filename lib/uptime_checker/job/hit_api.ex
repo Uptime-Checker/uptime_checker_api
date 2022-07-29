@@ -5,21 +5,24 @@ defmodule UptimeChecker.Job.HitApi do
   alias UptimeChecker.Customer
   alias UptimeChecker.WatchDog
   alias UptimeChecker.Http.Api
+  alias UptimeChecker.Helper.Util
   import Plug.Conn.Status, only: [code: 1]
 
   def work(monitor_region_id) do
+    tracing_id = Util.random_string(10)
+
     monitor_region = WatchDog.get_monitor_region(monitor_region_id)
     monitor = WatchDog.get_monitor_with_status_codes(monitor_region.monitor_id)
     org = Customer.get_organization(monitor.organization_id)
 
     with {:ok, check} <- create_check(monitor, monitor_region.region, org) do
-      with {u_secs, result} <- hit_api(monitor) do
+      with {u_secs, result} <- hit_api(tracing_id, monitor) do
         case result do
           {:ok, %HTTPoison.Response{} = response} ->
-            handle_response(monitor, monitor_region, check, u_secs / 1000, response)
+            handle_response(tracing_id, monitor, monitor_region, check, u_secs / 1000, response)
 
           {:error, %HTTPoison.Error{reason: reason}} ->
-            Logger.error("API Request failed #{monitor.url}, reason #{reason}, check #{check.id}")
+            Logger.error("#{tracing_id} API Request failed #{monitor.url}, reason #{reason}, check #{check.id}")
         end
       end
     end
@@ -27,8 +30,8 @@ defmodule UptimeChecker.Job.HitApi do
     :ok
   end
 
-  defp handle_response(monitor, monitor_region, check, duration, %HTTPoison.Response{} = response) do
-    Logger.info("RESPONSE #{monitor.url} CODE ==> #{response.status_code}")
+  defp handle_response(tracing_id, monitor, monitor_region, check, duration, %HTTPoison.Response{} = response) do
+    Logger.info("#{tracing_id} RESPONSE #{monitor.url} CODE ==> #{response.status_code}")
 
     if response.status_code >= code(:ok) && response.status_code < code(:bad_request) do
       if is_nil(List.first(monitor.status_codes)) do
@@ -69,9 +72,10 @@ defmodule UptimeChecker.Job.HitApi do
   defp monitor_params(success, now) when success == true, do: %{last_checked_at: now}
   defp monitor_params(success, now) when success == false, do: %{last_checked_at: now, last_failed_at: now}
 
-  defp hit_api(monitor) do
+  defp hit_api(tracing_id, monitor) do
     :timer.tc(fn ->
       Api.hit(
+        tracing_id,
         monitor.url,
         monitor.method,
         monitor.headers,

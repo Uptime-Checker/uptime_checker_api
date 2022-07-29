@@ -1,6 +1,6 @@
 defmodule UptimeChecker.Cron.CheckMonitor do
-  alias UptimeChecker.WatchDog
   alias UptimeChecker.Worker
+  alias UptimeChecker.WatchDog
 
   def work do
     # Load all the monitors for each region that were supposed to be executed

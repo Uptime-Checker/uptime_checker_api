@@ -1,7 +1,7 @@
 defmodule UptimeChecker.Http.Api do
   require Logger
 
-  def hit(url, method, headers, body, timeout, follow_redirect) do
+  def hit(tracing_id, url, method, headers, body, timeout, follow_redirect) do
     HTTPoison.start()
 
     # timeout for establishing a TCP or SSL connection
@@ -14,7 +14,7 @@ defmodule UptimeChecker.Http.Api do
       max_redirect: 2
     ]
 
-    Logger.info("Hitting => #{url}")
+    Logger.info("#{tracing_id} Hitting => #{url}")
     HTTPoison.request(method, url, body, headers, options)
   end
 end
