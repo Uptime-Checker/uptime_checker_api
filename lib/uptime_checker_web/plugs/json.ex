@@ -5,6 +5,6 @@ defmodule UptimeCheckerWeb.Plugs.Json do
 
   def call(conn, _opts) do
     conn
-    |> put_resp_content_type("application/json")
+    |> put_resp_content_type(UptimeChecker.Constant.Api.content_type_json())
   end
 end

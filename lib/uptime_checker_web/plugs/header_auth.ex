@@ -11,7 +11,7 @@ defmodule UptimeCheckerWeb.Plugs.HeaderAuth do
     |> case do
       false ->
         conn
-        |> send_resp(:unauthorized, Jason.encode!(%{error: "unauthorized"}))
+        |> send_resp(:unauthorized, Jason.encode!(%{error: UptimeChecker.Constant.HttpError.unauthorized()}))
         |> halt()
 
       true ->
