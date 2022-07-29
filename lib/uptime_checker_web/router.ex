@@ -20,6 +20,10 @@ defmodule UptimeCheckerWeb.Router do
     plug UptimeCheckerWeb.Plugs.HeaderAuth
   end
 
+  pipeline :org do
+    plug UptimeCheckerWeb.Plugs.Org
+  end
+
   scope "/", UptimeCheckerWeb do
     pipe_through :browser
 
@@ -27,29 +31,28 @@ defmodule UptimeCheckerWeb.Router do
   end
 
   scope "/api", UptimeCheckerWeb.Api, as: :api do
-    scope "/v1", V1, as: :v1_open do
-      pipe_through :api
+    pipe_through :api
 
+    scope "/v1", V1, as: :v1_open do
       get "/status", SettingsController, :status
 
       post "/register", UserController, :register
       post "/login", UserController, :login
     end
 
-    scope "/v1", V1, as: :v1_auth do
-      pipe_through [:api, :auth]
+    scope "/v1", V1, as: :v1 do
+      pipe_through :auth
 
       get "/me", UserController, :me
+      resources "/organization", OrganizationController, only: [:create]
 
-      post "/organization", OrganizationController, :create
-      resources "/monitors", MonitorController, only: [:create]
+      scope "/auth", Auth, as: :auth do
+        pipe_through [:org]
+
+        resources "/monitors", MonitorController, only: [:create]
+      end
     end
   end
-
-  # Other scopes may use custom stacks.
-  # scope "/api", UptimeCheckerWeb do
-  #   pipe_through :api
-  # end
 
   # Enables LiveDashboard only for development
   #

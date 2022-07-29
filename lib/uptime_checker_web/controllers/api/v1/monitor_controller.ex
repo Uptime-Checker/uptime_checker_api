@@ -1,4 +1,4 @@
-defmodule UptimeCheckerWeb.Api.V1.MonitorController do
+defmodule UptimeCheckerWeb.Api.V1.Auth.MonitorController do
   use UptimeCheckerWeb, :controller
 
   alias UptimeChecker.WatchDog
