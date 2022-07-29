@@ -7,7 +7,7 @@ defmodule UptimeChecker.Schema.WatchDog.Check do
   alias UptimeChecker.Schema.WatchDog.{Monitor, ErrorLog}
 
   schema "checks" do
-    field :duration, :float
+    field :duration, :integer
     field :success, :boolean, default: false
 
     belongs_to :monitor, Monitor
