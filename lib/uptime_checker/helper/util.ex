@@ -12,4 +12,10 @@ defmodule UptimeChecker.Helper.Util do
   def random_string(length) do
     :crypto.strong_rand_bytes(length) |> Base.encode64() |> binary_part(0, length)
   end
+
+  @version Mix.Project.config()[:version]
+  def version(), do: @version
+
+  @app Mix.Project.config()[:app]
+  def app_name(), do: @app
 end

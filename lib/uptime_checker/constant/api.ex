@@ -7,4 +7,6 @@ defmodule UptimeChecker.Constant.Api do
   const(:auth_schema, "Bearer")
 
   const(:content_type_json, "application/json")
+
+  const(:user_agent, "User-Agent")
 end

@@ -1,6 +1,9 @@
 defmodule UptimeChecker.Http.Api do
   require Logger
 
+  alias UptimeChecker.Constant
+  alias UptimeChecker.Helper.Util
+
   def hit(tracing_id, url, method, headers, body, timeout, follow_redirect) do
     HTTPoison.start()
 
@@ -13,6 +16,8 @@ defmodule UptimeChecker.Http.Api do
       follow_redirect: follow_redirect,
       max_redirect: 2
     ]
+
+    headers = Map.put(headers, Constant.Api.user_agent(), "#{Util.app_name()}_agent/#{Util.version()}")
 
     Logger.info("#{tracing_id} Hitting => #{url}")
     HTTPoison.request(method, url, body, headers, options)
