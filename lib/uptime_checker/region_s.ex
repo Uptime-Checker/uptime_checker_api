@@ -6,4 +6,8 @@ defmodule UptimeChecker.Region_S do
   def get_default_region() do
     Region |> Repo.get_by(default: true)
   end
+
+  def list_regions do
+    Repo.all(Region)
+  end
 end

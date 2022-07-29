@@ -30,25 +30,21 @@ defmodule UptimeChecker.Job.HitApi do
   defp handle_response(monitor, monitor_region, check, duration, %HTTPoison.Response{} = response) do
     Logger.info("RESPONSE #{monitor.url} CODE ==> #{response.status_code}")
 
-    if(response.status_code >= code(:ok) && response.status_code < code(:bad_request)) do
+    if response.status_code >= code(:ok) && response.status_code < code(:bad_request) do
       if is_nil(List.first(monitor.status_codes)) do
-        handle_success_response(monitor, monitor_region, check, duration)
+        handle_next_check(monitor, monitor_region, check, duration, true)
       else
         success_status_codes = Enum.map(monitor.status_codes, fn status_code -> status_code.code end)
 
         if Enum.member?(success_status_codes, response.status_code) do
-          handle_success_response(monitor, monitor_region, check, duration)
+          handle_next_check(monitor, monitor_region, check, duration, true)
         end
       end
     end
   end
 
-  defp handle_success_response(monitor, monitor_region, check, duration) do
+  defp handle_next_check(monitor, monitor_region, check, duration, success) do
     now = NaiveDateTime.utc_now()
-
-    monitor_params = %{
-      last_checked_at: now
-    }
 
     monitor_region_params = %{
       last_checked_at: now,
@@ -56,12 +52,22 @@ defmodule UptimeChecker.Job.HitApi do
     }
 
     check_params = %{
-      success: true,
-      duration: duration
+      success: success,
+      duration: round(duration)
     }
 
-    WatchDog.handle_next_check(monitor, monitor_params, monitor_region, monitor_region_params, check, check_params)
+    WatchDog.handle_next_check(
+      monitor,
+      monitor_params(success, now),
+      monitor_region,
+      monitor_region_params,
+      check,
+      check_params
+    )
   end
+
+  defp monitor_params(success, now) when success == true, do: %{last_checked_at: now}
+  defp monitor_params(success, now) when success == false, do: %{last_checked_at: now, last_failed_at: now}
 
   defp hit_api(monitor) do
     :timer.tc(fn ->
