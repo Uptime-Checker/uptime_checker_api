@@ -9,8 +9,7 @@ defmodule UptimeChecker.WatchDog do
 
   alias UptimeChecker.Repo
   alias UptimeChecker.Region_S
-  alias UptimeChecker.Schema.Region
-  alias UptimeChecker.Schema.MonitorRegion
+  alias UptimeChecker.Schema.{Region, MonitorRegion}
   alias UptimeChecker.Schema.WatchDog.{Monitor, Check}
 
   def list_monitors do
@@ -35,6 +34,19 @@ defmodule UptimeChecker.WatchDog do
     %Monitor{}
     |> Monitor.changeset(params)
     |> Repo.insert()
+  end
+
+  def create_monitor_regions(monitor) do
+    regions = Region_S.list_regions()
+
+    Enum.each(regions, fn region ->
+      %MonitorRegion{}
+      |> MonitorRegion.changeset(%{
+        monitor_id: monitor.id,
+        region_id: region.id
+      })
+      |> Repo.insert()
+    end)
   end
 
   def list_monitor_region(from, to) do

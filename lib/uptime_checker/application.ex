@@ -20,6 +20,8 @@ defmodule UptimeChecker.Application do
       UptimeCheckerWeb.Endpoint,
       # Scheduler
       UptimeChecker.Module.Scheduler,
+      # Task Supervison
+      {Task.Supervisor, name: UptimeChecker.TaskSupervisor},
       # Oban
       {Oban, Application.fetch_env!(:uptime_checker, Oban)}
       # Start a worker by calling: UptimeChecker.Worker.start_link(arg)

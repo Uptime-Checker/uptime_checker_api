@@ -1,4 +1,4 @@
-defmodule UptimeCheckerWeb.Api.V1.Auth.MonitorView do
+defmodule UptimeCheckerWeb.Api.V1.MonitorView do
   use UptimeCheckerWeb, :view
   alias UptimeCheckerWeb.Api.V1.MonitorView
 

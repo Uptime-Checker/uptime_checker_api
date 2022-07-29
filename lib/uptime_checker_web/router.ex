@@ -20,10 +20,6 @@ defmodule UptimeCheckerWeb.Router do
     plug UptimeCheckerWeb.Plugs.HeaderAuth
   end
 
-  pipeline :org do
-    plug UptimeCheckerWeb.Plugs.Org
-  end
-
   scope "/", UptimeCheckerWeb do
     pipe_through :browser
 
@@ -45,12 +41,7 @@ defmodule UptimeCheckerWeb.Router do
 
       get "/me", UserController, :me
       resources "/organization", OrganizationController, only: [:create]
-
-      scope "/auth", Auth, as: :auth do
-        pipe_through [:org]
-
-        resources "/monitors", MonitorController, only: [:create]
-      end
+      resources "/monitors", MonitorController, only: [:create]
     end
   end
 
