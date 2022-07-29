@@ -2,7 +2,6 @@ defmodule UptimeCheckerWeb.Api.V1.Auth.MonitorController do
   use UptimeCheckerWeb, :controller
 
   alias UptimeChecker.WatchDog
-  alias UptimeChecker.Schema.MonitorRegion
   alias UptimeChecker.Schema.WatchDog.Monitor
 
   action_fallback UptimeCheckerWeb.FallbackController
@@ -13,8 +12,7 @@ defmodule UptimeCheckerWeb.Api.V1.Auth.MonitorController do
   end
 
   def create(conn, params) do
-    with {:ok, %Monitor{} = monitor, %MonitorRegion{} = _monitor_region} <-
-           WatchDog.create_monitor(params, current_user(conn)) do
+    with {:ok, %Monitor{} = monitor} <- WatchDog.create_monitor(params, current_user(conn)) do
       conn
       |> put_status(:created)
       |> render("show.json", monitor: monitor)

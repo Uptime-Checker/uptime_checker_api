@@ -32,26 +32,9 @@ defmodule UptimeChecker.WatchDog do
   def create_monitor(attrs \\ %{}, user) do
     params = key_to_atom(attrs) |> Map.put(:user, user)
 
-    Ecto.Multi.new()
-    |> Ecto.Multi.insert(:monitor, Monitor.changeset(%Monitor{}, params))
-    |> Ecto.Multi.insert(:monitor_region, fn %{monitor: updated_monitor} ->
-      region = Region_S.get_default_region()
-
-      %MonitorRegion{}
-      |> MonitorRegion.changeset(%{
-        region_id: region.id,
-        next_check_at: Timex.shift(NaiveDateTime.utc_now(), minutes: +1)
-      })
-      |> Ecto.Changeset.put_assoc(:monitor, updated_monitor)
-    end)
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{monitor: monitor, monitor_region: monitor_region}} ->
-        {:ok, get_monitor(monitor.id), monitor_region}
-
-      {:error, _name, changeset, _changes_so_far} ->
-        {:error, changeset}
-    end
+    %Monitor{}
+    |> Monitor.changeset(params)
+    |> Repo.insert()
   end
 
   def list_monitor_region(from, to) do
