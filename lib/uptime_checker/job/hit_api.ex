@@ -43,6 +43,17 @@ defmodule UptimeChecker.Job.HitApi do
           handle_next_check(monitor, monitor_region, check, duration, true)
         end
       end
+    else
+      handle_next_check(monitor, monitor_region, check, duration, false)
+
+      WatchDog.create_error_log(
+        %{
+          text: response.body,
+          status_code: response.status_code,
+          type: 1
+        },
+        check
+      )
     end
   end
 

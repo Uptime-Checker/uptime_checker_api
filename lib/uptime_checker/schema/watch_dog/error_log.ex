@@ -19,5 +19,6 @@ defmodule UptimeChecker.Schema.WatchDog.ErrorLog do
     error_log
     |> cast(attrs, [:text, :status_code, :type])
     |> validate_required([:text, :status_code, :type])
+    |> put_assoc(:check, attrs.check)
   end
 end

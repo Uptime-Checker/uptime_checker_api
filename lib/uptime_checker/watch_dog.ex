@@ -10,7 +10,7 @@ defmodule UptimeChecker.WatchDog do
   alias UptimeChecker.Repo
   alias UptimeChecker.Region_S
   alias UptimeChecker.Schema.{Region, MonitorRegion}
-  alias UptimeChecker.Schema.WatchDog.{Monitor, Check}
+  alias UptimeChecker.Schema.WatchDog.{Monitor, Check, ErrorLog}
 
   def list_monitors do
     Repo.all(Monitor)
@@ -123,10 +123,6 @@ defmodule UptimeChecker.WatchDog do
     Repo.delete(region)
   end
 
-  def change_region(%Region{} = region, attrs \\ %{}) do
-    Region.changeset(region, attrs)
-  end
-
   def list_checks do
     Repo.all(Check)
   end
@@ -181,5 +177,13 @@ defmodule UptimeChecker.WatchDog do
   """
   def change_check(%Check{} = check, attrs \\ %{}) do
     Check.changeset(check, attrs)
+  end
+
+  def create_error_log(attrs \\ %{}, check) do
+    params = attrs |> Map.put(:check, check)
+
+    %ErrorLog{}
+    |> ErrorLog.changeset(params)
+    |> Repo.insert()
   end
 end
