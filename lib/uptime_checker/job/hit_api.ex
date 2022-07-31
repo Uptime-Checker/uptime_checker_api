@@ -2,10 +2,11 @@ defmodule UptimeChecker.Job.HitApi do
   use Timex
   require Logger
 
-  alias UptimeChecker.Customer
   alias UptimeChecker.WatchDog
   alias UptimeChecker.Http.Api
   alias UptimeChecker.Helper.Util
+  alias UptimeChecker.TaskSupervisor
+  alias UptimeChecker.{Customer, Alarm_S}
   import Plug.Conn.Status, only: [code: 1]
 
   def work(monitor_region_id) do
@@ -60,11 +61,6 @@ defmodule UptimeChecker.Job.HitApi do
   defp handle_next_check(monitor, monitor_region, check, duration, success) do
     now = NaiveDateTime.utc_now()
 
-    monitor_region_params = %{
-      last_checked_at: now,
-      next_check_at: Timex.shift(now, seconds: +monitor.interval)
-    }
-
     check_params = %{
       success: success,
       duration: round(duration)
@@ -74,7 +70,7 @@ defmodule UptimeChecker.Job.HitApi do
       monitor,
       monitor_params(success, now),
       monitor_region,
-      monitor_region_params,
+      monitor_region_params(success, now, monitor, monitor_region, check),
       check,
       check_params
     )
@@ -82,6 +78,27 @@ defmodule UptimeChecker.Job.HitApi do
 
   defp monitor_params(success, now) when success == true, do: %{last_checked_at: now}
   defp monitor_params(success, now) when success == false, do: %{last_checked_at: now, last_failed_at: now}
+
+  defp monitor_region_params(success, now, monitor, _monitor_region, _check) when success == true do
+    %{
+      last_checked_at: now,
+      next_check_at: Timex.shift(now, seconds: +monitor.interval)
+    }
+  end
+
+  defp monitor_region_params(success, now, monitor, monitor_region, check) when success == false do
+    consequtive_failure = monitor_region.consequtive_failure + 1
+
+    Task.Supervisor.start_child(TaskSupervisor, Alarm_S, :create_alarm_if_needed, [check, consequtive_failure],
+      restart: :transient
+    )
+
+    %{
+      last_checked_at: now,
+      next_check_at: Timex.shift(now, seconds: +monitor.interval),
+      consequtive_failure: consequtive_failure
+    }
+  end
 
   defp hit_api(tracing_id, monitor) do
     :timer.tc(fn ->

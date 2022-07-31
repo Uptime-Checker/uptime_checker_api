@@ -30,9 +30,10 @@ defmodule UptimeChecker.Schema.MonitorRegion do
     ])
   end
 
-  def update_check_changeset(monitor_region, attrs) do
+  @allowed_updates [:last_checked_at, :next_check_at, :consequtive_failure, :consequtive_recovery]
+  def update_changeset(monitor_region, attrs) do
     monitor_region
-    |> cast(attrs, [:last_checked_at, :next_check_at])
-    |> validate_required([:last_checked_at, :next_check_at])
+    |> cast(attrs, @allowed_updates)
+    |> validate_required(@allowed_updates)
   end
 end

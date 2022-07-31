@@ -144,7 +144,7 @@ defmodule UptimeChecker.WatchDog do
   def handle_next_check(monitor, monitor_params, monitor_region, monitor_region_params, check, check_params) do
     Ecto.Multi.new()
     |> Ecto.Multi.update(:monitor, Monitor.update_check_changeset(monitor, monitor_params))
-    |> Ecto.Multi.update(:monitor_region, MonitorRegion.update_check_changeset(monitor_region, monitor_region_params))
+    |> Ecto.Multi.update(:monitor_region, MonitorRegion.update_changeset(monitor_region, monitor_region_params))
     |> Ecto.Multi.update(:check, Check.update_changeset(check, check_params))
     |> Repo.transaction()
     |> case do

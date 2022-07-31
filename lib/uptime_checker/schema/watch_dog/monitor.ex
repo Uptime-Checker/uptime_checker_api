@@ -74,8 +74,8 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
 
   def update_check_changeset(monitor, attrs) do
     monitor
-    |> cast(attrs, [:last_checked_at])
-    |> validate_required([:last_checked_at])
+    |> cast(attrs, [:last_checked_at, :last_failed_at])
+    |> validate_required([:last_checked_at, :last_failed_at])
   end
 
   def validate_url(changeset, field, options \\ []) do
