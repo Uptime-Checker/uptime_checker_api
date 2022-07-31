@@ -14,9 +14,9 @@ defmodule UptimeChecker.Worker.HitApiAsync do
     end
   end
 
-  def enqueue(%MonitorRegion{id: id}) do
+  def enqueue(%MonitorRegion{id: id, next_check_at: next_check_at}) do
     %{monitor_region_id: id}
-    |> new()
+    |> new(scheduled_at: next_check_at)
     |> Oban.insert()
   end
 end

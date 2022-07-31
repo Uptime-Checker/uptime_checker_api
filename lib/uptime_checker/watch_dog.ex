@@ -40,14 +40,16 @@ defmodule UptimeChecker.WatchDog do
     now = NaiveDateTime.utc_now()
     regions = Region_S.list_regions()
 
-    Enum.each(regions, fn region ->
+    Enum.scan(regions, monitor.interval, fn region, interval ->
       %MonitorRegion{}
       |> MonitorRegion.changeset(%{
         monitor_id: monitor.id,
         region_id: region.id,
-        next_check_at: Timex.shift(now, seconds: +monitor.interval)
+        next_check_at: Timex.shift(now, seconds: +interval)
       })
       |> Repo.insert()
+
+      interval + 5
     end)
   end
 
