@@ -2,6 +2,7 @@ defmodule UptimeChecker.Schema.WatchDog.Alarm do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias UptimeChecker.Schema.Customer.Organization
   alias UptimeChecker.Schema.WatchDog.{Monitor, Check}
 
   schema "alarms" do
@@ -12,14 +13,18 @@ defmodule UptimeChecker.Schema.WatchDog.Alarm do
     belongs_to :resolved_by, Check, foreign_key: :resolved_by_check_id
 
     belongs_to :monitor, Monitor
+    belongs_to :organization, Organization
 
     timestamps(type: :utc_datetime)
   end
 
   @doc false
-  def changeset(check, attrs) do
-    check
-    |> cast(attrs, [:ongoing, :resolved_at])
-    |> validate_required([:ongoing, :resolved_at])
+  def changeset(alarm, attrs) do
+    alarm
+    |> cast(attrs, [:ongoing])
+    |> validate_required([:ongoing])
+    |> put_assoc(:monitor, attrs.monitor)
+    |> put_assoc(:triggered_by, attrs.check)
+    |> put_assoc(:organization, attrs.organization)
   end
 end
