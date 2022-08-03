@@ -46,7 +46,7 @@ defmodule UptimeChecker.WatchDog do
       |> MonitorRegion.changeset(%{
         monitor_id: monitor.id,
         region_id: region.id,
-        next_check_at: Timex.shift(now, seconds: -interval)
+        next_check_at: Timex.shift(now, seconds: +interval)
       })
       |> Repo.insert()
 

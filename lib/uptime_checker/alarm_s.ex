@@ -17,9 +17,11 @@ defmodule UptimeChecker.Alarm_S do
           |> Map.put(:organization, check.organization)
 
         with {:ok, %Alarm{} = alarm} <- create_alarm(params) do
-          Logger.info("#{tracing_id} Alarm created #{alarm.id}, consequtive failure: #{consequtive_failure},
-            monitor: #{check.monitor.id}")
+          Logger.info("#{tracing_id} Alarm created #{alarm.id}, monitor: #{check.monitor.id}")
         end
+
+      %Alarm{} = alarm ->
+        IO.inspect(alarm)
     end
   end
 
