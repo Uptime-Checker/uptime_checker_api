@@ -18,5 +18,10 @@ defmodule UptimeChecker.Repo.Migrations.CreateAlarms do
     create index(:alarms, [:monitor_id])
     create index(:alarms, [:organization_id])
     create unique_index(:alarms, [:triggered_by_check_id])
+
+    create unique_index(:alarms, [:monitor_id, :ongoing],
+             name: "uq_monitor_on_alarm",
+             where: "ongoing = `true`"
+           )
   end
 end
