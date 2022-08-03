@@ -89,9 +89,7 @@ defmodule UptimeChecker.Job.HitApi do
   defp monitor_region_params(tracing_id, success, now, monitor, monitor_region, check) when success == false do
     consequtive_failure = monitor_region.consequtive_failure + 1
 
-    Task.Supervisor.start_child(TaskSupervisor, Alarm_S, :raise_alarm, [tracing_id, check, consequtive_failure],
-      restart: :transient
-    )
+    Task.Supervisor.start_child(TaskSupervisor, Alarm_S, :raise_alarm, [tracing_id, check, consequtive_failure])
 
     %{
       last_checked_at: now,

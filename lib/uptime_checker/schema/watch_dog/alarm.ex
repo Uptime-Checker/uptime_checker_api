@@ -26,5 +26,6 @@ defmodule UptimeChecker.Schema.WatchDog.Alarm do
     |> put_assoc(:monitor, attrs.monitor)
     |> put_assoc(:triggered_by, attrs.check)
     |> put_assoc(:organization, attrs.organization)
+    |> unique_constraint([:ongoing], name: :uq_monitor_on_alarm)
   end
 end
