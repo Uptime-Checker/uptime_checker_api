@@ -5,7 +5,7 @@ defmodule UptimeChecker.Alarm_S do
   alias UptimeChecker.Repo
   alias UptimeChecker.Schema.WatchDog.Alarm
 
-  def raise_alarm(tracing_id, check, consequtive_failure) when check.monitor.error_threshold >= consequtive_failure do
+  def raise_alarm(tracing_id, check, consequtive_failure) when consequtive_failure >= check.monitor.error_threshold do
     alarm = get_ongoing_alarm(check.monitor_id)
 
     case alarm do
@@ -27,6 +27,8 @@ defmodule UptimeChecker.Alarm_S do
         IO.inspect(alarm)
     end
   end
+
+  def raise_alarm(_tracing_id, _check, _consequtive_failure), do: :ok
 
   def get_ongoing_alarm(monitor_id) do
     Alarm |> Repo.get_by(monitor_id: monitor_id, ongoing: true)
