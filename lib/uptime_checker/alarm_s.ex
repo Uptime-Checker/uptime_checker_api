@@ -1,9 +1,11 @@
 defmodule UptimeChecker.Alarm_S do
+  require Logger
   import Ecto.Query, warn: false
+
   alias UptimeChecker.Repo
   alias UptimeChecker.Schema.WatchDog.Alarm
 
-  def raise_alarm(check, consequtive_failure) when check.monitor.error_threshold >= consequtive_failure do
+  def raise_alarm(tracing_id, check, consequtive_failure) when check.monitor.error_threshold >= consequtive_failure do
     alarm = get_ongoing_alarm(check.monitor_id)
 
     case alarm do
@@ -15,7 +17,8 @@ defmodule UptimeChecker.Alarm_S do
           |> Map.put(:organization, check.organization)
 
         with {:ok, %Alarm{} = alarm} <- create_alarm(params) do
-          IO.inspect(alarm)
+          Logger.info("#{tracing_id} Alarm created #{alarm.id}, consequtive failure: #{consequtive_failure},
+            monitor: #{check.monitor.id}")
         end
     end
   end
