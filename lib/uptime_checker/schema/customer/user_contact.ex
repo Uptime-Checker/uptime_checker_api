@@ -20,8 +20,8 @@ defmodule UptimeChecker.Schema.Customer.UserContact do
     user_contact
     |> cast(attrs, [:email, :number, :device_id, :verified, :mode])
     |> validate_format(:email, ~r/@/)
-    |> unique_constraint(:email, :verified)
-    |> unique_constraint(:number, :verified)
+    |> unique_constraint([:email, :verified])
+    |> unique_constraint([:number, :verified])
     |> unique_constraint(:device_id)
     |> put_assoc(:user, attrs.user)
   end

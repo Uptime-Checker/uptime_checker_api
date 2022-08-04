@@ -28,7 +28,7 @@ defmodule UptimeChecker.Schema.MonitorRegion do
       :consequtive_failure,
       :consequtive_recovery
     ])
-    |> unique_constraint(:monitor_id, :region_id)
+    |> unique_constraint([:monitor_id, :region_id])
   end
 
   @allowed_updates [:last_checked_at, :next_check_at, :consequtive_failure, :consequtive_recovery]

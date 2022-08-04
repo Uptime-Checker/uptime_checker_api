@@ -11,5 +11,10 @@ defmodule UptimeChecker.Repo.Migrations.CreateNotifications do
 
       timestamps(type: :timestamptz)
     end
+
+    create index(:notifications, [:alarm_id])
+    create index(:notifications, [:monitor_id])
+    create index(:notifications, [:user_contact_id])
+    create index(:notifications, [:organization_id])
   end
 end
