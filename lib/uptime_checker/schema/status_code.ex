@@ -16,5 +16,6 @@ defmodule UptimeChecker.Schema.StatusCode do
     |> cast(attrs, [:name, :code, :descripition])
     |> validate_required([:name, :code, :descripition])
     |> validate_inclusion(:code, 200..499)
+    |> unique_constraint(:code)
   end
 end
