@@ -3,6 +3,7 @@ defmodule UptimeChecker.Alarm_S do
   import Ecto.Query, warn: false
 
   alias UptimeChecker.Repo
+  alias UptimeChecker.Worker
   alias UptimeChecker.Schema.WatchDog.Alarm
 
   def raise_alarm(tracing_id, check, consequtive_failure) when consequtive_failure >= check.monitor.error_threshold do
@@ -18,6 +19,7 @@ defmodule UptimeChecker.Alarm_S do
 
         with {:ok, %Alarm{} = alarm} <- create_alarm(params) do
           Logger.info("#{tracing_id} Alarm created #{alarm.id}, monitor: #{check.monitor.id}")
+          Worker.SendNotificationAsync.enqueue(alarm)
         else
           {:error, %Ecto.Changeset{} = changeset} ->
             Logger.error("#{tracing_id}, Failed to create alarm, error: #{inspect(changeset.errors)}")
