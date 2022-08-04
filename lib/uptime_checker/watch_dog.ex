@@ -5,12 +5,13 @@ defmodule UptimeChecker.WatchDog do
   use Timex
 
   import Ecto.Query, warn: false
-  import UptimeChecker.Helper.Util
 
   alias UptimeChecker.Repo
   alias UptimeChecker.Region_S
-  alias UptimeChecker.Schema.{Region, MonitorRegion}
+  alias UptimeChecker.Customer
+  alias UptimeChecker.Schema.Customer.User
   alias UptimeChecker.Schema.WatchDog.{Monitor, Check, ErrorLog}
+  alias UptimeChecker.Schema.{Region, MonitorRegion, MonitorUser}
 
   def list_monitors do
     Repo.all(Monitor)
@@ -29,7 +30,7 @@ defmodule UptimeChecker.WatchDog do
   end
 
   def create_monitor(attrs \\ %{}, user) do
-    params = key_to_atom(attrs) |> Map.put(:user, user)
+    params = attrs |> Map.put(:user, user)
 
     %Monitor{}
     |> Monitor.changeset(params)
@@ -66,6 +67,22 @@ defmodule UptimeChecker.WatchDog do
              mr.last_checked_at < ^prev) or is_nil(mr.last_checked_at)
 
     Repo.all(query)
+  end
+
+  def create_monitor_users(monitor, user_ids) do
+    Enum.each(user_ids, fn user_id ->
+      case Customer.get_by_id(user_id) do
+        %User{} = user ->
+          if monitor.organization_id == user.organization_id do
+            %MonitorUser{}
+            |> MonitorUser.changeset(%{monitor: monitor, user: user})
+            |> Repo.insert()
+          end
+
+        nil ->
+          nil
+      end
+    end)
   end
 
   @doc """
