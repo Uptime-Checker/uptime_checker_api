@@ -36,6 +36,13 @@ defmodule UptimeChecker.Alarm_S do
     Alarm |> Repo.get_by(monitor_id: monitor_id, ongoing: true)
   end
 
+  def get_by_id(id) do
+    Alarm
+    |> Repo.get(id)
+    |> Repo.preload([:monitor])
+    |> Repo.preload([:triggered_by])
+  end
+
   defp create_alarm(attrs) do
     %Alarm{ongoing: true}
     |> Alarm.changeset(attrs)
