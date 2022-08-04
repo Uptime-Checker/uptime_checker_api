@@ -4,10 +4,12 @@ defmodule UptimeChecker.Schema.WatchDog.ErrorLog do
 
   alias UptimeChecker.Schema.WatchDog.Check
 
+  @error_types [status_code_mismatch: 1]
+
   schema "error_logs" do
     field :text, :string
     field :status_code, :integer
-    field :type, :integer
+    field :type, Ecto.Enum, values: @error_types
 
     belongs_to :check, Check
 

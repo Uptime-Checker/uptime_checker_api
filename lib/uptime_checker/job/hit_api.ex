@@ -51,7 +51,7 @@ defmodule UptimeChecker.Job.HitApi do
         %{
           text: response.body,
           status_code: response.status_code,
-          type: 1
+          type: :status_code_mismatch
         },
         check
       )
