@@ -17,9 +17,11 @@ defmodule UptimeChecker.Http.Api do
       max_redirect: 2
     ]
 
-    headers = Map.put(headers, Constant.Api.user_agent(), "#{Util.app_name()}_agent/#{Util.version()}")
+    headers_with_agent =
+      headers
+      |> Map.put(Constant.Api.user_agent(), "#{Util.app_name()}_agent/#{Util.version()}")
 
     Logger.info("#{tracing_id} Hitting => #{url}")
-    HTTPoison.request(method, url, body, headers, options)
+    HTTPoison.request(method, url, body, headers_with_agent, options)
   end
 end

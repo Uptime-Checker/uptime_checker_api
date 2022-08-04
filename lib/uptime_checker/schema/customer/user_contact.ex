@@ -23,5 +23,6 @@ defmodule UptimeChecker.Schema.Customer.UserContact do
     |> unique_constraint(:email, :verified)
     |> unique_constraint(:number, :verified)
     |> unique_constraint(:device_id)
+    |> put_assoc(:user, attrs.user)
   end
 end

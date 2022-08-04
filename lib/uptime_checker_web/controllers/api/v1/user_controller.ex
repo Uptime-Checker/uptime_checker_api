@@ -8,7 +8,7 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
   action_fallback UptimeCheckerWeb.FallbackController
 
   def register(conn, params) do
-    updated_params = Map.put(params, "name", name_from_email(params["email"]))
+    updated_params = params |> Map.put("name", name_from_email(params["email"]))
 
     with {:ok, %User{} = user} <- Customer.create_user(updated_params) do
       {:ok, access_token, _claims} = encode_and_sign(user)
