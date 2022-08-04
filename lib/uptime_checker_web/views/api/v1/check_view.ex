@@ -1,6 +1,6 @@
-defmodule UptimeCheckerWeb.CheckView do
+defmodule UptimeCheckerWeb.Api.V1.CheckView do
   use UptimeCheckerWeb, :view
-  alias UptimeCheckerWeb.CheckView
+  alias UptimeCheckerWeb.Api.V1.CheckView
 
   def render("index.json", %{checks: checks}) do
     %{data: render_many(checks, CheckView, "check.json")}

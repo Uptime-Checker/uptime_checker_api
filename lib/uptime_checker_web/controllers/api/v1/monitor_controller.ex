@@ -1,5 +1,6 @@
 defmodule UptimeCheckerWeb.Api.V1.MonitorController do
   use UptimeCheckerWeb, :controller
+  import UptimeChecker.Helper.Util
 
   alias UptimeChecker.WatchDog
   alias UptimeChecker.Schema.WatchDog.Monitor
@@ -14,10 +15,22 @@ defmodule UptimeCheckerWeb.Api.V1.MonitorController do
   end
 
   def create(conn, params) do
-    with {:ok, %Monitor{} = monitor} <- WatchDog.create_monitor(params, current_user(conn)) do
+    attrs = key_to_atom(params)
+
+    with {:ok, %Monitor{} = monitor} <- WatchDog.create_monitor(attrs, current_user(conn)) do
       Task.Supervisor.start_child(UptimeChecker.TaskSupervisor, WatchDog, :create_monitor_regions, [monitor],
         restart: :transient
       )
+
+      if Map.has_key?(attrs, :user_ids) do
+        Task.Supervisor.start_child(
+          UptimeChecker.TaskSupervisor,
+          WatchDog,
+          :create_monitor_users,
+          [monitor, attrs.user_ids],
+          restart: :transient
+        )
+      end
 
       conn
       |> put_status(:created)
