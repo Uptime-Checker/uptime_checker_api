@@ -7,6 +7,8 @@ import Config
 # any compile-time configuration in here, as it won't be applied.
 # The block below contains prod specific runtime configuration.
 
+Vapor.load!([%Vapor.Provider.Dotenv{}])
+
 # ## Using releases
 #
 # If you use `mix release`, you need to explicitly enable the server
@@ -19,6 +21,9 @@ import Config
 if System.get_env("PHX_SERVER") do
   config :uptime_checker, UptimeCheckerWeb.Endpoint, server: true
 end
+
+config :sentry,
+  dsn: System.get_env("SENTRY_DSN")
 
 if config_env() == :prod do
   database_url =

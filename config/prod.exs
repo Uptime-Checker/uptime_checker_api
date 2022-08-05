@@ -14,6 +14,11 @@ config :uptime_checker, UptimeCheckerWeb.Endpoint, cache_static_manifest: "priv/
 # Do not print debug messages in production
 config :logger, level: :info
 
+# Sentry
+config :sentry,
+  environment_name: :prod,
+  included_environments: [:prod]
+
 # ## SSL Support
 #
 # To get SSL working, you will need to add the `https` key

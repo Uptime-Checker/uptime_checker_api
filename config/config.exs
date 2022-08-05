@@ -17,6 +17,11 @@ config :uptime_checker, UptimeCheckerWeb.Endpoint,
   pubsub_server: UptimeChecker.PubSub,
   live_view: [signing_salt: "kLGCLap0"]
 
+# Sentry
+config :sentry,
+  enable_source_code_context: true,
+  root_source_code_path: File.cwd!()
+
 # Configures the mailer
 #
 # By default it uses the "Local" adapter which stores the emails
