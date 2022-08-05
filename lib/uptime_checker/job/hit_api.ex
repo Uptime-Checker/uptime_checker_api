@@ -14,7 +14,7 @@ defmodule UptimeChecker.Job.HitApi do
     monitor_region = WatchDog.get_monitor_region_status_code(monitor_region_id)
     monitor = monitor_region.monitor
 
-    with {:ok, check} <- create_check(monitor, monitor_region.region, monitor.org) do
+    with {:ok, check} <- create_check(monitor, monitor_region.region, monitor.organization) do
       with {u_secs, result} <- hit_api(tracing_id, monitor) do
         case result do
           {:ok, %HTTPoison.Response{} = response} ->
@@ -56,14 +56,20 @@ defmodule UptimeChecker.Job.HitApi do
       duration: round(duration)
     }
 
-    WatchDog.handle_next_check(
-      monitor,
-      monitor_params(success, now),
-      monitor_region,
-      monitor_region_params(tracing_id, success, now, monitor, monitor_region, check),
-      check,
-      check_params
-    )
+    case WatchDog.handle_next_check(
+           monitor,
+           monitor_params(success, now),
+           monitor_region,
+           monitor_region_params(tracing_id, success, now, monitor, monitor_region, check),
+           check,
+           check_params
+         ) do
+      {:ok, _monitor, monitor_region, _check} ->
+        Logger.info("#{tracing_id} Next check Monitor Region #{monitor_region.id}, at #{monitor_region.next_check_at}")
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        Logger.error("#{tracing_id} Next check schedule failed, error: #{inspect(changeset.errors)}")
+    end
   end
 
   defp monitor_params(success, now) when success == true, do: %{last_checked_at: now}
