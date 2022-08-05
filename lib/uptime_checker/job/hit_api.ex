@@ -45,16 +45,8 @@ defmodule UptimeChecker.Job.HitApi do
         end
       end
     else
+      create_error_log_async(response, check, :status_code_mismatch)
       handle_next_check(tracing_id, monitor, monitor_region, check, duration, false)
-
-      WatchDog.create_error_log(
-        %{
-          text: response.body,
-          status_code: response.status_code,
-          type: :status_code_mismatch
-        },
-        check
-      )
     end
   end
 
@@ -89,7 +81,9 @@ defmodule UptimeChecker.Job.HitApi do
   defp monitor_region_params(tracing_id, success, now, monitor, monitor_region, check) when success == false do
     consequtive_failure = monitor_region.consequtive_failure + 1
 
-    Task.Supervisor.start_child(TaskSupervisor, Alarm_S, :raise_alarm, [tracing_id, check, consequtive_failure])
+    Task.Supervisor.start_child(TaskSupervisor, Alarm_S, :raise_alarm, [tracing_id, check, consequtive_failure],
+      restart: :transient
+    )
 
     %{
       last_checked_at: now,
@@ -115,5 +109,22 @@ defmodule UptimeChecker.Job.HitApi do
 
   defp create_check(monitor, region, org) do
     WatchDog.create_check(%{}, monitor, region, org)
+  end
+
+  defp create_error_log_async(response, check, type) do
+    Task.Supervisor.start_child(
+      TaskSupervisor,
+      WatchDog,
+      :create_error_log,
+      [
+        %{
+          text: response.body,
+          status_code: response.status_code,
+          type: type
+        },
+        check
+      ],
+      restart: :transient
+    )
   end
 end
