@@ -85,6 +85,17 @@ defmodule UptimeChecker.WatchDog do
     end)
   end
 
+  def list_monitor_users_contacts(monitor_id) do
+    query =
+      from mu in MonitorUser,
+        left_join: u in assoc(mu, :user),
+        right_join: uc in assoc(u, :user_contacts),
+        where: mu.monitor_id == ^monitor_id,
+        select: {uc}
+
+    Repo.all(query)
+  end
+
   @doc """
   Updates a monitor.
 
