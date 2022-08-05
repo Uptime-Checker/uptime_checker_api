@@ -2,21 +2,19 @@ defmodule UptimeChecker.Job.HitApi do
   use Timex
   require Logger
 
-  alias UptimeChecker.WatchDog
   alias UptimeChecker.Http.Api
   alias UptimeChecker.Helper.Util
   alias UptimeChecker.TaskSupervisor
-  alias UptimeChecker.{Customer, Alarm_S}
+  alias UptimeChecker.{Alarm_S, WatchDog}
   import Plug.Conn.Status, only: [code: 1]
 
   def work(monitor_region_id) do
     tracing_id = Util.random_string(10)
 
-    monitor_region = WatchDog.get_monitor_region(monitor_region_id)
-    monitor = WatchDog.get_monitor_with_status_codes(monitor_region.monitor_id)
-    org = Customer.get_organization(monitor.organization_id)
+    monitor_region = WatchDog.get_monitor_region_status_code(monitor_region_id)
+    monitor = monitor_region.monitor
 
-    with {:ok, check} <- create_check(monitor, monitor_region.region, org) do
+    with {:ok, check} <- create_check(monitor, monitor_region.region, monitor.org) do
       with {u_secs, result} <- hit_api(tracing_id, monitor) do
         case result do
           {:ok, %HTTPoison.Response{} = response} ->

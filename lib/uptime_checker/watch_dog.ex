@@ -29,6 +29,19 @@ defmodule UptimeChecker.WatchDog do
     |> Repo.preload([:region])
   end
 
+  def get_monitor_region_status_code(id) do
+    query =
+      from mr in MonitorRegion,
+        left_join: m in assoc(mr, :monitor),
+        left_join: r in assoc(mr, :region),
+        left_join: o in assoc(m, :organization),
+        left_join: status_codes in assoc(m, :status_codes),
+        where: mr.id == ^id,
+        preload: [monitor: {m, organization: o, status_codes: status_codes}, region: r]
+
+    Repo.one(query)
+  end
+
   def create_monitor(attrs \\ %{}, user) do
     params = attrs |> Map.put(:user, user)
 
