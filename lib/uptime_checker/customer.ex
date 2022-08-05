@@ -67,6 +67,11 @@ defmodule UptimeChecker.Customer do
     |> Repo.preload([:organization])
   end
 
+  def get_user_contact_by_id(id) do
+    UserContact
+    |> Repo.get(id)
+  end
+
   def authenticate_user(email, password) do
     with {:ok, user} <- get_by_email(email) do
       case validate_password(password, user.password) do

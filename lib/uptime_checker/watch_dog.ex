@@ -91,7 +91,7 @@ defmodule UptimeChecker.WatchDog do
         left_join: u in assoc(mu, :user),
         right_join: uc in assoc(u, :user_contacts),
         where: mu.monitor_id == ^monitor_id,
-        select: {uc}
+        select: uc
 
     Repo.all(query)
   end
