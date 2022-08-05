@@ -19,7 +19,7 @@ defmodule UptimeChecker.Alarm_S do
 
         with {:ok, %Alarm{} = alarm} <- create_alarm(params) do
           Logger.info("#{tracing_id} Alarm created #{alarm.id}, monitor: #{check.monitor.id}")
-          Worker.SendNotificationAsync.enqueue(alarm)
+          Worker.ScheduleNotificationAsync.enqueue(alarm)
         else
           {:error, %Ecto.Changeset{} = changeset} ->
             Logger.error("#{tracing_id}, Failed to create alarm, error: #{inspect(changeset.errors)}")
