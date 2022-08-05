@@ -112,19 +112,12 @@ defmodule UptimeChecker.Job.HitApi do
   end
 
   defp create_error_log_async(response, check, type) do
-    Task.Supervisor.start_child(
-      TaskSupervisor,
-      WatchDog,
-      :create_error_log,
-      [
-        %{
-          text: response.body,
-          status_code: response.status_code,
-          type: type
-        },
-        check
-      ],
-      restart: :transient
-    )
+    attrs = %{
+      text: response.body,
+      status_code: response.status_code,
+      type: type
+    }
+
+    Task.Supervisor.start_child(TaskSupervisor, WatchDog, :create_error_log, [attrs, check], restart: :transient)
   end
 end
