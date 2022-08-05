@@ -28,4 +28,11 @@ defmodule UptimeChecker.Schema.WatchDog.Alarm do
     |> put_assoc(:organization, attrs.organization)
     |> unique_constraint([:ongoing], name: :uq_monitor_on_alarm)
   end
+
+  def resolve_changeset(alarm, attrs) do
+    alarm
+    |> cast(attrs, [:ongoing, :resolved_at])
+    |> validate_required([:ongoing, :resolved_at])
+    |> put_assoc(:resolved_by, attrs.check)
+  end
 end

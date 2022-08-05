@@ -7,7 +7,7 @@ defmodule UptimeChecker.Job.ScheduleNotification do
     monitor_users_contacts = WatchDog.list_monitor_users_contacts(alarm.monitor.id)
 
     Enum.each(monitor_users_contacts, fn user_contact ->
-      SendNotificationAsync.enqueue(user_contact)
+      SendNotificationAsync.enqueue(user_contact, alarm)
     end)
 
     :ok

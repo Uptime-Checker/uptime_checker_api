@@ -71,10 +71,18 @@ defmodule UptimeChecker.Job.HitApi do
   defp monitor_params(success, now) when success == true, do: %{last_checked_at: now}
   defp monitor_params(success, now) when success == false, do: %{last_checked_at: now, last_failed_at: now}
 
-  defp monitor_region_params(_tracing_id, success, now, monitor, _monitor_region, _check) when success == true do
+  defp monitor_region_params(tracing_id, success, now, monitor, monitor_region, check) when success == true do
+    consequtive_recovery = consequtive_recovery_count(monitor_region.consequtive_failure, monitor_region)
+
+    Task.Supervisor.start_child(TaskSupervisor, Alarm_S, :resolve_alarm, [tracing_id, check, consequtive_recovery],
+      restart: :transient
+    )
+
     %{
       last_checked_at: now,
-      next_check_at: Timex.shift(now, seconds: +monitor.interval)
+      next_check_at: Timex.shift(now, seconds: +monitor.interval),
+      consequtive_failure: 0,
+      consequtive_recovery: consequtive_recovery
     }
   end
 
@@ -91,6 +99,12 @@ defmodule UptimeChecker.Job.HitApi do
       consequtive_failure: consequtive_failure,
       consequtive_recovery: 0
     }
+  end
+
+  defp consequtive_recovery_count(consequtive_failure, _monitor_region) when consequtive_failure == 0, do: 0
+
+  defp consequtive_recovery_count(consequtive_failure, monitor_region) when consequtive_failure > 0 do
+    monitor_region.consequtive_recovery + 1
   end
 
   defp hit_api(tracing_id, monitor) do

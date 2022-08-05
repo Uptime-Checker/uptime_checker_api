@@ -26,11 +26,29 @@ defmodule UptimeChecker.Alarm_S do
         end
 
       %Alarm{} = alarm ->
-        IO.inspect(alarm)
+        Logger.debug("#{tracing_id}, Alarm already there, #{alarm.id} |> #{alarm.ongoing}")
     end
   end
 
   def raise_alarm(_tracing_id, _check, _consequtive_failure), do: :ok
+
+  def resolve_alarm(tracing_id, check, consequtive_recovery)
+      when consequtive_recovery >= check.monitor.resolve_threshold do
+    now = NaiveDateTime.utc_now()
+    alarm = get_ongoing_alarm(check.monitor_id)
+
+    case alarm do
+      nil ->
+        Logger.error("#{tracing_id}, No active alarm found, check #{check.id}")
+
+      %Alarm{} = alarm ->
+        alarm
+        |> Alarm.resolve_changeset(%{ongoing: false, resolved_at: now, resolved_by: check})
+        |> Repo.update()
+    end
+  end
+
+  def resolve_alarm(_tracing_id, _check, _consequtive_failure), do: :ok
 
   def get_ongoing_alarm(monitor_id) do
     Alarm |> Repo.get_by(monitor_id: monitor_id, ongoing: true)
