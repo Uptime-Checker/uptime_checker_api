@@ -58,6 +58,7 @@ defmodule UptimeChecker.MixProject do
       {:oban, "~> 2.13"},
       {:x509, "~> 0.8"},
       {:httpoison, "~> 1.8"},
+      {:sentry, "~> 8.0"},
       {:tls_certificate_check, "~> 1.15"}
     ]
   end
@@ -74,7 +75,8 @@ defmodule UptimeChecker.MixProject do
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
-      "assets.deploy": ["esbuild default --minify", "phx.digest"]
+      "assets.deploy": ["esbuild default --minify", "phx.digest"],
+      sentry_recompile: ["compile", "deps.compile sentry --force"]
     ]
   end
 end

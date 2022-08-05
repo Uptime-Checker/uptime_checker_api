@@ -44,19 +44,4 @@ defmodule UptimeChecker.WatchDogFixtures do
 
     region
   end
-
-  @doc """
-  Generate a check.
-  """
-  def check_fixture(attrs \\ %{}) do
-    {:ok, check} =
-      attrs
-      |> Enum.into(%{
-        duration: 120.5,
-        success: true
-      })
-      |> UptimeChecker.WatchDog.create_check()
-
-    check
-  end
 end
