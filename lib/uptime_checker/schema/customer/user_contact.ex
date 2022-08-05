@@ -9,6 +9,7 @@ defmodule UptimeChecker.Schema.Customer.UserContact do
     field :number, :string
     field :device_id, :string
     field :verified, :boolean, default: false
+    field :subscribed, :boolean, default: true
     field :mode, Ecto.Enum, values: [email: 1, sms: 2, phone: 3]
 
     belongs_to :user, User

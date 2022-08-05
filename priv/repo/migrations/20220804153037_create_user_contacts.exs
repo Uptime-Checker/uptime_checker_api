@@ -8,6 +8,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateUserContacts do
       add :mode, :integer
       add :device_id, :string
       add :verified, :boolean, default: false, null: false
+      add :subscribed, :boolean, default: true, null: false
 
       add :user_id, references(:users, on_delete: :delete_all)
 
