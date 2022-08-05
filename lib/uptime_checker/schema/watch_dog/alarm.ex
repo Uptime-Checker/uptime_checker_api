@@ -31,8 +31,7 @@ defmodule UptimeChecker.Schema.WatchDog.Alarm do
 
   def resolve_changeset(alarm, attrs) do
     alarm
-    |> cast(attrs, [:ongoing, :resolved_at])
-    |> validate_required([:ongoing, :resolved_at])
-    |> put_assoc(:resolved_by, attrs.check)
+    |> cast(attrs, [:ongoing, :resolved_at, :resolved_by_check_id])
+    |> validate_required([:ongoing, :resolved_at, :resolved_by_check_id])
   end
 end

@@ -43,7 +43,7 @@ defmodule UptimeChecker.Alarm_S do
 
       %Alarm{} = alarm ->
         alarm
-        |> Alarm.resolve_changeset(%{ongoing: false, resolved_at: now, resolved_by: check})
+        |> Alarm.resolve_changeset(%{ongoing: false, resolved_at: now, resolved_by_check_id: check.id})
         |> Repo.update()
     end
   end
