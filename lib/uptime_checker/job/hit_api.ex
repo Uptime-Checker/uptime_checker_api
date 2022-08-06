@@ -19,7 +19,7 @@ defmodule UptimeChecker.Job.HitApi do
       with {u_secs, result} <- hit_api(tracing_id, monitor) do
         case result do
           {:ok, %HTTPoison.Response{} = response} ->
-            handle_response(tracing_id, monitor_region, check, u_secs / 1000, response)
+            handle_response(tracing_id, monitor_region, check, round(u_secs / 1000), response)
 
           {:error, %HTTPoison.Error{reason: reason}} ->
             Logger.error("#{tracing_id} API Request failed #{monitor.url}, reason #{reason}, check #{check.id}")
@@ -31,7 +31,7 @@ defmodule UptimeChecker.Job.HitApi do
   end
 
   defp handle_response(tracing_id, monitor_region, check, duration, %HTTPoison.Response{} = response) do
-    Logger.info("#{tracing_id} RESPONSE #{check.monitor.url} CODE ==> #{response.status_code}")
+    Logger.info("#{tracing_id} RESPONSE #{check.monitor.url} CODE ==> #{response.status_code} DURATION ==> #{duration}")
 
     if response.status_code >= code(:ok) && response.status_code < code(:bad_request) do
       if is_nil(List.first(check.monitor.status_codes)) do

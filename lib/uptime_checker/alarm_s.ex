@@ -46,7 +46,7 @@ defmodule UptimeChecker.Alarm_S do
 
     case alarm do
       nil ->
-        Logger.error("#{tracing_id}, No active alarm found, check #{check.id}")
+        Logger.debug("#{tracing_id}, No active alarm to resolve, check #{check.id}")
 
       %Alarm{} = alarm ->
         alarm
