@@ -10,6 +10,7 @@ defmodule UptimeChecker.Schema.Customer.UserContact do
     field :device_id, :string
     field :verified, :boolean, default: false
     field :subscribed, :boolean, default: true
+    field :bounce_count, :integer
     field :mode, Ecto.Enum, values: [email: 1, sms: 2, phone: 3]
 
     belongs_to :user, User
@@ -19,7 +20,7 @@ defmodule UptimeChecker.Schema.Customer.UserContact do
 
   def changeset(user_contact, attrs) do
     user_contact
-    |> cast(attrs, [:email, :number, :device_id, :verified, :mode])
+    |> cast(attrs, [:email, :number, :device_id, :verified, :mode, :bounce_count])
     |> validate_format(:email, ~r/@/)
     |> unique_constraint([:email, :verified])
     |> unique_constraint([:number, :verified])
