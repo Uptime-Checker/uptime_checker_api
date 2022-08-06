@@ -6,12 +6,13 @@ defmodule UptimeChecker.Event.HandleNextCheck do
   alias UptimeChecker.{Alarm_S, WatchDog}
 
   def act(tracing_id, monitor_region, check, duration, success) do
-    now = NaiveDateTime.utc_now()
+    # Shift the spent time in hitting api
+    now = Timex.shift(NaiveDateTime.utc_now(), milliseconds: -duration)
     monitor = monitor_region.monitor
 
     check_params = %{
       success: success,
-      duration: round(duration)
+      duration: duration
     }
 
     case WatchDog.handle_next_check(
@@ -41,12 +42,15 @@ defmodule UptimeChecker.Event.HandleNextCheck do
   defp monitor_region_params(success, now, monitor_region) when success == true do
     consequtive_recovery = consequtive_recovery_count(monitor_region.consequtive_recovery, monitor_region)
 
+    consequtive_failure =
+      consequtive_failure_count(monitor_region.consequtive_failure, consequtive_recovery, monitor_region)
+
     %{
       last_checked_at: now,
       next_check_at: Timex.shift(now, seconds: +monitor_region.monitor.interval),
-      consequtive_failure: 0,
+      consequtive_failure: consequtive_failure,
       consequtive_recovery: consequtive_recovery_count(monitor_region.consequtive_recovery, monitor_region),
-      down: is_monitor_region_down(0, consequtive_recovery, monitor_region.monitor)
+      down: is_monitor_region_down(consequtive_failure, consequtive_recovery, monitor_region.monitor)
     }
   end
 
@@ -62,15 +66,19 @@ defmodule UptimeChecker.Event.HandleNextCheck do
     }
   end
 
+  defp consequtive_failure_count(_consequtive_failure, consequtive_recovery, monitor_region)
+       when consequtive_recovery >= monitor_region.monitor.resolve_threshold,
+       do: 0
+
+  defp consequtive_failure_count(consequtive_failure, _consequtive_recovery, _monitor_region),
+    do: consequtive_failure
+
   defp consequtive_recovery_count(consequtive_recovery, monitor_region)
        when consequtive_recovery >= monitor_region.monitor.resolve_threshold,
        do: 0
 
   defp consequtive_recovery_count(_consequtive_recovery, monitor_region),
     do: monitor_region.consequtive_recovery + 1
-
-  defp is_monitor_region_down(consequtive_failure, _consequtive_recovery, _monitor) when consequtive_failure == 0,
-    do: false
 
   defp is_monitor_region_down(consequtive_failure, _consequtive_recovery, monitor)
        when consequtive_failure >= monitor.error_threshold,
@@ -79,4 +87,7 @@ defmodule UptimeChecker.Event.HandleNextCheck do
   defp is_monitor_region_down(_consequtive_failure, consequtive_recovery, monitor)
        when consequtive_recovery >= monitor.resolve_threshold,
        do: false
+
+  defp is_monitor_region_down(consequtive_failure, _consequtive_recovery, _monitor) when consequtive_failure == 0,
+    do: false
 end
