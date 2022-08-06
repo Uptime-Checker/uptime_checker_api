@@ -6,7 +6,17 @@ defmodule UptimeChecker.Alarm_S do
   alias UptimeChecker.Worker
   alias UptimeChecker.Schema.WatchDog.Alarm
 
-  def raise_alarm(tracing_id, check, consequtive_failure) when consequtive_failure >= check.monitor.error_threshold do
+  def handle_alarm(tracing_id, check, is_down) do
+    cond do
+      is_down == true ->
+        raise_alarm(tracing_id, check)
+
+      is_down == false ->
+        resolve_alarm(tracing_id, check)
+    end
+  end
+
+  defp raise_alarm(tracing_id, check) do
     alarm = get_ongoing_alarm(check.monitor_id)
 
     case alarm do
@@ -30,10 +40,7 @@ defmodule UptimeChecker.Alarm_S do
     end
   end
 
-  def raise_alarm(_tracing_id, _check, _consequtive_failure), do: :ok
-
-  def resolve_alarm(tracing_id, check, consequtive_recovery)
-      when consequtive_recovery >= check.monitor.resolve_threshold do
+  def resolve_alarm(tracing_id, check) do
     now = NaiveDateTime.utc_now()
     alarm = get_ongoing_alarm(check.monitor_id)
 
@@ -47,8 +54,6 @@ defmodule UptimeChecker.Alarm_S do
         |> Repo.update()
     end
   end
-
-  def resolve_alarm(_tracing_id, _check, _consequtive_failure), do: :ok
 
   def get_ongoing_alarm(monitor_id) do
     Alarm |> Repo.get_by(monitor_id: monitor_id, ongoing: true)
