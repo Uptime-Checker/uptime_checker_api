@@ -29,6 +29,9 @@ config :uptime_checker, UptimeCheckerWeb.Endpoint,
     esbuild: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch)]}
   ]
 
+# Configures the mailer
+config :uptime_checker, UptimeChecker.Module.Mailer, adapter: Bamboo.LocalAdapter
+
 # Watch static and templates for browser reloading.
 config :uptime_checker, UptimeCheckerWeb.Endpoint,
   live_reload: [
