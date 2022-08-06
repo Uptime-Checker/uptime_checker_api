@@ -28,5 +28,6 @@ defmodule UptimeChecker.Schema.WatchDog.Notification do
     |> put_assoc(:monitor, attrs.monitor)
     |> put_assoc(:user_contact, attrs.user_contact)
     |> put_assoc(:organization, attrs.organization)
+    |> unique_constraint([:alarm, :type])
   end
 end

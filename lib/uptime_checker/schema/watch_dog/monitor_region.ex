@@ -1,4 +1,4 @@
-defmodule UptimeChecker.Schema.MonitorRegion do
+defmodule UptimeChecker.Schema.WatchDog.MonitorRegion do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -10,6 +10,7 @@ defmodule UptimeChecker.Schema.MonitorRegion do
     field :next_check_at, :utc_datetime
     field :consequtive_failure, :integer
     field :consequtive_recovery, :integer
+    field :down, :boolean
 
     belongs_to(:monitor, Monitor)
     belongs_to(:region, Region)
@@ -26,12 +27,13 @@ defmodule UptimeChecker.Schema.MonitorRegion do
       :last_checked_at,
       :next_check_at,
       :consequtive_failure,
-      :consequtive_recovery
+      :consequtive_recovery,
+      :down
     ])
     |> unique_constraint([:monitor_id, :region_id])
   end
 
-  @allowed_updates [:last_checked_at, :next_check_at, :consequtive_failure, :consequtive_recovery]
+  @allowed_updates [:last_checked_at, :next_check_at, :consequtive_failure, :consequtive_recovery, :down]
   def update_changeset(monitor_region, attrs) do
     monitor_region
     |> cast(attrs, @allowed_updates)

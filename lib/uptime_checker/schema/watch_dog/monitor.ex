@@ -2,9 +2,9 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias UptimeChecker.Schema.WatchDog.Check
   alias UptimeChecker.Schema.Customer.{Organization, User}
-  alias UptimeChecker.Schema.{Region, StatusCode, MonitorRegion, MonitorStatusCode}
+  alias UptimeChecker.Schema.WatchDog.{Check, MonitorRegion}
+  alias UptimeChecker.Schema.{Region, StatusCode, MonitorStatusCode}
 
   schema "monitors" do
     field :name, :string
@@ -17,6 +17,7 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
     field :contains, :string
     field :headers, :map, default: %{}
     field :on, :boolean
+    field :down, :boolean
     field :check_ssl, :boolean
     field :follow_redirects, :boolean
 
@@ -50,6 +51,7 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
       :contains,
       :headers,
       :on,
+      :down,
       :check_ssl,
       :follow_redirects,
       :resolve_threshold,
@@ -76,6 +78,12 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
     monitor
     |> cast(attrs, [:last_checked_at, :last_failed_at])
     |> validate_required([:last_checked_at])
+  end
+
+  def update_alarm_changeset(monitor, attrs) do
+    monitor
+    |> cast(attrs, [:down])
+    |> validate_required([:down])
   end
 
   def validate_url(changeset, field, options \\ []) do

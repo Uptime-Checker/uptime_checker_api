@@ -2,7 +2,7 @@ defmodule UptimeChecker.Worker.HitApiAsync do
   require Logger
   use Oban.Worker, max_attempts: 1, unique: [period: 10]
 
-  alias UptimeChecker.Schema.MonitorRegion
+  alias UptimeChecker.Schema.WatchDog.MonitorRegion
 
   @impl true
   def perform(%Oban.Job{args: %{"monitor_region_id" => monitor_region_id}}) do
