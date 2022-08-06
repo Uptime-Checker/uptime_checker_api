@@ -84,10 +84,11 @@ defmodule UptimeChecker.Event.HandleNextCheck do
        when consequtive_failure >= monitor.error_threshold,
        do: true
 
+  defp is_monitor_region_down(consequtive_failure, _consequtive_recovery, monitor)
+       when consequtive_failure < monitor.error_threshold,
+       do: false
+
   defp is_monitor_region_down(_consequtive_failure, consequtive_recovery, monitor)
        when consequtive_recovery >= monitor.resolve_threshold,
        do: false
-
-  defp is_monitor_region_down(consequtive_failure, _consequtive_recovery, _monitor) when consequtive_failure == 0,
-    do: false
 end
