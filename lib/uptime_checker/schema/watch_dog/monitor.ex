@@ -21,6 +21,7 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
     field :check_ssl, :boolean
     field :follow_redirects, :boolean
 
+    field :region_threshold, :integer
     field :resolve_threshold, :integer
     field :error_threshold, :integer
 
@@ -54,6 +55,7 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
       :down,
       :check_ssl,
       :follow_redirects,
+      :region_threshold,
       :resolve_threshold,
       :error_threshold,
       :last_checked_at,

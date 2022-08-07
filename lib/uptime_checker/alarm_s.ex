@@ -4,6 +4,7 @@ defmodule UptimeChecker.Alarm_S do
 
   alias UptimeChecker.Repo
   alias UptimeChecker.Worker
+  alias UptimeChecker.WatchDog
   alias UptimeChecker.Schema.WatchDog.Alarm
 
   def handle_alarm(tracing_id, check, is_down) do
@@ -18,21 +19,30 @@ defmodule UptimeChecker.Alarm_S do
 
   defp raise_alarm(tracing_id, check) do
     alarm = get_ongoing_alarm(check.monitor_id)
+    down_monitor_region_count = WatchDog.count_monitor_region_by_status(check.monitor_id, true)
 
     case alarm do
       nil ->
-        params =
-          %{}
-          |> Map.put(:check, check)
-          |> Map.put(:monitor, check.monitor)
-          |> Map.put(:organization, check.organization)
+        cond do
+          down_monitor_region_count >= check.monitor.region_threshold ->
+            params =
+              %{}
+              |> Map.put(:check, check)
+              |> Map.put(:monitor, check.monitor)
+              |> Map.put(:organization, check.organization)
 
-        with {:ok, %Alarm{} = alarm} <- create_alarm(params) do
-          Logger.info("#{tracing_id} Alarm created #{alarm.id}, monitor: #{check.monitor.id}")
-          Worker.ScheduleNotificationAsync.enqueue(alarm)
-        else
-          {:error, %Ecto.Changeset{} = changeset} ->
-            Logger.error("#{tracing_id}, Failed to create alarm, error: #{inspect(changeset.errors)}")
+            with {:ok, %Alarm{} = alarm} <- create_alarm(params) do
+              Logger.info("#{tracing_id} Alarm created #{alarm.id}, monitor: #{check.monitor.id}")
+              Worker.ScheduleNotificationAsync.enqueue(alarm)
+            else
+              {:error, %Ecto.Changeset{} = changeset} ->
+                Logger.error("#{tracing_id}, Failed to create alarm, error: #{inspect(changeset.errors)}")
+            end
+
+          true ->
+            Logger.debug(
+              "#{tracing_id}, Region threshold did not raise alarm, down count: #{down_monitor_region_count}"
+            )
         end
 
       %Alarm{} = alarm ->
@@ -43,15 +53,22 @@ defmodule UptimeChecker.Alarm_S do
   def resolve_alarm(tracing_id, check) do
     now = NaiveDateTime.utc_now()
     alarm = get_ongoing_alarm(check.monitor_id)
+    up_monitor_region_count = WatchDog.count_monitor_region_by_status(check.monitor_id, false)
 
     case alarm do
       nil ->
         Logger.debug("#{tracing_id}, No active alarm to resolve, check #{check.id}")
 
       %Alarm{} = alarm ->
-        alarm
-        |> Alarm.resolve_changeset(%{ongoing: false, resolved_at: now, resolved_by_check_id: check.id})
-        |> Repo.update()
+        cond do
+          up_monitor_region_count >= check.monitor.region_threshold ->
+            alarm
+            |> Alarm.resolve_changeset(%{ongoing: false, resolved_at: now, resolved_by_check_id: check.id})
+            |> Repo.update()
+
+          true ->
+            Logger.debug("#{tracing_id}, Region threshold did not raise alarm, up count: #{up_monitor_region_count}")
+        end
     end
   end
 

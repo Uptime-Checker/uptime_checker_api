@@ -82,6 +82,15 @@ defmodule UptimeChecker.WatchDog do
     Repo.all(query)
   end
 
+  def count_monitor_region_by_status(monitor_id, is_down) do
+    query =
+      from mr in MonitorRegion,
+        where: mr.monitor_id == ^monitor_id and mr.down == ^is_down,
+        select: count(mr.id)
+
+    Repo.one(query)
+  end
+
   def create_monitor_users(monitor, user_ids) do
     Enum.each(user_ids, fn user_id ->
       case Customer.get_by_id(user_id) do
