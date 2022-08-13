@@ -1,4 +1,6 @@
 defmodule UptimeChecker.Helper.Util do
+  use Timex
+
   def key_to_atom(map) do
     Enum.reduce(map, %{}, fn
       # String.to_existing_atom saves us from overloading the VM by
@@ -18,4 +20,10 @@ defmodule UptimeChecker.Helper.Util do
 
   @app Mix.Project.config()[:app]
   def app_name(), do: @app
+
+  def human_readable_time_difference(from, to) do
+    Timex.diff(from, to, :second)
+    |> Duration.from_seconds()
+    |> Timex.Format.Duration.Formatters.Humanized.format()
+  end
 end

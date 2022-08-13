@@ -1,5 +1,4 @@
 defmodule UptimeChecker.Job.HitApi do
-  use Timex
   require Logger
 
   alias UptimeChecker.Http.Api

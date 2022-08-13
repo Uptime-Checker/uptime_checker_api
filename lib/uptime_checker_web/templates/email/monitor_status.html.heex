@@ -6,4 +6,5 @@
 
 <%= if @monitor.down == false do %>
     <p>Outage ended at: <%= format_time(@alarm.resolved_at) %></p>
+    <p>Outage duration: <%= difference_between_two_times(@alarm.inserted_at, @alarm.resolved_at) %></p>
 <% end %>
