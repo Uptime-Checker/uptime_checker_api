@@ -31,7 +31,7 @@ defmodule UptimeChecker.Event.HandleNextCheck do
       {:ok, _monitor, monitor_region, _check} ->
         Logger.info("#{tracing_id} Next check Monitor Region #{monitor_region.id}, at #{monitor_region.next_check_at}")
 
-        # Spin on checking alarm in a separate thread
+        # Spin up checking alarm in a separate thread
         Task.Supervisor.start_child(TaskSupervisor, Alarm_S, :handle_alarm, [tracing_id, check, monitor_region.down],
           restart: :transient
         )
