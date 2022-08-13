@@ -1,1 +1,9 @@
-<p>Ok</p>
+<h1>Monitor is <%= monitor_status(@monitor) %></h1>
+
+<h3>Monitor URL: <%= link(@monitor.url, to: @monitor.url) %></h3>
+
+<p>Outage started at: <%= format_time(@alarm.inserted_at) %></p>
+
+<%= if @monitor.down == false do %>
+    <p>Outage ended at: <%= format_time(@alarm.resolved_at) %></p>
+<% end %>
