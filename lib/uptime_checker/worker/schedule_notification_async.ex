@@ -1,6 +1,6 @@
 defmodule UptimeChecker.Worker.ScheduleNotificationAsync do
   require Logger
-  use Oban.Worker, max_attempts: 2, unique: [period: 10]
+  use Oban.Worker, queue: :notification, max_attempts: 2, unique: [period: 5]
 
   alias UptimeChecker.Schema.WatchDog.Alarm
 

@@ -62,7 +62,7 @@ config :uptime_checker, UptimeChecker.Module.Scheduler,
 config :uptime_checker, Oban,
   repo: UptimeChecker.Repo,
   plugins: [Oban.Plugins.Pruner],
-  queues: [default: 10]
+  queues: [default: 10, notification: 100]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
