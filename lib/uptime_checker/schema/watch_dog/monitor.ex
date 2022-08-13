@@ -12,6 +12,7 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
     field :method, Ecto.Enum, values: [:GET, :POST, :PUT, :DELETE, :PATCH]
     field :interval, :integer
     field :timeout, :integer
+    field :type, Ecto.Enum, values: [api: 1, browser: 2]
 
     field :body, :string
     field :contains, :string

@@ -6,8 +6,8 @@ defmodule UptimeChecker.Schema.MonitorStatusCode do
   alias UptimeChecker.Schema.WatchDog.Monitor
 
   schema "monitor_status_code_junction" do
-    belongs_to(:monitor, Monitor)
-    belongs_to(:status_code, StatusCode)
+    belongs_to :monitor, Monitor
+    belongs_to :status_code, StatusCode
 
     timestamps(type: :utc_datetime)
   end

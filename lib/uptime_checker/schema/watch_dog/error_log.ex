@@ -10,6 +10,7 @@ defmodule UptimeChecker.Schema.WatchDog.ErrorLog do
     field :text, :string
     field :status_code, :integer
     field :type, Ecto.Enum, values: @error_types
+    field :screenshot_url, :string
 
     belongs_to :check, Check
 
@@ -19,7 +20,7 @@ defmodule UptimeChecker.Schema.WatchDog.ErrorLog do
   @doc false
   def changeset(error_log, attrs) do
     error_log
-    |> cast(attrs, [:text, :status_code, :type])
+    |> cast(attrs, [:text, :status_code, :type, :screenshot_url])
     |> validate_required([:text, :status_code, :type])
     |> put_assoc(:check, attrs.check)
   end

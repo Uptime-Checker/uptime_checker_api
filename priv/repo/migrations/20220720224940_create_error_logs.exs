@@ -6,6 +6,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateErrorLog do
       add :text, :string
       add :status_code, :integer
       add :type, :integer
+      add :screenshot_url, :string
 
       add :check_id, references(:checks, on_delete: :delete_all)
       add :organization_id, references(:organizations, on_delete: :delete_all)

@@ -6,8 +6,8 @@ defmodule UptimeChecker.Schema.MonitorUser do
   alias UptimeChecker.Schema.WatchDog.Monitor
 
   schema "monitor_user_junction" do
-    belongs_to(:monitor, Monitor)
-    belongs_to(:user, User)
+    belongs_to :monitor, Monitor
+    belongs_to :user, User
 
     timestamps(type: :utc_datetime)
   end

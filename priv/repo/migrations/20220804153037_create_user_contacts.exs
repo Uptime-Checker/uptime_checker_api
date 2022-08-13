@@ -7,6 +7,8 @@ defmodule UptimeChecker.Repo.Migrations.CreateUserContacts do
       add :number, :string
       add :mode, :integer
       add :device_id, :string
+      add :verification_code, :string
+      add :verification_code_expires_at, :utc_datetime
       add :verified, :boolean, default: false, null: false
       add :subscribed, :boolean, default: true, null: false
       add :bounce_count, :integer, default: 0
