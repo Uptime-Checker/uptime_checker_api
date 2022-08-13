@@ -3,12 +3,17 @@ defmodule UptimeChecker.Event.HandleNextCheck do
   require Logger
 
   alias UptimeChecker.TaskSupervisor
-  alias UptimeChecker.{Alarm_S, WatchDog}
+  alias UptimeChecker.{Alarm_S, WatchDog, DailyReport}
 
   def act(tracing_id, monitor_region, check, duration, success) do
     # Shift the spent time in hitting api
     now = Timex.shift(NaiveDateTime.utc_now(), milliseconds: -duration)
     monitor = monitor_region.monitor
+
+    daily_report_task =
+      Task.Supervisor.async(TaskSupervisor, fn ->
+        DailyReport.upsert(monitor, success)
+      end)
 
     check_params = %{
       success: success,
@@ -30,6 +35,9 @@ defmodule UptimeChecker.Event.HandleNextCheck do
         Task.Supervisor.start_child(TaskSupervisor, Alarm_S, :handle_alarm, [tracing_id, check, monitor_region.down],
           restart: :transient
         )
+
+        # Await on the daily report task
+        daily_report_task |> Task.await()
 
       {:error, %Ecto.Changeset{} = changeset} ->
         Logger.error("#{tracing_id} Next check schedule failed, error: #{inspect(changeset.errors)}")

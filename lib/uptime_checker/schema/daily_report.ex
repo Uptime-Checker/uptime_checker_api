@@ -16,9 +16,15 @@ defmodule UptimeChecker.Schema.DailyReport do
   end
 
   @doc false
-  def changeset(region, attrs) do
-    region
+  def changeset(daily_report, attrs) do
+    daily_report
     |> cast(attrs, [:successful_checks, :error_checks, :downtime, :date])
     |> unique_constraint([:monitor_id, :date])
+    |> put_assoc(:monitor, attrs.monitor)
+  end
+
+  def check_update_changeset(daily_report, attrs) do
+    daily_report
+    |> cast(attrs, [:successful_checks, :error_checks, :downtime, :date])
   end
 end

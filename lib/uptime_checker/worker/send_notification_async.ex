@@ -12,6 +12,7 @@ defmodule UptimeChecker.Worker.SendNotificationAsync do
     rescue
       e ->
         Logger.error(e)
+        Sentry.capture_exception(e)
     end
   end
 
