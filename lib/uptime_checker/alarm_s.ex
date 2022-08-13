@@ -31,7 +31,7 @@ defmodule UptimeChecker.Alarm_S do
               |> Map.put(:monitor, check.monitor)
               |> Map.put(:organization, check.organization)
 
-            with {:ok, %Alarm{} = alarm} <- create_alarm(params) do
+            with {:ok, %Alarm{} = alarm} <- create_alarm(check.monitor, params) do
               Logger.info("#{tracing_id} Alarm created #{alarm.id}, monitor: #{check.monitor.id}")
               Worker.ScheduleNotificationAsync.enqueue(alarm)
             else
@@ -62,9 +62,7 @@ defmodule UptimeChecker.Alarm_S do
       %Alarm{} = alarm ->
         cond do
           up_monitor_region_count >= check.monitor.region_threshold ->
-            alarm
-            |> Alarm.resolve_changeset(%{ongoing: false, resolved_at: now, resolved_by_check_id: check.id})
-            |> Repo.update()
+            resolve_alarm(check.monitor, alarm, now, check)
 
           true ->
             Logger.debug("#{tracing_id}, Region threshold did not raise alarm, up count: #{up_monitor_region_count}")
@@ -83,9 +81,38 @@ defmodule UptimeChecker.Alarm_S do
     |> Repo.preload([:triggered_by])
   end
 
-  defp create_alarm(attrs) do
-    %Alarm{ongoing: true}
-    |> Alarm.changeset(attrs)
-    |> Repo.insert()
+  defp create_alarm(monitor, attrs) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:alarm, Alarm.changeset(%Alarm{ongoing: true}, attrs))
+    |> Ecto.Multi.run(:monitor, fn _repo, %{alarm: _alarm} ->
+      WatchDog.update_monitor_status(monitor, %{down: true})
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{alarm: alarm, monitor: _monitor}} ->
+        {:ok, alarm}
+
+      {:error, _name, changeset, _changes_so_far} ->
+        {:error, changeset}
+    end
+  end
+
+  defp resolve_alarm(monitor, alarm, now, check) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(
+      :alarm,
+      Alarm.resolve_changeset(alarm, %{ongoing: false, resolved_at: now, resolved_by_check_id: check.id})
+    )
+    |> Ecto.Multi.run(:monitor, fn _repo, %{alarm: _alarm} ->
+      WatchDog.update_monitor_status(monitor, %{down: false})
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{alarm: alarm, monitor: _monitor}} ->
+        {:ok, alarm}
+
+      {:error, _name, changeset, _changes_so_far} ->
+        {:error, changeset}
+    end
   end
 end

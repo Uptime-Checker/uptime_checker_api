@@ -3,4 +3,7 @@ defmodule UptimeChecker.Constant.Text do
 
   const(:down, "DOWN")
   const(:up, "UP")
+
+  const(:alert, "Alert")
+  const(:resolved, "Resolved")
 end

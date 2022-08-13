@@ -6,7 +6,7 @@ defmodule UptimeChecker.Mail.MonitorStatus do
 
   def compose(monitor, alarm, user_contact) do
     new_email()
-    |> from({Constant.Misc.app_name(), Constant.Email.no_reply_email_address()})
+    |> from({"[#{Constant.Misc.app_name()} | #{alert(monitor.down)}]", Constant.Email.no_reply_email_address()})
     |> to(user_contact.email)
     |> subject("Monitor #{down(monitor.down)}")
     |> assign(:monitor, monitor)
@@ -17,4 +17,7 @@ defmodule UptimeChecker.Mail.MonitorStatus do
 
   defp down(is_down) when is_down == true, do: Constant.Text.down()
   defp down(is_down) when is_down == false, do: Constant.Text.up()
+
+  defp alert(is_down) when is_down == true, do: Constant.Text.alert()
+  defp alert(is_down) when is_down == false, do: Constant.Text.resolved()
 end

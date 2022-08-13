@@ -118,6 +118,12 @@ defmodule UptimeChecker.WatchDog do
     Repo.all(query)
   end
 
+  def update_monitor_status(%Monitor{} = monitor, attrs) do
+    monitor
+    |> Monitor.update_alarm_changeset(attrs)
+    |> Repo.update()
+  end
+
   @doc """
   Updates a monitor.
 
