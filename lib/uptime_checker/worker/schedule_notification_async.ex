@@ -11,7 +11,7 @@ defmodule UptimeChecker.Worker.ScheduleNotificationAsync do
     rescue
       e ->
         Logger.error(e)
-        Sentry.capture_exception(e)
+        Sentry.capture_exception(e, stacktrace: __STACKTRACE__, extra: %{module: __MODULE__})
     end
   end
 

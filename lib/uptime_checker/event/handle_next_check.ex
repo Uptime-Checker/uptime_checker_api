@@ -12,7 +12,7 @@ defmodule UptimeChecker.Event.HandleNextCheck do
 
     daily_report_task =
       Task.Supervisor.async(TaskSupervisor, fn ->
-        DailyReport.upsert(monitor, success)
+        DailyReport.upsert(monitor, check.organization, success)
       end)
 
     check_params = %{

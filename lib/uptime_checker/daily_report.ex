@@ -5,9 +5,8 @@ defmodule UptimeChecker.DailyReport do
   alias UptimeChecker.Repo
   alias UptimeChecker.Schema.DailyReport
 
-  def upsert(monitor, success) do
+  def upsert(monitor, organization, success) do
     daily_report = DailyReport |> Repo.get_by(monitor_id: monitor.id, date: Timex.today())
-    IO.inspect(daily_report)
 
     case daily_report do
       %DailyReport{} = report ->
@@ -24,7 +23,8 @@ defmodule UptimeChecker.DailyReport do
           successful_checks: success_count(success),
           error_checks: error_count(success),
           date: Timex.today(),
-          monitor: monitor
+          monitor: monitor,
+          organization: organization
         })
         |> Repo.insert()
     end
