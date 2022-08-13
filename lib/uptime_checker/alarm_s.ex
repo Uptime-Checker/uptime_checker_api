@@ -63,6 +63,7 @@ defmodule UptimeChecker.Alarm_S do
         cond do
           up_monitor_region_count >= check.monitor.region_threshold ->
             resolve_alarm(check.monitor, alarm, now, check)
+            Worker.ScheduleNotificationAsync.enqueue(alarm)
 
           true ->
             Logger.debug("#{tracing_id}, Region threshold did not raise alarm, up count: #{up_monitor_region_count}")
