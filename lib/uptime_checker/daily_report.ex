@@ -6,39 +6,34 @@ defmodule UptimeChecker.DailyReport do
   alias UptimeChecker.Schema.DailyReport
 
   def upsert(monitor, organization, success) do
-    daily_report = DailyReport |> Repo.get_by(monitor_id: monitor.id, date: Timex.today())
+    today = Timex.today()
 
-    case daily_report do
-      %DailyReport{} = report ->
-        report
-        |> DailyReport.check_update_changeset(%{
-          successful_checks: success_count(report.successful_checks, success),
-          error_checks: error_count(report.error_checks, success)
-        })
-        |> Repo.update()
-
-      nil ->
-        %DailyReport{}
-        |> DailyReport.changeset(%{
-          successful_checks: success_count(success),
-          error_checks: error_count(success),
-          date: Timex.today(),
-          monitor: monitor,
-          organization: organization
-        })
-        |> Repo.insert()
+    DailyReport
+    |> where(monitor_id: ^monitor.id, date: ^today)
+    |> update(inc: [successful_checks: ^success_count(success), error_checks: ^error_count(success)])
+    |> Repo.update_all([])
+    |> case do
+      {count, nil} ->
+        if count == 0 do
+          %DailyReport{}
+          |> DailyReport.changeset(%{
+            successful_checks: success_count(success),
+            error_checks: error_count(success),
+            date: today,
+            monitor: monitor,
+            organization: organization
+          })
+          |> Repo.insert(
+            on_conflict: [inc: [successful_checks: success_count(success), error_checks: error_count(success)]],
+            conflict_target: [:monitor_id, :date]
+          )
+        end
     end
   end
 
   defp success_count(success) when success == true, do: 1
   defp success_count(success) when success == false, do: 0
 
-  defp success_count(successful_checks, success) when success == true, do: successful_checks + 1
-  defp success_count(successful_checks, success) when success == false, do: successful_checks
-
   defp error_count(success) when success == true, do: 0
   defp error_count(success) when success == false, do: 1
-
-  defp error_count(error_checks, success) when success == true, do: error_checks
-  defp error_count(error_checks, success) when success == false, do: error_checks + 1
 end
