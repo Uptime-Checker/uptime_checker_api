@@ -1,5 +1,7 @@
 defmodule UptimeChecker.Event.InitStart do
+  alias UptimeChecker.Worker
+
   def run() do
-    :ok
+    Worker.RunChecksOnStartupAsync.enqueue()
   end
 end
