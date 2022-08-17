@@ -39,6 +39,8 @@ defmodule UptimeChecker.DailyReport do
 
   def update_duration(monitor, organization, duration) do
     today = Timex.today()
+
+    # We only update downtime when it is resolved
     success = true
 
     DailyReport
