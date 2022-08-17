@@ -2,9 +2,9 @@
 
 <h3>Monitor URL: <%= link(@monitor.url, to: @monitor.url) %></h3>
 
-<p>Outage started at: <%= format_time(@alarm.inserted_at) %></p>
+<p>Outage started at: <%= format_time(@alarm.inserted_at) %> GMT (Coordinated Universal Time)</p>
 
 <%= if @monitor.down == false do %>
-    <p>Outage ended at: <%= format_time(@alarm.resolved_at) %></p>
+    <p>Outage ended at: <%= format_time(@alarm.resolved_at) %> GMT (Coordinated Universal Time)</p>
     <p>Outage duration: <%= difference_between_two_times(@alarm.inserted_at, @alarm.resolved_at) %></p>
 <% end %>
