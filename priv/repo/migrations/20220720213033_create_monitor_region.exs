@@ -17,6 +17,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateMonitorRegion do
 
     create index(:monitor_region_junction, [:monitor_id])
     create index(:monitor_region_junction, [:region_id])
+    create index(:monitor_region_junction, [:next_check_at])
     create index(:monitor_region_junction, [:last_checked_at, :next_check_at])
     create unique_index(:monitor_region_junction, [:monitor_id, :region_id])
   end
