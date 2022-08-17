@@ -21,9 +21,13 @@ defmodule UptimeChecker.Helper.Util do
   @app Mix.Project.config()[:app]
   def app_name(), do: @app
 
-  def human_readable_time_difference(from, to) do
+  def get_duration_in_seconds(from, to) do
     Timex.diff(from, to, :second)
     |> Duration.from_seconds()
+  end
+
+  def human_readable_time_difference(from, to) do
+    get_duration_in_seconds(from, to)
     |> Timex.Format.Duration.Formatters.Humanized.format()
   end
 end

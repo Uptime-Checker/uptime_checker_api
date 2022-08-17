@@ -4,8 +4,10 @@ defmodule UptimeChecker.Alarm_S do
 
   alias UptimeChecker.Repo
   alias UptimeChecker.Worker
-  alias UptimeChecker.WatchDog
+  alias UptimeChecker.Helper.Util
+  alias UptimeChecker.TaskSupervisor
   alias UptimeChecker.Schema.WatchDog.Alarm
+  alias UptimeChecker.{WatchDog, DailyReport}
 
   def handle_alarm(tracing_id, check, is_down) do
     cond do
@@ -50,7 +52,7 @@ defmodule UptimeChecker.Alarm_S do
     end
   end
 
-  def resolve_alarm(tracing_id, check) do
+  defp resolve_alarm(tracing_id, check) do
     now = NaiveDateTime.utc_now()
     alarm = get_ongoing_alarm(check.monitor_id)
     up_monitor_region_count = WatchDog.count_monitor_region_by_status(check.monitor_id, false)
@@ -64,6 +66,7 @@ defmodule UptimeChecker.Alarm_S do
           up_monitor_region_count >= check.monitor.region_threshold ->
             resolve_alarm(check.monitor, alarm, now, check)
             Worker.ScheduleNotificationAsync.enqueue(alarm)
+            update_duration_in_daily_report_async(check.monitor, alarm, now)
 
           true ->
             Logger.debug("#{tracing_id}, Region threshold did not raise alarm, up count: #{up_monitor_region_count}")
@@ -115,5 +118,15 @@ defmodule UptimeChecker.Alarm_S do
       {:error, _name, changeset, _changes_so_far} ->
         {:error, changeset}
     end
+  end
+
+  defp update_duration_in_daily_report_async(monitor, alarm, now) do
+    Task.Supervisor.start_child(
+      TaskSupervisor,
+      DailyReport,
+      :update_duration,
+      [monitor, Util.get_duration_in_seconds(alarm.inserted_at, now)],
+      restart: :transient
+    )
   end
 end
