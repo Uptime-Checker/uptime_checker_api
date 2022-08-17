@@ -11,10 +11,11 @@ defmodule UptimeChecker.Job.HitApi do
   def work(monitor_region_id) do
     tracing_id = Util.random_string(10)
 
-    monitor_region = WatchDog.get_monitor_region_status_code(monitor_region_id)
-    monitor = monitor_region.monitor
+    with monitor_region = WatchDog.get_monitor_region_status_code(monitor_region_id),
+         {:ok, check} <-
+           create_check(monitor_region.monitor, monitor_region.region, monitor_region.monitor.organization) do
+      monitor = monitor_region.monitor
 
-    with {:ok, check} <- create_check(monitor, monitor_region.region, monitor.organization) do
       with {u_secs, result} <- hit_api(tracing_id, monitor) do
         case result do
           {:ok, %HTTPoison.Response{} = response} ->
