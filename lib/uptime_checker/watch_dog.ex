@@ -91,10 +91,11 @@ defmodule UptimeChecker.WatchDog do
         left_join: mr in assoc(m, :monitor_regions),
         where: m.on == true,
         where: mr.next_check_at < ^later,
-        order_by: mr.id,
-        select: mr
+        order_by: m.id,
+        preload: [monitor_regions: mr]
 
-    Repo.all(query)
+    query
+    |> Repo.paginate()
   end
 
   def count_monitor_region_by_status(monitor_id, is_down) do
