@@ -33,6 +33,7 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
     belongs_to :organization, Organization
 
     has_many :checks, Check
+    has_many :monitor_regions, MonitorRegion
 
     many_to_many :regions, Region, join_through: MonitorRegion, on_replace: :delete
     many_to_many :status_codes, StatusCode, join_through: MonitorStatusCode, on_replace: :delete
