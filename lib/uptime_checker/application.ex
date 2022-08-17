@@ -20,12 +20,12 @@ defmodule UptimeChecker.Application do
       UptimeCheckerWeb.Endpoint,
       # Scheduler
       UptimeChecker.Module.Scheduler,
-      # Task Supervison
+      # Task Supervisor
       {Task.Supervisor, name: UptimeChecker.TaskSupervisor},
       # Oban
-      {Oban, Application.fetch_env!(:uptime_checker, Oban)}
-      # Start a worker by calling: UptimeChecker.Worker.start_link(arg)
-      # {UptimeChecker.Worker, arg}
+      {Oban, Application.fetch_env!(:uptime_checker, Oban)},
+      # Start a worker on startup
+      {Task, &UptimeChecker.Event.InitStart.run/0}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
