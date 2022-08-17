@@ -82,6 +82,21 @@ defmodule UptimeChecker.WatchDog do
     Repo.all(query)
   end
 
+  def list_monitor_region_for_active_monitors() do
+    now = NaiveDateTime.utc_now()
+    later = Timex.shift(now, seconds: 2)
+
+    query =
+      from m in Monitor,
+        left_join: mr in assoc(m, :monitor_regions),
+        where: m.on == true,
+        where: mr.next_check_at < ^later,
+        order_by: mr.id,
+        select: mr
+
+    Repo.all(query)
+  end
+
   def count_monitor_region_by_status(monitor_id, is_down) do
     query =
       from mr in MonitorRegion,
@@ -158,10 +173,6 @@ defmodule UptimeChecker.WatchDog do
     Repo.delete(monitor)
   end
 
-  def change_monitor(%Monitor{} = monitor, attrs \\ %{}) do
-    Monitor.changeset(monitor, attrs)
-  end
-
   def list_regions do
     Repo.all(Region)
   end
@@ -225,19 +236,6 @@ defmodule UptimeChecker.WatchDog do
 
   def delete_check(%Check{} = check) do
     Repo.delete(check)
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking check changes.
-
-  ## Examples
-
-      iex> change_check(check)
-      %Ecto.Changeset{data: %Check{}}
-
-  """
-  def change_check(%Check{} = check, attrs \\ %{}) do
-    Check.changeset(check, attrs)
   end
 
   def create_error_log(attrs \\ %{}, check) do
