@@ -95,6 +95,12 @@ defmodule UptimeChecker.WatchDog do
     |> Repo.paginate(after: cursor)
   end
 
+  def update_monitor_region(%MonitorRegion{} = monitor_region, attrs) do
+    monitor_region
+    |> MonitorRegion.changeset(attrs)
+    |> Repo.update()
+  end
+
   def count_monitor_region_by_status(monitor_id, is_down) do
     query =
       from mr in MonitorRegion,
