@@ -82,20 +82,17 @@ defmodule UptimeChecker.WatchDog do
     Repo.all(query)
   end
 
-  def list_monitor_region_for_active_monitors() do
+  def list_monitor_region_for_active_monitors(cursor) do
     now = NaiveDateTime.utc_now()
     later = Timex.shift(now, seconds: 2)
 
-    query =
-      from m in Monitor,
-        left_join: mr in assoc(m, :monitor_regions),
-        where: m.on == true,
-        where: mr.next_check_at < ^later,
-        order_by: m.id,
-        preload: [monitor_regions: mr]
-
-    query
-    |> Repo.paginate()
+    MonitorRegion
+    |> join(:left, [mr], m in assoc(mr, :monitor), as: :monitor)
+    |> where([mr, m], m.on == true)
+    |> where([mr], mr.next_check_at < ^later)
+    |> preload([mr, m], monitor: m)
+    |> order_by([mr], asc: mr.next_check_at)
+    |> Repo.paginate(after: cursor)
   end
 
   def count_monitor_region_by_status(monitor_id, is_down) do
