@@ -6,12 +6,13 @@ defmodule UptimeChecker.Job.HitApi do
   alias UptimeChecker.Helper.String
   alias UptimeChecker.TaskSupervisor
   alias UptimeChecker.Event.HandleNextCheck
+  alias UptimeChecker.Schema.WatchDog.MonitorRegion
   import Plug.Conn.Status, only: [code: 1]
 
   def work(monitor_region_id) do
     tracing_id = String.random_string(10)
 
-    with monitor_region = WatchDog.get_monitor_region_status_code(monitor_region_id),
+    with %MonitorRegion{} = monitor_region <- WatchDog.get_monitor_region_status_code(monitor_region_id),
          {:ok, check} <-
            create_check(monitor_region.monitor, monitor_region.region, monitor_region.monitor.organization) do
       monitor = monitor_region.monitor
