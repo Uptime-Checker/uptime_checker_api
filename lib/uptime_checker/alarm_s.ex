@@ -4,7 +4,7 @@ defmodule UptimeChecker.Alarm_S do
 
   alias UptimeChecker.Repo
   alias UptimeChecker.Worker
-  alias UptimeChecker.Helper.Util
+  alias UptimeChecker.Helper.Times
   alias UptimeChecker.TaskSupervisor
   alias UptimeChecker.Schema.WatchDog.Alarm
   alias UptimeChecker.{WatchDog, DailyReport}
@@ -125,7 +125,7 @@ defmodule UptimeChecker.Alarm_S do
       TaskSupervisor,
       DailyReport,
       :update_duration,
-      [monitor, organization, Util.get_duration_in_seconds(now, alarm.inserted_at)],
+      [monitor, organization, Times.get_duration_in_seconds(now, alarm.inserted_at)],
       restart: :transient
     )
   end

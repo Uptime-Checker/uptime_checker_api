@@ -1,7 +1,7 @@
 defmodule UptimeCheckerWeb.EmailView do
   use Timex
   use UptimeCheckerWeb, :view
-  alias UptimeChecker.Helper.Util
+  alias UptimeChecker.Helper.Times
 
   alias UptimeChecker.Constant
 
@@ -14,7 +14,7 @@ defmodule UptimeCheckerWeb.EmailView do
   end
 
   def difference_between_two_times(from, to) do
-    Util.human_readable_time_difference(from, to)
+    Times.human_readable_time_difference(from, to)
   end
 
   defp down(is_down) when is_down == true, do: Constant.Text.down()
