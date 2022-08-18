@@ -9,8 +9,8 @@ defmodule UptimeChecker.WatchDog do
   alias UptimeChecker.Repo
   alias UptimeChecker.Region_S
   alias UptimeChecker.Customer
+  alias UptimeChecker.Schema.MonitorUser
   alias UptimeChecker.Schema.Customer.User
-  alias UptimeChecker.Schema.{Region, MonitorUser}
   alias UptimeChecker.Schema.WatchDog.{Monitor, Check, MonitorRegion, ErrorLog}
 
   def list_monitors do

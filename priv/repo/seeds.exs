@@ -9,3 +9,7 @@
 #
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
+alias UptimeChecker.Region_S
+
+Region_S.create_region(%{name: "Sunnyvale, California (US)", key: "sjc"})
+Region_S.create_region(%{name: "Frankfurt, Germany", key: "fra"})
