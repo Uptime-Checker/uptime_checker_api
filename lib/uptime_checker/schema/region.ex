@@ -15,7 +15,7 @@ defmodule UptimeChecker.Schema.Region do
   def changeset(region, attrs) do
     region
     |> cast(attrs, [:name, :key, :ip_address])
-    |> validate_required([:name, :key, :ip_address])
+    |> validate_required([:name, :key])
     |> unique_constraint(:key)
   end
 end
