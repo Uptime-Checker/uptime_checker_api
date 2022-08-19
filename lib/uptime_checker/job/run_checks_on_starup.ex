@@ -14,15 +14,14 @@ defmodule UptimeChecker.Job.RunChecksOnStarup do
 
     now = NaiveDateTime.utc_now()
 
-    stream =
+    _ =
       Task.Supervisor.async_stream(
         TaskSupervisor,
         entries,
         fn entry -> update_monitor_region(entry, now) end,
         max_concurrency: 5
       )
-
-    Enum.to_list(stream)
+      |> Enum.to_list()
 
     with metadata_after_cursor <- metadata.after do
       unless String.blank?(metadata_after_cursor) do
