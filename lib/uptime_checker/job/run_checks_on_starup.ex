@@ -32,7 +32,7 @@ defmodule UptimeChecker.Job.RunChecksOnStarup do
   end
 
   defp update_monitor_region(monitor_region, now) do
-    later = Timex.shift(now, seconds: monitor_region.monitor.interval)
+    later = Timex.shift(now, seconds: monitor_region.monitor.interval + :rand.uniform(60))
     WatchDog.update_monitor_region(monitor_region, %{next_check_at: later})
   end
 end
