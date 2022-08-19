@@ -22,8 +22,8 @@ if System.get_env("PHX_SERVER") do
   config :uptime_checker, UptimeCheckerWeb.Endpoint, server: true
 end
 
-config :sentry,
-  dsn: System.get_env("SENTRY_DSN")
+# Configure sentry dsn
+config :sentry, dsn: System.get_env("SENTRY_DSN")
 
 if config_env() == :prod do
   database_url =
