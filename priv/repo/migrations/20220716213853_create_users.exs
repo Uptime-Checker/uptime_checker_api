@@ -11,6 +11,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateUsers do
     create table(:users) do
       add :name, :string, null: false
       add :email, :string, null: false
+      add :picture_url, :string
       add :password, :string
 
       add :firebase_uid, :string
