@@ -25,26 +25,22 @@ defmodule UptimeChecker.Alarm_S do
 
     case alarm do
       nil ->
-        cond do
-          down_monitor_region_count >= check.monitor.region_threshold ->
-            params =
-              %{}
-              |> Map.put(:check, check)
-              |> Map.put(:monitor, check.monitor)
-              |> Map.put(:organization, check.organization)
+        if down_monitor_region_count >= check.monitor.region_threshold do
+          params =
+            %{}
+            |> Map.put(:check, check)
+            |> Map.put(:monitor, check.monitor)
+            |> Map.put(:organization, check.organization)
 
-            with {:ok, %Alarm{} = alarm} <- create_alarm(check.monitor, params) do
-              Logger.info("#{tracing_id} Alarm created #{alarm.id}, monitor: #{check.monitor.id}")
-              Worker.ScheduleNotificationAsync.enqueue(alarm)
-            else
-              {:error, %Ecto.Changeset{} = changeset} ->
-                Logger.error("#{tracing_id}, Failed to create alarm, error: #{inspect(changeset.errors)}")
-            end
-
-          true ->
-            Logger.debug(
-              "#{tracing_id}, Region threshold did not raise alarm, down count: #{down_monitor_region_count}"
-            )
+          with {:ok, %Alarm{} = alarm} <- create_alarm(check.monitor, params) do
+            Logger.info("#{tracing_id} Alarm created #{alarm.id}, monitor: #{check.monitor.id}")
+            Worker.ScheduleNotificationAsync.enqueue(alarm)
+          else
+            {:error, %Ecto.Changeset{} = changeset} ->
+              Logger.error("#{tracing_id}, Failed to create alarm, error: #{inspect(changeset.errors)}")
+          end
+        else
+          Logger.debug("#{tracing_id}, Region threshold did not raise alarm, down count: #{down_monitor_region_count}")
         end
 
       %Alarm{} = alarm ->
@@ -62,16 +58,14 @@ defmodule UptimeChecker.Alarm_S do
         Logger.debug("#{tracing_id}, No active alarm to resolve, check #{check.id}")
 
       %Alarm{} = alarm ->
-        cond do
-          up_monitor_region_count >= check.monitor.region_threshold ->
-            with {:ok, updated_alarm} <- resolve_alarm(check.monitor, alarm, now, check) do
-              update_duration_in_daily_report_async(check.organization, check.monitor, updated_alarm)
-            end
+        if up_monitor_region_count >= check.monitor.region_threshold do
+          with {:ok, updated_alarm} <- resolve_alarm(check.monitor, alarm, now, check) do
+            update_duration_in_daily_report_async(check.organization, check.monitor, updated_alarm)
+          end
 
-            Worker.ScheduleNotificationAsync.enqueue(alarm)
-
-          true ->
-            Logger.debug("#{tracing_id}, Region threshold did not raise alarm, up count: #{up_monitor_region_count}")
+          Worker.ScheduleNotificationAsync.enqueue(alarm)
+        else
+          Logger.debug("#{tracing_id}, Region threshold did not raise alarm, up count: #{up_monitor_region_count}")
         end
     end
   end
