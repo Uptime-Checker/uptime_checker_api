@@ -21,4 +21,11 @@ defmodule UptimeCheckerWeb.FallbackController do
     |> put_view(UptimeCheckerWeb.ErrorView)
     |> render(:"404")
   end
+
+  def call(conn, {:error, error}) do
+    conn
+    |> put_status(:bad_request)
+    |> put_view(UptimeCheckerWeb.ErrorView)
+    |> render(:"400", message: to_string(error))
+  end
 end

@@ -7,6 +7,10 @@ defmodule UptimeCheckerWeb.ErrorView do
   #   "Internal Server Error"
   # end
 
+  def render("400.json", assigns) do
+    %{error: assigns.message}
+  end
+
   # By default, Phoenix returns the status message from
   # the template name. For example, "404.html" becomes
   # "Not Found".
