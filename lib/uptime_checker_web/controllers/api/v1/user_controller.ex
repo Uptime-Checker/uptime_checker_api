@@ -34,6 +34,14 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
     end
   end
 
+  def provider_login(conn, params) do
+    with {:ok, firebase_user} <- UptimeChecker.Module.Firebase.verify_id_token!(params["id_token"]) do
+      conn
+      |> put_status(:ok)
+      |> json(firebase_user)
+    end
+  end
+
   def me(conn, _params) do
     user = current_user(conn)
     render(conn, "show.json", user: user)
