@@ -33,7 +33,20 @@ defmodule UptimeCheckerWeb.MonitorControllerTest do
     timeout: 43,
     url: "some updated url"
   }
-  @invalid_attrs %{body: nil, contains: nil, interval: nil, last_checked_at: nil, last_failed_at: nil, method: nil, name: nil, resolve_threshold: nil, state: nil, status_codes: nil, timeout: nil, url: nil}
+  @invalid_attrs %{
+    body: nil,
+    contains: nil,
+    interval: nil,
+    last_checked_at: nil,
+    last_failed_at: nil,
+    method: nil,
+    name: nil,
+    resolve_threshold: nil,
+    state: nil,
+    status_codes: nil,
+    timeout: nil,
+    url: nil
+  }
 
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}

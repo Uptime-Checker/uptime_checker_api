@@ -70,7 +70,7 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
     ])
     |> validate_url(:url)
     |> unique_constraint([:organization_id, :url])
-    |> validate_inclusion(:interval, 20..86400)
+    |> validate_inclusion(:interval, 20..86_400)
     |> validate_inclusion(:timeout, 1..10)
     |> validate_inclusion(:resolve_threshold, 1..10)
     |> validate_inclusion(:error_threshold, 1..10)

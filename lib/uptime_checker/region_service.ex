@@ -1,4 +1,4 @@
-defmodule UptimeChecker.Region_Service do
+defmodule UptimeChecker.RegionService do
   import Ecto.Query, warn: false
   alias UptimeChecker.Repo
   alias UptimeChecker.Schema.Region

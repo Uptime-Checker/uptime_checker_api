@@ -32,10 +32,11 @@ defmodule UptimeChecker.AlarmService do
             |> Map.put(:monitor, check.monitor)
             |> Map.put(:organization, check.organization)
 
-          with {:ok, %Alarm{} = alarm} <- create_alarm(check.monitor, params) do
-            Logger.info("#{tracing_id} Alarm created #{alarm.id}, monitor: #{check.monitor.id}")
-            Worker.ScheduleNotificationAsync.enqueue(alarm)
-          else
+          case create_alarm(check.monitor, params) do
+            {:ok, %Alarm{} = alarm} ->
+              Logger.info("#{tracing_id} Alarm created #{alarm.id}, monitor: #{check.monitor.id}")
+              Worker.ScheduleNotificationAsync.enqueue(alarm)
+
             {:error, %Ecto.Changeset{} = changeset} ->
               Logger.error("#{tracing_id}, Failed to create alarm, error: #{inspect(changeset.errors)}")
           end

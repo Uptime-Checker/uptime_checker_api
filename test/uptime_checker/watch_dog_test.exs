@@ -8,7 +8,20 @@ defmodule UptimeChecker.WatchDogTest do
 
     import UptimeChecker.WatchDogFixtures
 
-    @invalid_attrs %{body: nil, contains: nil, interval: nil, last_checked_at: nil, last_failed_at: nil, method: nil, name: nil, resolve_threshold: nil, state: nil, status_codes: nil, timeout: nil, url: nil}
+    @invalid_attrs %{
+      body: nil,
+      contains: nil,
+      interval: nil,
+      last_checked_at: nil,
+      last_failed_at: nil,
+      method: nil,
+      name: nil,
+      resolve_threshold: nil,
+      state: nil,
+      status_codes: nil,
+      timeout: nil,
+      url: nil
+    }
 
     test "list_monitors/0 returns all monitors" do
       monitor = monitor_fixture()
@@ -21,7 +34,20 @@ defmodule UptimeChecker.WatchDogTest do
     end
 
     test "create_monitor/1 with valid data creates a monitor" do
-      valid_attrs = %{body: "some body", contains: "some contains", interval: 42, last_checked_at: ~U[2022-07-19 11:54:00Z], last_failed_at: ~U[2022-07-19 11:54:00Z], method: 42, name: "some name", resolve_threshold: 42, state: 42, status_codes: [], timeout: 42, url: "some url"}
+      valid_attrs = %{
+        body: "some body",
+        contains: "some contains",
+        interval: 42,
+        last_checked_at: ~U[2022-07-19 11:54:00Z],
+        last_failed_at: ~U[2022-07-19 11:54:00Z],
+        method: 42,
+        name: "some name",
+        resolve_threshold: 42,
+        state: 42,
+        status_codes: [],
+        timeout: 42,
+        url: "some url"
+      }
 
       assert {:ok, %Monitor{} = monitor} = WatchDog.create_monitor(valid_attrs)
       assert monitor.body == "some body"
@@ -44,7 +70,21 @@ defmodule UptimeChecker.WatchDogTest do
 
     test "update_monitor/2 with valid data updates the monitor" do
       monitor = monitor_fixture()
-      update_attrs = %{body: "some updated body", contains: "some updated contains", interval: 43, last_checked_at: ~U[2022-07-20 11:54:00Z], last_failed_at: ~U[2022-07-20 11:54:00Z], method: 43, name: "some updated name", resolve_threshold: 43, state: 43, status_codes: [], timeout: 43, url: "some updated url"}
+
+      update_attrs = %{
+        body: "some updated body",
+        contains: "some updated contains",
+        interval: 43,
+        last_checked_at: ~U[2022-07-20 11:54:00Z],
+        last_failed_at: ~U[2022-07-20 11:54:00Z],
+        method: 43,
+        name: "some updated name",
+        resolve_threshold: 43,
+        state: 43,
+        status_codes: [],
+        timeout: 43,
+        url: "some updated url"
+      }
 
       assert {:ok, %Monitor{} = monitor} = WatchDog.update_monitor(monitor, update_attrs)
       assert monitor.body == "some updated body"

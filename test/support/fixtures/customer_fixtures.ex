@@ -5,21 +5,6 @@ defmodule UptimeChecker.CustomerFixtures do
   """
 
   @doc """
-  Generate a organization.
-  """
-  def organization_fixture(attrs \\ %{}) do
-    {:ok, organization} =
-      attrs
-      |> Enum.into(%{
-        key: "some key",
-        name: "some name"
-      })
-      |> UptimeChecker.Customer.create_organization()
-
-    organization
-  end
-
-  @doc """
   Generate a user.
   """
   def user_fixture(attrs \\ %{}) do
