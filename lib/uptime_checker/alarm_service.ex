@@ -1,4 +1,5 @@
 defmodule UptimeChecker.AlarmService do
+  use Timex
   require Logger
   import Ecto.Query, warn: false
 
@@ -50,7 +51,7 @@ defmodule UptimeChecker.AlarmService do
   end
 
   defp resolve_alarm(tracing_id, check) do
-    now = NaiveDateTime.utc_now()
+    now = Timex.now()
     alarm = get_ongoing_alarm(check.monitor_id)
     up_monitor_region_count = WatchDog.count_monitor_region_by_status(check.monitor_id, false)
 

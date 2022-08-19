@@ -11,8 +11,7 @@ defmodule UptimeChecker.Job.RunChecksOnStarup do
 
   defp handle_active_monitors(after_cursor) do
     %{entries: entries, metadata: metadata} = WatchDog.list_monitor_region_for_active_monitors(after_cursor)
-
-    now = NaiveDateTime.utc_now()
+    now = Timex.now()
 
     _ =
       Task.Supervisor.async_stream(

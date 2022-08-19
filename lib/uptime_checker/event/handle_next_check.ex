@@ -7,7 +7,7 @@ defmodule UptimeChecker.Event.HandleNextCheck do
 
   def act(tracing_id, monitor_region, check, duration, success) do
     # Shift the spent time in hitting api
-    now = Timex.shift(NaiveDateTime.utc_now(), milliseconds: -duration)
+    now = Timex.shift(Timex.now(), milliseconds: -duration)
     monitor = monitor_region.monitor
 
     daily_report_task =

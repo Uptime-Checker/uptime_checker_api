@@ -3,7 +3,6 @@ defmodule UptimeChecker.WatchDog do
   The WatchDog context.
   """
   use Timex
-
   import Ecto.Query, warn: false
 
   alias UptimeChecker.Repo
@@ -51,7 +50,7 @@ defmodule UptimeChecker.WatchDog do
   end
 
   def create_monitor_regions(monitor) do
-    now = NaiveDateTime.utc_now()
+    now = Timex.now()
     regions = RegionService.list_regions()
 
     # Start first one in 11 seconds and later ones will be 22/33/44/55 seconds plus
@@ -69,7 +68,7 @@ defmodule UptimeChecker.WatchDog do
   end
 
   def list_monitor_region(from, to) do
-    now = NaiveDateTime.utc_now()
+    now = Timex.now()
     prev = Timex.shift(now, seconds: from)
     later = Timex.shift(now, seconds: to)
 
@@ -83,7 +82,7 @@ defmodule UptimeChecker.WatchDog do
   end
 
   def list_monitor_region_for_active_monitors(cursor) do
-    now = NaiveDateTime.utc_now()
+    now = Timex.now()
     later = Timex.shift(now, seconds: 2)
 
     MonitorRegion
