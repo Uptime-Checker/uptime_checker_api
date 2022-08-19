@@ -3,7 +3,7 @@ defmodule UptimeChecker.Event.HandleNextCheck do
   require Logger
 
   alias UptimeChecker.TaskSupervisor
-  alias UptimeChecker.{Alarm_S, WatchDog, DailyReport}
+  alias UptimeChecker.{AlarmService, WatchDog, DailyReport}
 
   def act(tracing_id, monitor_region, check, duration, success) do
     # Shift the spent time in hitting api
@@ -32,7 +32,11 @@ defmodule UptimeChecker.Event.HandleNextCheck do
         Logger.info("#{tracing_id} Next check Monitor Region #{monitor_region.id}, at #{monitor_region.next_check_at}")
 
         # Spin up checking alarm in a separate thread
-        Task.Supervisor.start_child(TaskSupervisor, Alarm_S, :handle_alarm, [tracing_id, check, monitor_region.down],
+        Task.Supervisor.start_child(
+          TaskSupervisor,
+          AlarmService,
+          :handle_alarm,
+          [tracing_id, check, monitor_region.down],
           restart: :transient
         )
 

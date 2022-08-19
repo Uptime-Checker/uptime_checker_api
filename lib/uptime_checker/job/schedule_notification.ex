@@ -1,9 +1,9 @@
 defmodule UptimeChecker.Job.ScheduleNotification do
-  alias UptimeChecker.{Alarm_S, WatchDog}
+  alias UptimeChecker.{AlarmService, WatchDog}
   alias UptimeChecker.Worker.SendNotificationAsync
 
   def work(alarm_id) do
-    alarm = Alarm_S.get_by_id(alarm_id)
+    alarm = AlarmService.get_by_id(alarm_id)
     monitor_users_contacts = WatchDog.list_monitor_users_contacts(alarm.monitor.id)
 
     Enum.each(monitor_users_contacts, fn user_contact ->

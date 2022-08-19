@@ -1,4 +1,4 @@
-defmodule UptimeChecker.Alarm_S do
+defmodule UptimeChecker.AlarmService do
   require Logger
   import Ecto.Query, warn: false
 

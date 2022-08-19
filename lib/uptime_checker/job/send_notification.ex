@@ -1,10 +1,10 @@
 defmodule UptimeChecker.Job.SendNotification do
   alias UptimeChecker.Module.Mailer
   alias UptimeChecker.Mail.MonitorStatus
-  alias UptimeChecker.{Customer, Alarm_S}
+  alias UptimeChecker.{Customer, AlarmService}
 
   def work(user_contact_id, alarm_id) do
-    alarm = Alarm_S.get_by_id(alarm_id)
+    alarm = AlarmService.get_by_id(alarm_id)
     user_contact = Customer.get_user_contact_by_id(user_contact_id)
 
     case user_contact.mode do

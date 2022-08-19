@@ -7,8 +7,8 @@ defmodule UptimeChecker.WatchDog do
   import Ecto.Query, warn: false
 
   alias UptimeChecker.Repo
-  alias UptimeChecker.Region_S
   alias UptimeChecker.Customer
+  alias UptimeChecker.Region_Service
   alias UptimeChecker.Schema.MonitorUser
   alias UptimeChecker.Schema.Customer.User
   alias UptimeChecker.Schema.WatchDog.{Monitor, Check, MonitorRegion, ErrorLog}
@@ -52,7 +52,7 @@ defmodule UptimeChecker.WatchDog do
 
   def create_monitor_regions(monitor) do
     now = NaiveDateTime.utc_now()
-    regions = Region_S.list_regions()
+    regions = Region_Service.list_regions()
 
     # Start first one in 11 seconds and later ones will be 22/33/44/55 seconds plus
     Enum.scan(regions, 11, fn region, interval ->

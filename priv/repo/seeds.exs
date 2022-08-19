@@ -9,9 +9,9 @@
 #
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
-alias UptimeChecker.Region_S
+alias UptimeChecker.Region_Service
 
-Region_S.create_region(%{name: "Sunnyvale, California (US)", key: "sjc"})
-Region_S.create_region(%{name: "Frankfurt, Germany", key: "fra"})
-Region_S.create_region(%{name: "Tokyo, Japan", key: "nrt"})
-Region_S.create_region(%{name: "Sydney, Australia", key: "syd"})
+Region_Service.create_region(%{name: "Sunnyvale, California (US)", key: "sjc"})
+Region_Service.create_region(%{name: "Frankfurt, Germany", key: "fra"})
+Region_Service.create_region(%{name: "Tokyo, Japan", key: "nrt"})
+Region_Service.create_region(%{name: "Sydney, Australia", key: "syd"})
