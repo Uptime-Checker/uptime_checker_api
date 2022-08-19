@@ -30,7 +30,13 @@ defmodule UptimeChecker.Module.Firebase do
         {:error, :token_expired}
 
       true ->
-        %{name: fields["name"], email: fields["email"], picture_url: fields["picture"], firebase_uid: fields["user_id"]}
+        {:ok,
+         %{
+           name: fields["name"],
+           email: fields["email"],
+           picture_url: fields["picture"],
+           firebase_uid: fields["user_id"]
+         }}
     end
   end
 end
