@@ -1,4 +1,5 @@
 defmodule UptimeChecker.Module.Firebase do
+  use Timex
   alias UptimeChecker.Constant.Api
 
   defp verify!(token) do
@@ -14,5 +15,22 @@ defmodule UptimeChecker.Module.Firebase do
       |> JOSE.JWT.verify(token)
 
     fields
+  end
+
+  def verify_id_token!(token) do
+    now = Timex.now()
+    fields = verify!(token)
+    expires_at = fields["exp"] |> DateTime.from_unix!()
+
+    cond do
+      fields["iss"] != System.get_env("FIREBASE_ISSUER") ->
+        {:error, :issuer_mismatch}
+
+      Timex.after?(now, expires_at) ->
+        {:error, :token_expired}
+
+      true ->
+        %{name: fields["name"], email: fields["email"], picture_url: fields["picture"], firebase_uid: fields["user_id"]}
+    end
   end
 end
