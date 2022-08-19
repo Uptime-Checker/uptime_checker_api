@@ -3,6 +3,7 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
 
   alias UptimeChecker.Customer
   alias UptimeChecker.Guardian
+  alias UptimeChecker.Module.Firebase
   alias UptimeChecker.Schema.Customer.User
 
   action_fallback UptimeCheckerWeb.FallbackController
@@ -35,10 +36,19 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
   end
 
   def provider_login(conn, params) do
-    with {:ok, firebase_user} <- UptimeChecker.Module.Firebase.verify_id_token!(params["id_token"]) do
+    with {:ok, firebase_user} <- Firebase.verify_id_token!(params["id_token"]),
+         {:ok, user} <- Customer.get_by_email(firebase_user.email),
+         {:ok, updated_user} <-
+           Customer.update_user_provider(user, %{
+             name: firebase_user.name,
+             picture_url: firebase_user.picture_url,
+             firebase_uid: firebase_user.firebase_uid
+           }) do
+      {:ok, access_token, _claims} = encode_and_sign(updated_user)
+
       conn
-      |> put_status(:ok)
-      |> json(firebase_user)
+      |> put_status(:accepted)
+      |> json(%{access_token: access_token})
     end
   end
 

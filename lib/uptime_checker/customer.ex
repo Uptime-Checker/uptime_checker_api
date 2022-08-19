@@ -67,6 +67,12 @@ defmodule UptimeChecker.Customer do
     |> Repo.preload([:organization])
   end
 
+  def update_user_provider(%User{} = user, attrs) do
+    user
+    |> User.update_provider_changeset(attrs)
+    |> Repo.update()
+  end
+
   def get_user_contact_by_id(id) do
     UserContact
     |> Repo.get(id)
