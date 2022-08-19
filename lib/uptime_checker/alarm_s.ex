@@ -64,9 +64,11 @@ defmodule UptimeChecker.Alarm_S do
       %Alarm{} = alarm ->
         cond do
           up_monitor_region_count >= check.monitor.region_threshold ->
-            resolve_alarm(check.monitor, alarm, now, check)
+            with {:ok, updated_alarm} <- resolve_alarm(check.monitor, alarm, now, check) do
+              update_duration_in_daily_report_async(check.organization, check.monitor, updated_alarm)
+            end
+
             Worker.ScheduleNotificationAsync.enqueue(alarm)
-            update_duration_in_daily_report_async(check.organization, check.monitor, alarm, now)
 
           true ->
             Logger.debug("#{tracing_id}, Region threshold did not raise alarm, up count: #{up_monitor_region_count}")
@@ -120,12 +122,12 @@ defmodule UptimeChecker.Alarm_S do
     end
   end
 
-  defp update_duration_in_daily_report_async(organization, monitor, alarm, now) do
+  defp update_duration_in_daily_report_async(organization, monitor, alarm) do
     Task.Supervisor.start_child(
       TaskSupervisor,
       DailyReport,
       :update_duration,
-      [monitor, organization, Times.get_duration_in_seconds(now, alarm.inserted_at)],
+      [monitor, organization, Times.get_duration_in_seconds(alarm.resolved_at, alarm.inserted_at)],
       restart: :transient
     )
   end
