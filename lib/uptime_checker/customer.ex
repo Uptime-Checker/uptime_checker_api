@@ -62,14 +62,14 @@ defmodule UptimeChecker.Customer do
     end
   end
 
-  def get_by_id(id) do
-    user_query =
+  def get_customer_by_id(id) do
+    query =
       from user in User,
         left_join: o in assoc(user, :organization),
         where: user.id == ^id,
         preload: [organization: o]
 
-    Repo.one(user_query)
+    Repo.one(query)
   end
 
   def update_user_provider(%User{} = user, attrs) do

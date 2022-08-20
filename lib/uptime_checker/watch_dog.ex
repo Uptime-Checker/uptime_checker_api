@@ -18,16 +18,6 @@ defmodule UptimeChecker.WatchDog do
 
   def get_monitor(id), do: Repo.get(Monitor, id)
 
-  def get_monitor_with_status_codes(id) do
-    Repo.get(Monitor, id)
-    |> Repo.preload([:status_codes])
-  end
-
-  def get_monitor_region(id) do
-    Repo.get(MonitorRegion, id)
-    |> Repo.preload([:region])
-  end
-
   def get_monitor_region_status_code(id) do
     query =
       from mr in MonitorRegion,
@@ -111,7 +101,7 @@ defmodule UptimeChecker.WatchDog do
 
   def create_monitor_users(monitor, user_ids) do
     Enum.each(user_ids, fn user_id ->
-      case Customer.get_by_id(user_id) do
+      case Customer.get_customer_by_id(user_id) do
         %User{} = user ->
           if monitor.organization_id == user.organization_id do
             %MonitorUser{}
