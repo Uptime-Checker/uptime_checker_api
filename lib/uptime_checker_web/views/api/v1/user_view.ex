@@ -20,6 +20,17 @@ defmodule UptimeCheckerWeb.Api.V1.UserView do
     }
   end
 
+  def render("show.json", %{guest_user: guest_user}) do
+    %{data: render_one(guest_user, UserView, "guest_user.json")}
+  end
+
+  def render("guest_user.json", %{user: guest_user}) do
+    %{
+      id: guest_user.id,
+      email: guest_user.email
+    }
+  end
+
   defp render_org(%{:id => _id} = org) do
     render_one(org, OrganizationView, "organization.json")
   end

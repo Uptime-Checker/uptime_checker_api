@@ -35,6 +35,7 @@ defmodule UptimeCheckerWeb.Router do
       post "/register", UserController, :register
       post "/login", UserController, :login
       post "/provider_login", UserController, :provider_login
+      post "/guest_user", UserController, :guest_user
     end
 
     scope "/v1", V1, as: :v1 do

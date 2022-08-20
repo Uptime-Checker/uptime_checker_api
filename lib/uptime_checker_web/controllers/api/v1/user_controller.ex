@@ -4,7 +4,7 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
   alias UptimeChecker.Customer
   alias UptimeChecker.Guardian
   alias UptimeChecker.Module.Firebase
-  alias UptimeChecker.Schema.Customer.User
+  alias UptimeChecker.Schema.Customer.{User, GuestUser}
 
   action_fallback UptimeCheckerWeb.FallbackController
 
@@ -67,6 +67,14 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
   def me(conn, _params) do
     user = current_user(conn)
     render(conn, "show.json", user: user)
+  end
+
+  def guest_user(conn, params) do
+    with {:ok, %GuestUser{} = guest_user} <- Customer.create_guest_user(params["email"], params["code"]) do
+      conn
+      |> put_status(:created)
+      |> render("show.json", guest_user: guest_user)
+    end
   end
 
   defp encode_and_sign(user) do

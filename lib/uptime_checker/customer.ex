@@ -4,7 +4,7 @@ defmodule UptimeChecker.Customer do
   """
   import Ecto.Query, warn: false
   alias UptimeChecker.Repo
-  alias UptimeChecker.Schema.Customer.{Organization, User, UserContact}
+  alias UptimeChecker.Schema.Customer.{Organization, User, UserContact, GuestUser}
 
   def get_organization(id), do: Repo.get(Organization, id)
 
@@ -42,7 +42,7 @@ defmodule UptimeChecker.Customer do
     |> add_user(true)
   end
 
-  def add_user(changeset, verified) do
+  defp add_user(changeset, verified) do
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:user, changeset)
     |> Ecto.Multi.run(:user_contact, fn _repo, %{user: user} ->
@@ -86,6 +86,15 @@ defmodule UptimeChecker.Customer do
   def get_user_contact_by_id(id) do
     UserContact
     |> Repo.get(id)
+  end
+
+  def create_guest_user(email, code) do
+    now = Timex.now()
+    attrs = %{email: email, code: code, expires_at: Timex.shift(now, minutes: +10)}
+
+    %GuestUser{}
+    |> GuestUser.changeset(attrs)
+    |> Repo.insert()
   end
 
   def authenticate_user(email, password) do
