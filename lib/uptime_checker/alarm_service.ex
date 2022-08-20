@@ -77,10 +77,14 @@ defmodule UptimeChecker.AlarmService do
   end
 
   def get_alarm_by_id(id) do
-    Alarm
-    |> Repo.get(id)
-    |> Repo.preload([:monitor])
-    |> Repo.preload([:triggered_by])
+    query =
+      from alarm in Alarm,
+        left_join: m in assoc(alarm, :monitor),
+        left_join: t in assoc(alarm, :triggered_by),
+        where: alarm.id == ^id,
+        preload: [monitor: m, triggered_by: t]
+
+    Repo.one(query)
   end
 
   defp create_alarm(monitor, attrs) do
