@@ -47,6 +47,7 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
              name: firebase_user.name,
              picture_url: firebase_user.picture_url,
              firebase_uid: firebase_user.firebase_uid,
+             provider: params["provider"],
              last_login_at: Timex.now()
            }) do
       {:ok, access_token, _claims} = encode_and_sign(updated_user)
@@ -92,6 +93,7 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
            {:ok, updated_user} <-
              Customer.update_user_provider(user, %{
                firebase_uid: params["firebase_uid"],
+               provider: params["provider"],
                last_login_at: Timex.now()
              }) do
         access_token = after_email_link_login_successful(guest_user, updated_user)

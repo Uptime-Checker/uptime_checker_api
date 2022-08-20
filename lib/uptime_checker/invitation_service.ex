@@ -23,4 +23,27 @@ defmodule UptimeChecker.InvitationService do
     |> Invitation.changeset(updated_params)
     |> Repo.insert()
   end
+
+  def verify_invitation(email, code) do
+    now = Timex.now()
+
+    Invitation
+    |> Repo.get_by(code: code)
+    |> case do
+      nil ->
+        {:error, :not_found}
+
+      invitation ->
+        cond do
+          invitation.email != email ->
+            {:error, :email_mismatch}
+
+          Timex.after?(now, invitation.expires_at) ->
+            {:error, :code_expired}
+
+          true ->
+            {:ok, invitation}
+        end
+    end
+  end
 end
