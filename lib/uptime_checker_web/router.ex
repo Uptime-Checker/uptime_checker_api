@@ -32,6 +32,7 @@ defmodule UptimeCheckerWeb.Router do
     scope "/v1", V1, as: :v1_open do
       get "/status", SettingsController, :status
       get "/guest_user", UserController, :get_guest_user
+      get "/invitation", InvitationController, :get
 
       post "/register", UserController, :register
       post "/login", UserController, :login
@@ -44,8 +45,8 @@ defmodule UptimeCheckerWeb.Router do
       pipe_through :auth
 
       get "/me", UserController, :me
-      resources "/role", RoleController, only: [:index]
-      resources "/organization", OrganizationController, only: [:create]
+      resources "/roles", RoleController, only: [:index]
+      resources "/organizations", OrganizationController, only: [:create]
       resources "/monitors", MonitorController, only: [:create]
       resources "/invitations", InvitationController, only: [:create]
     end

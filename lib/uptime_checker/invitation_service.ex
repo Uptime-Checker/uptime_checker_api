@@ -2,6 +2,7 @@ defmodule UptimeChecker.InvitationService do
   import Ecto.Query, warn: false
   alias UptimeChecker.Repo
 
+  alias UptimeChecker.Auth
   alias UptimeChecker.Helper.Util
   alias UptimeChecker.Authorization
   alias UptimeChecker.Helper.Strings
@@ -22,6 +23,21 @@ defmodule UptimeChecker.InvitationService do
     %Invitation{}
     |> Invitation.changeset(updated_params)
     |> Repo.insert()
+  end
+
+  def get_invitation_by_code(code) do
+    Invitation
+    |> Repo.get_by(code: code)
+    |> Repo.preload([:role])
+    |> Repo.preload([:organization])
+    |> case do
+      nil ->
+        {:error, :not_found}
+
+      invitation ->
+        user = Auth.get_by_email(invitation.email)
+        %{invitation: invitation, user: user}
+    end
   end
 
   def verify_invitation(email, code) do

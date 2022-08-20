@@ -26,7 +26,11 @@ defmodule UptimeCheckerWeb.Api.V1.InvitationView do
     render_one(org, OrganizationView, "organization.json")
   end
 
+  defp render_org(_org), do: nil
+
   defp render_role(%{:id => _id} = role) do
     render_one(role, RoleView, "role.json")
   end
+
+  defp render_role(_role), do: nil
 end
