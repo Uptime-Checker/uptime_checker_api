@@ -22,8 +22,6 @@ config :sentry,
   enable_source_code_context: true,
   root_source_code_path: File.cwd!()
 
-# Configures the mailer
-
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.14.29",
