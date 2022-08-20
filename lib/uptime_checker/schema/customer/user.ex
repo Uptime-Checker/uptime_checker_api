@@ -42,7 +42,7 @@ defmodule UptimeChecker.Schema.Customer.User do
 
   def update_provider_changeset(user, attrs) do
     user
-    |> cast(attrs, [:name, :firebase_uid, :provider, :picture_url])
+    |> cast(attrs, [:name, :firebase_uid, :provider, :picture_url, :last_login_at])
     |> validate_required([:firebase_uid, :provider])
   end
 
