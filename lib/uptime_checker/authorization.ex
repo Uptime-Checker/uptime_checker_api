@@ -8,4 +8,10 @@ defmodule UptimeChecker.Authorization do
     |> Role.changeset(attrs)
     |> Repo.insert()
   end
+
+  def get_role!(id), do: Repo.get!(Role, id)
+
+  def list_roles do
+    Repo.all(Role)
+  end
 end

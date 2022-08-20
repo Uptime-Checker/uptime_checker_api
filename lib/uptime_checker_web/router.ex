@@ -44,8 +44,10 @@ defmodule UptimeCheckerWeb.Router do
       pipe_through :auth
 
       get "/me", UserController, :me
+      resources "/role", RoleController, only: [:index]
       resources "/organization", OrganizationController, only: [:create]
       resources "/monitors", MonitorController, only: [:create]
+      resources "/invitations", InvitationController, only: [:create]
     end
   end
 
