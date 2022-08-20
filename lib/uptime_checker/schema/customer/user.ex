@@ -25,13 +25,18 @@ defmodule UptimeChecker.Schema.Customer.User do
   end
 
   def provider_registration_changeset(user, attrs) do
+    join_user_changeset(user, attrs)
+    |> validate_required([:firebase_uid])
+    |> unique_constraint(:firebase_uid)
+  end
+
+  def join_user_changeset(user, attrs) do
     user
     |> cast(attrs, [:name, :email, :password, :firebase_uid, :provider, :picture_url, :last_login_at])
-    |> validate_required([:name, :email, :firebase_uid, :provider])
+    |> validate_required([:name, :email, :provider])
     |> validate_format(:email, ~r/@/)
     |> validate_length(:name, min: 2, max: 30)
     |> unique_constraint(:email)
-    |> unique_constraint(:firebase_uid)
   end
 
   def changeset(user, attrs) do
