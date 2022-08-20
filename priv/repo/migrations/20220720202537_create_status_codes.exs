@@ -7,7 +7,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateStatusCodes do
       add :code, :integer, null: false
       add :descripition, :string, null: false
 
-      timestamps(type: :timestamptz)
+      timestamps()
     end
 
     create unique_index(:status_codes, [:code])

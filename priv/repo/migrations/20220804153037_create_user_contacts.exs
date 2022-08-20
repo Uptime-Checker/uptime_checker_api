@@ -15,7 +15,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateUserContacts do
 
       add :user_id, references(:users, on_delete: :delete_all)
 
-      timestamps(type: :timestamptz)
+      timestamps()
     end
 
     create index(:user_contacts, [:user_id])

@@ -12,7 +12,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateMonitorRegion do
       add :monitor_id, references(:monitors, on_delete: :delete_all)
       add :region_id, references(:regions, on_delete: :delete_all)
 
-      timestamps(type: :timestamptz)
+      timestamps()
     end
 
     create index(:monitor_region_junction, [:monitor_id])

@@ -7,7 +7,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateGuestUsers do
       add :code, :string, null: false
       add :expires_at, :utc_datetime, null: false
 
-      timestamps(type: :timestamptz)
+      timestamps()
     end
 
     create unique_index(:guest_users, [:code])

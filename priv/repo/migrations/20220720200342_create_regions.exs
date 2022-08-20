@@ -8,7 +8,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateRegions do
       add :ip_address, :string
       add :default, :boolean, default: false
 
-      timestamps(type: :timestamptz)
+      timestamps()
     end
 
     create unique_index(:regions, [:key])

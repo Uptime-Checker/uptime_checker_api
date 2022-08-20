@@ -6,7 +6,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateMonitorUser do
       add :monitor_id, references(:monitors, on_delete: :delete_all)
       add :user_id, references(:users, on_delete: :delete_all)
 
-      timestamps(type: :timestamptz)
+      timestamps()
     end
 
     create index(:monitor_user_junction, [:monitor_id])

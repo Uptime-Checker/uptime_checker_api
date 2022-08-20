@@ -11,7 +11,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateNotifications do
       add :user_contact_id, references(:user_contacts, on_delete: :delete_all)
       add :organization_id, references(:organizations, on_delete: :delete_all)
 
-      timestamps(type: :timestamptz)
+      timestamps()
     end
 
     create index(:notifications, [:alarm_id])

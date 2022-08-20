@@ -6,7 +6,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateOrganizations do
       add :name, :string, null: false
       add :slug, :string, null: false
 
-      timestamps(type: :timestamptz)
+      timestamps()
     end
 
     create unique_index(:organizations, [:slug])

@@ -12,7 +12,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateAlarms do
       add :monitor_id, references(:monitors, on_delete: :delete_all)
       add :organization_id, references(:organizations, on_delete: :delete_all)
 
-      timestamps(type: :timestamptz)
+      timestamps()
     end
 
     create index(:alarms, [:monitor_id])

@@ -11,7 +11,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateDailyReports do
       add :monitor_id, references(:monitors, on_delete: :delete_all)
       add :organization_id, references(:organizations, on_delete: :delete_all)
 
-      timestamps(type: :timestamptz)
+      timestamps()
     end
 
     create index(:daily_reports, [:monitor_id])
