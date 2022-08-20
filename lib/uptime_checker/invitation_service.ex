@@ -40,8 +40,7 @@ defmodule UptimeChecker.InvitationService do
   def verify_invitation(email, code) do
     now = Timex.now()
 
-    Invitation
-    |> Repo.get_by(code: code)
+    get_invitation_with_org_from_code(code)
     |> case do
       nil ->
         {:error, :not_found}
