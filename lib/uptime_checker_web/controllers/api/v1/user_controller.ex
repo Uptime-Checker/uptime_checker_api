@@ -36,8 +36,9 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
   end
 
   def provider_login(conn, params) do
-    with {:ok, firebase_user} <- Firebase.verify_id_token!(params["id_token"]),
-         {:ok, user} <- Customer.get_by_email(firebase_user.email),
+    {:ok, firebase_user} = Firebase.verify_id_token!(params["id_token"])
+
+    with {:ok, user} <- Customer.get_by_email(firebase_user.email),
          {:ok, updated_user} <-
            Customer.update_user_provider(user, %{
              name: firebase_user.name,
@@ -49,6 +50,17 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
       conn
       |> put_status(:accepted)
       |> json(%{access_token: access_token})
+    else
+      {:error, :not_found} ->
+        updated_params = firebase_user |> Map.put(:provider, params["provider"])
+
+        with {:ok, %User{} = user} <- Customer.create_user_for_provider(updated_params) do
+          {:ok, access_token, _claims} = encode_and_sign(user)
+
+          conn
+          |> put_status(:created)
+          |> json(%{access_token: access_token})
+        end
     end
   end
 

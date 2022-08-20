@@ -33,10 +33,20 @@ defmodule UptimeChecker.Customer do
   end
 
   def create_user(attrs \\ %{}) do
+    User.registration_changeset(%User{}, attrs)
+    |> add_user(false)
+  end
+
+  def create_user_for_provider(attrs \\ %{}) do
+    User.provider_registration_changeset(%User{}, attrs)
+    |> add_user(true)
+  end
+
+  def add_user(changeset, verified) do
     Ecto.Multi.new()
-    |> Ecto.Multi.insert(:user, User.registration_changeset(%User{}, attrs))
+    |> Ecto.Multi.insert(:user, changeset)
     |> Ecto.Multi.run(:user_contact, fn _repo, %{user: user} ->
-      params = %{email: user.email, mode: :email} |> Map.put(:user, user)
+      params = %{email: user.email, mode: :email, verified: verified} |> Map.put(:user, user)
 
       %UserContact{}
       |> UserContact.changeset(params)
