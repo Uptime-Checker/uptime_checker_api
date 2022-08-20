@@ -7,6 +7,10 @@ defmodule UptimeCheckerWeb.ErrorView do
   #   "Internal Server Error"
   # end
 
+  def render("404.json", assigns) do
+    %{error: assigns.message}
+  end
+
   def render("400.json", assigns) do
     %{error: assigns.message}
   end

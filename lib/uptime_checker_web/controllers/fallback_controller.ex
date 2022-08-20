@@ -19,7 +19,7 @@ defmodule UptimeCheckerWeb.FallbackController do
     conn
     |> put_status(:not_found)
     |> put_view(UptimeCheckerWeb.ErrorView)
-    |> render(:"404")
+    |> render(:"404", message: to_string(:not_found))
   end
 
   def call(conn, {:error, error}) do
