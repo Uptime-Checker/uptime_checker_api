@@ -14,6 +14,7 @@ defmodule UptimeChecker.Schema.Customer.GuestUser do
     guest_user
     |> cast(attrs, [:email, :code, :expires_at])
     |> validate_required([:email, :code, :expires_at])
+    |> validate_length(:code, min: 10, max: 30)
     |> unique_constraint(:code)
   end
 end
