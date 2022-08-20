@@ -97,6 +97,14 @@ defmodule UptimeChecker.Customer do
     |> Repo.insert()
   end
 
+  def list_guest_users do
+    Repo.all(GuestUser)
+  end
+
+  def delete_guest_user(%GuestUser{} = guest_user) do
+    Repo.delete(guest_user)
+  end
+
   def authenticate_user(email, password) do
     with {:ok, user} <- get_by_email(email) do
       case validate_password(password, user.password) do
