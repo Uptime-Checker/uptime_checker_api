@@ -5,6 +5,7 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
   alias UptimeChecker.Auth
   alias UptimeChecker.Customer
   alias UptimeChecker.Guardian
+  alias UptimeChecker.TaskSupervisor
   alias UptimeChecker.Module.Firebase
   alias UptimeChecker.Schema.Customer.{User, GuestUser}
 
@@ -93,7 +94,7 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
                firebase_uid: params["firebase_uid"],
                last_login_at: Timex.now()
              }) do
-        {:ok, access_token, _claims} = encode_and_sign(updated_user)
+        access_token = after_email_link_login_successful(guest_user, updated_user)
 
         conn
         |> put_status(:accepted)
@@ -101,7 +102,7 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
       else
         {:error, :not_found} ->
           with {:ok, %User{} = user} <- Customer.create_user_for_provider(params) do
-            {:ok, access_token, _claims} = encode_and_sign(user)
+            access_token = after_email_link_login_successful(guest_user, user)
 
             conn
             |> put_status(:created)
@@ -109,6 +110,12 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
           end
       end
     end
+  end
+
+  defp after_email_link_login_successful(guest_user, user) do
+    Task.Supervisor.start_child(TaskSupervisor, Auth, :delete_guest_user, [guest_user], restart: :transient)
+    {:ok, access_token, _claims} = encode_and_sign(user)
+    access_token
   end
 
   defp encode_and_sign(user) do
