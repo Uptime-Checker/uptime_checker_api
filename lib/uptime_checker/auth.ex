@@ -14,6 +14,16 @@ defmodule UptimeChecker.Auth do
     end
   end
 
+  def get_by_email_with_org(email) do
+    query =
+      from user in User,
+        left_join: o in assoc(user, :organization),
+        where: user.email == ^email,
+        preload: [organization: o]
+
+    Repo.one(query)
+  end
+
   def authenticate_user(email, password) do
     with {:ok, user} <- get_by_email(email) do
       case validate_password(password, user.password) do

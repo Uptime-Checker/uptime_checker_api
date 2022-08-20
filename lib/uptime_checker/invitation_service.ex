@@ -2,10 +2,11 @@ defmodule UptimeChecker.InvitationService do
   import Ecto.Query, warn: false
   alias UptimeChecker.Repo
 
+  alias UptimeChecker.Auth
   alias UptimeChecker.Helper.Util
   alias UptimeChecker.Authorization
   alias UptimeChecker.Helper.Strings
-  alias UptimeChecker.Schema.Customer.{User, Invitation}
+  alias UptimeChecker.Schema.Customer.Invitation
 
   def create_invitation(attrs \\ %{}, organization) do
     now = Timex.now()
@@ -25,25 +26,13 @@ defmodule UptimeChecker.InvitationService do
   end
 
   def get_invitation_by_code(code) do
-    invitation_query =
-      from invitation in Invitation,
-        left_join: o in assoc(invitation, :organization),
-        where: invitation.code == ^code,
-        preload: [organization: o]
-
-    Repo.one(invitation_query)
+    get_invitation_with_org_from_code(code)
     |> case do
       nil ->
         {:error, :not_found}
 
       invitation ->
-        user_query =
-          from user in User,
-            left_join: o in assoc(user, :organization),
-            where: user.email == ^invitation.email,
-            preload: [organization: o]
-
-        user = Repo.one(user_query)
+        user = Auth.get_by_email_with_org(invitation.email)
         %{invitation: invitation, user: user}
     end
   end
@@ -69,5 +58,15 @@ defmodule UptimeChecker.InvitationService do
             {:ok, invitation}
         end
     end
+  end
+
+  defp get_invitation_with_org_from_code(code) do
+    query =
+      from invitation in Invitation,
+        left_join: o in assoc(invitation, :organization),
+        where: invitation.code == ^code,
+        preload: [organization: o]
+
+    Repo.one(query)
   end
 end

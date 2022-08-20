@@ -18,6 +18,9 @@ defmodule UptimeCheckerWeb.Api.V1.InvitationController do
     end
   end
 
+  def join(conn, params) do
+  end
+
   def get(conn, params) do
     with %{invitation: invitation, user: user} <- InvitationService.get_invitation_by_code(params["code"]) do
       conn
