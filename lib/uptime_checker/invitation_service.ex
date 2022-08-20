@@ -28,14 +28,13 @@ defmodule UptimeChecker.InvitationService do
   def get_invitation_by_code(code) do
     Invitation
     |> Repo.get_by(code: code)
-    |> Repo.preload([:role])
     |> Repo.preload([:organization])
     |> case do
       nil ->
         {:error, :not_found}
 
       invitation ->
-        user = Auth.get_by_email(invitation.email)
+        {:ok, user} = Auth.get_by_email(invitation.email)
         %{invitation: invitation, user: user}
     end
   end
