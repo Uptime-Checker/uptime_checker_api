@@ -16,6 +16,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateUsers do
 
       add :firebase_uid, :string
       add :provider, :provider_name, null: false
+      add :last_login_at, :utc_datetime
 
       add :organization_id, references(:organizations, on_delete: :delete_all)
 
@@ -26,5 +27,6 @@ defmodule UptimeChecker.Repo.Migrations.CreateUsers do
     create unique_index(:users, [:firebase_uid])
 
     create index(:users, [:organization_id])
+    create index(:users, [:last_login_at])
   end
 end

@@ -10,6 +10,7 @@ defmodule UptimeChecker.Schema.Customer.User do
     field :password, :string
     field :firebase_uid, :string
     field :picture_url, :string
+    field :last_login_at, :utc_datetime
     field :provider, Ecto.Enum, values: [:email, :google, :apple, :github]
 
     has_many :user_contacts, UserContact
@@ -25,7 +26,7 @@ defmodule UptimeChecker.Schema.Customer.User do
 
   def provider_registration_changeset(user, attrs) do
     user
-    |> cast(attrs, [:name, :email, :password, :firebase_uid, :provider, :picture_url])
+    |> cast(attrs, [:name, :email, :password, :firebase_uid, :provider, :picture_url, :last_login_at])
     |> validate_required([:name, :email, :firebase_uid, :provider])
     |> validate_format(:email, ~r/@/)
     |> validate_length(:name, min: 2, max: 30)
@@ -35,7 +36,7 @@ defmodule UptimeChecker.Schema.Customer.User do
 
   def changeset(user, attrs) do
     user
-    |> cast(attrs, [:name, :email, :password, :firebase_uid, :provider, :organization_id])
+    |> cast(attrs, [:name, :email, :password, :firebase_uid, :provider, :organization_id, :last_login_at])
     |> validate_required([:name, :email, :firebase_uid, :provider, :organization_id])
   end
 
