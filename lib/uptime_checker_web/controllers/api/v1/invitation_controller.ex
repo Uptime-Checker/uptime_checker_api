@@ -21,7 +21,7 @@ defmodule UptimeCheckerWeb.Api.V1.InvitationController do
   def get(conn, params) do
     with %{invitation: invitation, user: user} <- InvitationService.get_invitation_by_code(params["code"]) do
       conn
-      |> render("show.json", invitation: invitation)
+      |> render("show.json", %{invitation: invitation, user: user})
     end
   end
 end
