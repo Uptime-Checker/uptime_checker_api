@@ -86,28 +86,28 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
   end
 
   def email_link_login(conn, params) do
-    {:ok, guest_user} = Auth.verify_email_link_login(params["email"], params["code"])
+    with {:ok, guest_user} <- Auth.verify_email_link_login(params["email"], params["code"]) do
+      with {:ok, user} <- Auth.get_by_email(guest_user.email),
+           {:ok, updated_user} <-
+             Customer.update_user_provider(user, %{
+               firebase_uid: params["firebase_uid"],
+               last_login_at: Timex.now()
+             }) do
+        {:ok, access_token, _claims} = encode_and_sign(updated_user)
 
-    with {:ok, user} <- Auth.get_by_email(guest_user.email),
-         {:ok, updated_user} <-
-           Customer.update_user_provider(user, %{
-             firebase_uid: params["firebase_uid"],
-             last_login_at: Timex.now()
-           }) do
-      {:ok, access_token, _claims} = encode_and_sign(updated_user)
+        conn
+        |> put_status(:accepted)
+        |> json(%{access_token: access_token})
+      else
+        {:error, :not_found} ->
+          with {:ok, %User{} = user} <- Customer.create_user_for_provider(params) do
+            {:ok, access_token, _claims} = encode_and_sign(user)
 
-      conn
-      |> put_status(:accepted)
-      |> json(%{access_token: access_token})
-    else
-      {:error, :not_found} ->
-        with {:ok, %User{} = user} <- Customer.create_user_for_provider(params) do
-          {:ok, access_token, _claims} = encode_and_sign(user)
-
-          conn
-          |> put_status(:created)
-          |> json(%{access_token: access_token})
-        end
+            conn
+            |> put_status(:created)
+            |> json(%{access_token: access_token})
+          end
+      end
     end
   end
 
