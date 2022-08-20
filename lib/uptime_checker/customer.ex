@@ -97,6 +97,11 @@ defmodule UptimeChecker.Customer do
     |> Repo.insert()
   end
 
+  def get_guest_user_by_code(code) do
+    GuestUser
+    |> Repo.get_by(code: code)
+  end
+
   def list_guest_users do
     Repo.all(GuestUser)
   end

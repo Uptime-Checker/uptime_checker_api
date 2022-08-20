@@ -77,6 +77,11 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
     end
   end
 
+  def get_guest_user(conn, params) do
+    guest_user = Customer.get_guest_user_by_code(params["code"])
+    render(conn, "show.json", guest_user: guest_user)
+  end
+
   defp encode_and_sign(user) do
     Guardian.encode_and_sign(user, %{}, token_type: "access", ttl: {180, :day})
   end

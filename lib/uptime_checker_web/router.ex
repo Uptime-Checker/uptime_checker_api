@@ -31,6 +31,7 @@ defmodule UptimeCheckerWeb.Router do
 
     scope "/v1", V1, as: :v1_open do
       get "/status", SettingsController, :status
+      get "/guest_user", UserController, :get_guest_user
 
       post "/register", UserController, :register
       post "/login", UserController, :login
