@@ -1,7 +1,7 @@
 defmodule UptimeChecker.Job.RunChecksOnStarup do
   use Timex
   alias UptimeChecker.WatchDog
-  alias UptimeChecker.Helper.String
+  alias UptimeChecker.Helper.Strings
   alias UptimeChecker.TaskSupervisor
 
   def work() do
@@ -23,7 +23,7 @@ defmodule UptimeChecker.Job.RunChecksOnStarup do
       |> Enum.to_list()
 
     with metadata_after_cursor <- metadata.after do
-      unless String.blank?(metadata_after_cursor) do
+      unless Strings.blank?(metadata_after_cursor) do
         handle_active_monitors(metadata_after_cursor)
       end
     end

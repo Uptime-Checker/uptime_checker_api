@@ -1,4 +1,4 @@
-defmodule UptimeChecker.Helper.String do
+defmodule UptimeChecker.Helper.Strings do
   def blank?(str) do
     case str do
       nil -> true
