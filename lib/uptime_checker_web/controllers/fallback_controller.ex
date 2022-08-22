@@ -6,6 +6,8 @@ defmodule UptimeCheckerWeb.FallbackController do
   """
   use UptimeCheckerWeb, :controller
 
+  alias UptimeChecker.Error.HttpError
+
   # This clause handles errors returned by Ecto's insert/update/delete.
   def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
     conn
@@ -21,14 +23,21 @@ defmodule UptimeCheckerWeb.FallbackController do
 
     error_string = to_string(error)
 
-    if String.contains?(error_string, "not_found") do
-      updated_conn
-      |> put_status(:bad_request)
-      |> render(:"400", message: error_string)
-    else
-      updated_conn
-      |> put_status(:not_found)
-      |> render(:"404", message: error_string)
+    cond do
+      String.contains?(error_string, HttpError.not_found()) ->
+        updated_conn
+        |> put_status(:not_found)
+        |> render(:"404", message: error_string)
+
+      String.contains?(error_string, HttpError.unauthorized()) ->
+        updated_conn
+        |> put_status(:unauthorized)
+        |> render(:"401", message: error_string)
+
+      true ->
+        updated_conn
+        |> put_status(:bad_request)
+        |> render(:"400", message: error_string)
     end
   end
 end

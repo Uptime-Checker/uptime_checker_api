@@ -24,17 +24,12 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
   end
 
   def login(conn, %{"email" => email, "password" => password}) do
-    case Auth.authenticate_user(email, password) do
-      {:ok, user} ->
-        {:ok, access_token, _claims} = encode_and_sign(user)
+    with {:ok, %User{} = user} <- Auth.authenticate_user(email, password) do
+      {:ok, access_token, _claims} = encode_and_sign(user)
 
-        conn
-        |> put_status(:created)
-        |> json(%{access_token: access_token})
-
-      {:error, :unauthorized} ->
-        conn
-        |> send_resp(:unauthorized, Jason.encode!(%{error: "unauthorized"}))
+      conn
+      |> put_status(:accepted)
+      |> json(%{access_token: access_token})
     end
   end
 
