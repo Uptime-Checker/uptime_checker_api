@@ -18,6 +18,6 @@ defmodule UptimeChecker.Schema.MonitorUser do
     |> cast(attrs, [:monitor_id, :user_id])
     |> put_assoc(:monitor, attrs.monitor)
     |> put_assoc(:user, attrs.user)
-    |> unique_constraint([:monitor_id, :user_id])
+    |> unique_constraint([:user_id, :monitor_id])
   end
 end

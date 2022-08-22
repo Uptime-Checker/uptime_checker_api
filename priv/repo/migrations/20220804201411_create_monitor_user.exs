@@ -11,6 +11,6 @@ defmodule UptimeChecker.Repo.Migrations.CreateMonitorUser do
 
     create index(:monitor_user_junction, [:monitor_id])
     create index(:monitor_user_junction, [:user_id])
-    create unique_index(:monitor_user_junction, [:monitor_id, :user_id])
+    create unique_index(:monitor_user_junction, [:user_id, :monitor_id])
   end
 end

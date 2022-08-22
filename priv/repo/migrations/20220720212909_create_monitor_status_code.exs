@@ -11,6 +11,6 @@ defmodule UptimeChecker.Repo.Migrations.CreateMonitorStatusCode do
 
     create index(:monitor_status_code_junction, [:monitor_id])
     create index(:monitor_status_code_junction, [:status_code_id])
-    create unique_index(:monitor_status_code_junction, [:monitor_id, :status_code_id])
+    create unique_index(:monitor_status_code_junction, [:status_code_id, :monitor_id])
   end
 end

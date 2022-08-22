@@ -30,7 +30,7 @@ defmodule UptimeChecker.Schema.WatchDog.MonitorRegion do
       :consequtive_recovery,
       :down
     ])
-    |> unique_constraint([:monitor_id, :region_id])
+    |> unique_constraint([:region_id, :monitor_id])
   end
 
   @allowed_updates [:last_checked_at, :next_check_at, :consequtive_failure, :consequtive_recovery, :down]

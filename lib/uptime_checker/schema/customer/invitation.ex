@@ -21,7 +21,7 @@ defmodule UptimeChecker.Schema.Customer.Invitation do
     |> validate_required([:email, :code, :expires_at])
     |> validate_length(:code, min: 10, max: 30)
     |> unique_constraint(:code)
-    |> unique_constraint([:organization_id, :email])
+    |> unique_constraint([:email, :organization_id])
     |> put_assoc(:role, attrs.role)
     |> put_assoc(:organization, attrs.organization)
   end

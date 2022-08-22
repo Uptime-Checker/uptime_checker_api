@@ -37,7 +37,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateMonitors do
       timestamps()
     end
 
-    create unique_index(:monitors, [:organization_id, :url])
+    create unique_index(:monitors, [:url, :organization_id])
 
     create index(:monitors, [:user_id])
     create index(:monitors, [:organization_id])

@@ -16,6 +16,6 @@ defmodule UptimeChecker.Repo.Migrations.CreateDailyReports do
 
     create index(:daily_reports, [:monitor_id])
     create index(:daily_reports, [:organization_id])
-    create unique_index(:daily_reports, [:monitor_id, :date])
+    create unique_index(:daily_reports, [:date, :monitor_id])
   end
 end

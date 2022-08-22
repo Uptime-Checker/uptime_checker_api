@@ -14,7 +14,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateInvitations do
     end
 
     create unique_index(:invitations, [:code])
-    create unique_index(:invitations, [:organization_id, :email])
+    create unique_index(:invitations, [:email, :organization_id])
 
     create index(:invitations, [:email])
     create index(:invitations, [:expires_at])
