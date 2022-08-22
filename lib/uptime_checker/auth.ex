@@ -2,14 +2,16 @@ defmodule UptimeChecker.Auth do
   use Timex
 
   import Ecto.Query, warn: false
+
   alias UptimeChecker.Repo
+  alias UptimeChecker.Error.{RepoError, ServiceError}
   alias UptimeChecker.Schema.Customer.{User, GuestUser}
 
   def get_by_email(email) do
     query = from u in User, where: u.email == ^email
 
     case Repo.one(query) do
-      nil -> {:error, :not_found}
+      nil -> {:error, RepoError.user_not_found() |> ErrorMessage.not_found(%{email: email})}
       user -> {:ok, user}
     end
   end
@@ -22,12 +24,16 @@ defmodule UptimeChecker.Auth do
         preload: [organization: o]
 
     Repo.one(query)
+    |> case do
+      nil -> {:error, RepoError.user_not_found() |> ErrorMessage.not_found(%{email: email})}
+      user -> {:ok, user}
+    end
   end
 
   def authenticate_user(email, password) do
     with {:ok, user} <- get_by_email(email) do
       case validate_password(password, user.password) do
-        false -> {:error, :unauthorized}
+        false -> {:error, ServiceError.unauthorized() |> ErrorMessage.unauthorized(%{email: email})}
         true -> {:ok, user}
       end
     end
@@ -44,15 +50,15 @@ defmodule UptimeChecker.Auth do
     |> Repo.get_by(code: code)
     |> case do
       nil ->
-        {:error, :not_found}
+        {:error, RepoError.guest_user_not_found() |> ErrorMessage.forbidden(%{code: code})}
 
       guest_user ->
         cond do
           guest_user.email != email ->
-            {:error, :email_mismatch}
+            {:error, ServiceError.email_mismatch() |> ErrorMessage.forbidden(%{email: email})}
 
           Timex.after?(now, guest_user.expires_at) ->
-            {:error, :code_expired}
+            {:error, ServiceError.code_expired() |> ErrorMessage.bad_request(%{code: code})}
 
           true ->
             {:ok, guest_user}
@@ -72,6 +78,10 @@ defmodule UptimeChecker.Auth do
   def get_guest_user_by_code(code) do
     GuestUser
     |> Repo.get_by(code: code)
+    |> case do
+      nil -> {:error, RepoError.guest_user_not_found() |> ErrorMessage.not_found(%{code: code})}
+      guest_user -> {:ok, guest_user}
+    end
   end
 
   def list_guest_users do

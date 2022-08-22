@@ -30,12 +30,12 @@ defmodule UptimeCheckerWeb.FallbackController do
     error_string = to_string(error)
 
     cond do
-      String.contains?(error_string, to_string(HttpError.not_found())) ->
+      String.contains?(error_string, HttpError.not_found()) ->
         updated_conn
         |> put_status(:not_found)
         |> render(:"404", message: error_string)
 
-      String.contains?(error_string, to_string(HttpError.unauthorized())) ->
+      String.contains?(error_string, HttpError.unauthorized()) ->
         updated_conn
         |> put_status(:unauthorized)
         |> render(:"401", message: error_string)

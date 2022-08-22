@@ -51,7 +51,7 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
       |> put_status(:accepted)
       |> json(%{access_token: access_token})
     else
-      {:error, :not_found} ->
+      {:error, %ErrorMessage{code: :not_found} = _e} ->
         updated_params = firebase_user |> Map.put(:provider, params["provider"])
 
         with {:ok, %User{} = user} <- Customer.create_user_for_provider(updated_params) do
@@ -78,8 +78,9 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
   end
 
   def get_guest_user(conn, params) do
-    guest_user = Auth.get_guest_user_by_code(params["code"])
-    render(conn, "show.json", guest_user: guest_user)
+    with {:ok, %GuestUser{} = guest_user} <- Auth.get_guest_user_by_code(params["code"]) do
+      render(conn, "show.json", guest_user: guest_user)
+    end
   end
 
   def email_link_login(conn, params) do
@@ -97,7 +98,7 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
         |> put_status(:accepted)
         |> json(%{access_token: access_token})
       else
-        {:error, :not_found} ->
+        {:error, %ErrorMessage{code: :not_found} = _e} ->
           with {:ok, %User{} = user} <- Customer.create_user_for_provider(params) do
             access_token = after_email_link_login_successful(guest_user, user)
 
