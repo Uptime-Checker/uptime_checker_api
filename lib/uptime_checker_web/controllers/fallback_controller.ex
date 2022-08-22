@@ -14,18 +14,21 @@ defmodule UptimeCheckerWeb.FallbackController do
     |> render("error.json", changeset: changeset)
   end
 
-  # This clause is an example of how to handle resources that cannot be found.
-  def call(conn, {:error, :not_found}) do
-    conn
-    |> put_status(:not_found)
-    |> put_view(UptimeCheckerWeb.ErrorView)
-    |> render(:"404", message: to_string(:not_found))
-  end
-
   def call(conn, {:error, error}) do
-    conn
-    |> put_status(:bad_request)
-    |> put_view(UptimeCheckerWeb.ErrorView)
-    |> render(:"400", message: to_string(error))
+    updated_conn =
+      conn
+      |> put_view(UptimeCheckerWeb.ErrorView)
+
+    error_string = to_string(error)
+
+    if String.contains?(error_string, "not_found") do
+      updated_conn
+      |> put_status(:bad_request)
+      |> render(:"400", message: error_string)
+    else
+      updated_conn
+      |> put_status(:not_found)
+      |> render(:"404", message: error_string)
+    end
   end
 end
