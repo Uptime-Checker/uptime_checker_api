@@ -11,6 +11,10 @@ defmodule UptimeCheckerWeb.ErrorView do
     %{error: message}
   end
 
+  def render("401.json", %{message: message} = _assigns) do
+    %{error: message}
+  end
+
   def render("400.json", %{message: message} = _assigns) do
     %{error: message}
   end
