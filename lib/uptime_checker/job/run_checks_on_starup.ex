@@ -1,4 +1,4 @@
-defmodule UptimeChecker.Job.RunChecksOnStarup do
+defmodule UptimeChecker.Job.RunChecksOnStartup do
   use Timex
   alias UptimeChecker.WatchDog
   alias UptimeChecker.Helper.Strings

@@ -5,7 +5,7 @@ defmodule UptimeChecker.Worker.RunChecksOnStartupAsync do
   @impl true
   def perform(%Oban.Job{args: %{}}) do
     try do
-      UptimeChecker.Job.RunChecksOnStarup.work()
+      UptimeChecker.Job.RunChecksOnStartup.work()
     rescue
       e ->
         Logger.error(e)
