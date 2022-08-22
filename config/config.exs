@@ -13,7 +13,7 @@ config :uptime_checker,
 # Configures the endpoint
 config :uptime_checker, UptimeCheckerWeb.Endpoint,
   url: [host: "localhost"],
-  render_errors: [view: UptimeCheckerWeb.ErrorView, accepts: ~w(html json), layout: false],
+  render_errors: [view: UptimeCheckerWeb.ErrorView, accepts: ~w(json), layout: false],
   pubsub_server: UptimeChecker.PubSub,
   live_view: [signing_salt: "kLGCLap0"]
 
