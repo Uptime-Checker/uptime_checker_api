@@ -1,6 +1,8 @@
 defmodule UptimeChecker.Authorization do
   import Ecto.Query, warn: false
+
   alias UptimeChecker.Repo
+  alias UptimeChecker.Error.RepoError
   alias UptimeChecker.Schema.Customer.Role
 
   def create_role(attrs \\ %{}) do
@@ -10,6 +12,15 @@ defmodule UptimeChecker.Authorization do
   end
 
   def get_role!(id), do: Repo.get!(Role, id)
+
+  def get_role(id) do
+    Role
+    |> Repo.get(id)
+    |> case do
+      nil -> {:error, RepoError.role_not_found() |> ErrorMessage.not_found(%{id: id})}
+      role -> {:ok, role}
+    end
+  end
 
   def list_roles do
     Repo.all(Role)

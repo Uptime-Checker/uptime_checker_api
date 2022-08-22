@@ -12,9 +12,7 @@ defmodule UptimeChecker.Guardian do
   end
 
   def resource_from_claims(%{"sub" => id}) do
-    customer = Customer.get_customer_by_id(id)
-
-    {:ok, customer}
+    Customer.get_customer_by_id(id)
   end
 
   def resource_from_claims(_claims) do

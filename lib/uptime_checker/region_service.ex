@@ -1,10 +1,17 @@
 defmodule UptimeChecker.RegionService do
   import Ecto.Query, warn: false
+
   alias UptimeChecker.Repo
   alias UptimeChecker.Schema.Region
+  alias UptimeChecker.Error.RepoError
 
   def get_default_region() do
-    Region |> Repo.get_by(default: true)
+    Region
+    |> Repo.get_by(default: true)
+    |> case do
+      nil -> {:error, RepoError.region_not_found() |> ErrorMessage.not_found(%{default: true})}
+      organization -> {:ok, organization}
+    end
   end
 
   def list_regions do

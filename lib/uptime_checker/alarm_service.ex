@@ -7,6 +7,7 @@ defmodule UptimeChecker.AlarmService do
   alias UptimeChecker.Worker
   alias UptimeChecker.Helper.Times
   alias UptimeChecker.TaskSupervisor
+  alias UptimeChecker.Error.RepoError
   alias UptimeChecker.Schema.WatchDog.Alarm
   alias UptimeChecker.{WatchDog, DailyReport}
 
@@ -25,7 +26,7 @@ defmodule UptimeChecker.AlarmService do
     down_monitor_region_count = WatchDog.count_monitor_region_by_status(check.monitor_id, true)
 
     case alarm do
-      nil ->
+      {:error, %ErrorMessage{code: :not_found} = _e} ->
         if down_monitor_region_count >= check.monitor.region_threshold do
           params =
             %{}
@@ -45,7 +46,7 @@ defmodule UptimeChecker.AlarmService do
           Logger.debug("#{tracing_id}, Region threshold did not raise alarm, down count: #{down_monitor_region_count}")
         end
 
-      %Alarm{} = alarm ->
+      {:ok, %Alarm{} = alarm} ->
         Logger.debug("#{tracing_id}, Alarm already there, #{alarm.id} |> #{alarm.ongoing}")
     end
   end
@@ -56,10 +57,10 @@ defmodule UptimeChecker.AlarmService do
     up_monitor_region_count = WatchDog.count_monitor_region_by_status(check.monitor_id, false)
 
     case alarm do
-      nil ->
+      {:error, %ErrorMessage{code: :not_found} = _e} ->
         Logger.debug("#{tracing_id}, No active alarm to resolve, check #{check.id}")
 
-      %Alarm{} = alarm ->
+      {:ok, %Alarm{} = alarm} ->
         if up_monitor_region_count >= check.monitor.region_threshold do
           with {:ok, updated_alarm} <- resolve_alarm(check.monitor, alarm, now, check) do
             update_duration_in_daily_report_async(check.organization, check.monitor, updated_alarm)
@@ -73,7 +74,12 @@ defmodule UptimeChecker.AlarmService do
   end
 
   def get_ongoing_alarm(monitor_id) do
-    Alarm |> Repo.get_by(monitor_id: monitor_id, ongoing: true)
+    Alarm
+    |> Repo.get_by(monitor_id: monitor_id, ongoing: true)
+    |> case do
+      nil -> {:error, RepoError.alarm_not_found() |> ErrorMessage.not_found(%{monitor_id: monitor_id})}
+      alarm -> {:ok, alarm}
+    end
   end
 
   def get_alarm_by_id(id) do
@@ -85,6 +91,10 @@ defmodule UptimeChecker.AlarmService do
         preload: [monitor: m, triggered_by: t]
 
     Repo.one(query)
+    |> case do
+      nil -> {:error, RepoError.alarm_not_found() |> ErrorMessage.not_found(%{id: id})}
+      alarm -> {:ok, alarm}
+    end
   end
 
   defp create_alarm(monitor, attrs) do

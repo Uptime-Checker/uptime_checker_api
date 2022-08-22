@@ -7,6 +7,7 @@ defmodule UptimeChecker.InvitationService do
   alias UptimeChecker.Authorization
   alias UptimeChecker.Helper.Strings
   alias UptimeChecker.Schema.Customer.Invitation
+  alias UptimeChecker.Error.{RepoError, ServiceError}
 
   def create_invitation(attrs \\ %{}, organization) do
     now = Timex.now()
@@ -26,36 +27,31 @@ defmodule UptimeChecker.InvitationService do
   end
 
   def get_invitation_by_code(code) do
-    get_invitation_with_org_from_code(code)
-    |> case do
-      nil ->
-        {:error, :not_found}
+    with {:ok, invitation} <- get_invitation_with_org_from_code(code) do
+      case Auth.get_by_email_with_org(invitation.email) do
+        {:ok, user} ->
+          %{invitation: invitation, user: user}
 
-      invitation ->
-        user = Auth.get_by_email_with_org(invitation.email)
-        %{invitation: invitation, user: user}
+        {:error, %ErrorMessage{code: :not_found} = _e} ->
+          %{invitation: invitation}
+      end
     end
   end
 
   def verify_invitation(email, code) do
     now = Timex.now()
 
-    get_invitation_with_org_from_code(code)
-    |> case do
-      nil ->
-        {:error, :not_found}
+    with {:ok, invitation} <- get_invitation_with_org_from_code(code) do
+      cond do
+        invitation.email != email ->
+          {:error, ServiceError.email_mismatch() |> ErrorMessage.forbidden(%{email: email})}
 
-      invitation ->
-        cond do
-          invitation.email != email ->
-            {:error, :email_mismatch}
+        Timex.after?(now, invitation.expires_at) ->
+          {:error, ServiceError.code_expired() |> ErrorMessage.bad_request(%{code: code})}
 
-          Timex.after?(now, invitation.expires_at) ->
-            {:error, :code_expired}
-
-          true ->
-            {:ok, invitation}
-        end
+        true ->
+          {:ok, invitation}
+      end
     end
   end
 
@@ -63,9 +59,14 @@ defmodule UptimeChecker.InvitationService do
     query =
       from invitation in Invitation,
         left_join: o in assoc(invitation, :organization),
+        left_join: r in assoc(invitation, :role),
         where: invitation.code == ^code,
-        preload: [organization: o]
+        preload: [organization: o, role: r]
 
     Repo.one(query)
+    |> case do
+      nil -> {:error, RepoError.invitation_not_found() |> ErrorMessage.not_found(%{code: code})}
+      invitation -> {:ok, invitation}
+    end
   end
 end

@@ -4,12 +4,16 @@ defmodule UptimeChecker.Customer do
   """
   import Ecto.Query, warn: false
   alias UptimeChecker.Repo
+  alias UptimeChecker.Error.RepoError
   alias UptimeChecker.Schema.Customer.{Organization, User, UserContact}
 
-  def get_organization(id), do: Repo.get(Organization, id)
-
   def get_organization_by_slug(slug) do
-    Organization |> Repo.get_by(slug: slug)
+    Organization
+    |> Repo.get_by(slug: slug)
+    |> case do
+      nil -> {:error, RepoError.organization_not_found() |> ErrorMessage.not_found(%{slug: slug})}
+      organization -> {:ok, organization}
+    end
   end
 
   def create_organization(attrs \\ %{}, user) do
@@ -70,6 +74,10 @@ defmodule UptimeChecker.Customer do
         preload: [organization: o]
 
     Repo.one(query)
+    |> case do
+      nil -> {:error, RepoError.user_not_found() |> ErrorMessage.not_found(%{id: id})}
+      user -> {:ok, user}
+    end
   end
 
   def update_user_provider(%User{} = user, attrs) do
@@ -81,5 +89,9 @@ defmodule UptimeChecker.Customer do
   def get_user_contact_by_id(id) do
     UserContact
     |> Repo.get(id)
+    |> case do
+      nil -> {:error, RepoError.user_contact_not_found() |> ErrorMessage.not_found(%{id: id})}
+      user_contact -> {:ok, user_contact}
+    end
   end
 end
