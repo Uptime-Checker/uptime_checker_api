@@ -68,7 +68,7 @@ defmodule UptimeChecker.AlarmService do
 
           Worker.ScheduleNotificationAsync.enqueue(alarm)
         else
-          Logger.debug("#{tracing_id}, Region threshold did not raise alarm, up count: #{up_monitor_region_count}")
+          Logger.debug("#{tracing_id}, Region threshold did not resolve alarm, up count: #{up_monitor_region_count}")
         end
     end
   end
