@@ -18,27 +18,6 @@ defmodule UptimeCheckerWeb.Api.V1.InvitationController do
     end
   end
 
-  def join(conn, params) do
-    with {:ok, invitation} <- InvitationService.verify_invitation(params["email"], params["code"]) do
-      with {:ok, user} <- Auth.get_by_email_with_org(invitation.email) do
-        access_token = after_email_link_login_successful(guest_user, updated_user)
-
-        conn
-        |> put_status(:accepted)
-        |> json(%{access_token: access_token})
-      else
-        {:error, :not_found} ->
-          with {:ok, %User{} = user} <- Customer.create_user_for_provider(params) do
-            access_token = after_email_link_login_successful(guest_user, user)
-
-            conn
-            |> put_status(:created)
-            |> json(%{access_token: access_token})
-          end
-      end
-    end
-  end
-
   def get(conn, params) do
     with %{invitation: invitation, user: user} <- InvitationService.get_invitation_by_code(params["code"]) do
       conn
