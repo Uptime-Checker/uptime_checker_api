@@ -8,6 +8,7 @@ defmodule UptimeChecker.WatchDog do
   alias UptimeChecker.Repo
   alias UptimeChecker.Customer
   alias UptimeChecker.RegionService
+  alias UptimeChecker.Error.RepoError
   alias UptimeChecker.Schema.MonitorUser
   alias UptimeChecker.Schema.Customer.User
   alias UptimeChecker.Schema.WatchDog.{Monitor, Check, MonitorRegion, ErrorLog}
@@ -29,6 +30,10 @@ defmodule UptimeChecker.WatchDog do
         preload: [monitor: {m, organization: o, status_codes: status_codes}, region: r]
 
     Repo.one(query)
+    |> case do
+      nil -> {:error, RepoError.monitor_region_not_found() |> ErrorMessage.not_found(%{id: id})}
+      monitor_region -> {:ok, monitor_region}
+    end
   end
 
   def create_monitor(attrs \\ %{}, user) do
@@ -101,16 +106,12 @@ defmodule UptimeChecker.WatchDog do
 
   def create_monitor_users(monitor, user_ids) do
     Enum.each(user_ids, fn user_id ->
-      case Customer.get_customer_by_id(user_id) do
-        %User{} = user ->
-          if monitor.organization_id == user.organization_id do
-            %MonitorUser{}
-            |> MonitorUser.changeset(%{monitor: monitor, user: user})
-            |> Repo.insert()
-          end
-
-        nil ->
-          nil
+      with {:ok, %User{} = user} <- Customer.get_customer_by_id(user_id) do
+        if monitor.organization_id == user.organization_id do
+          %MonitorUser{}
+          |> MonitorUser.changeset(%{monitor: monitor, user: user})
+          |> Repo.insert()
+        end
       end
     end)
   end
