@@ -1,6 +1,8 @@
 defmodule UptimeCheckerWeb.Plugs.HeaderAuth do
   import Plug.Conn
+
   alias UptimeChecker.Constant
+  alias UptimeChecker.Error.HttpError
 
   def init(opts), do: opts
 
@@ -11,7 +13,7 @@ defmodule UptimeCheckerWeb.Plugs.HeaderAuth do
     |> case do
       false ->
         conn
-        |> send_resp(:unauthorized, Jason.encode!(%{error: UptimeChecker.Constant.HttpError.unauthorized()}))
+        |> send_resp(:unauthorized, Jason.encode!(%{error: HttpError.unauthorized()}))
         |> halt()
 
       true ->
