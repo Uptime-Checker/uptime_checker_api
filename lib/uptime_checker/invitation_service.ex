@@ -1,7 +1,8 @@
 defmodule UptimeChecker.InvitationService do
+  require Logger
   import Ecto.Query, warn: false
-  alias UptimeChecker.Repo
 
+  alias UptimeChecker.Repo
   alias UptimeChecker.Auth
   alias UptimeChecker.Helper.Util
   alias UptimeChecker.Authorization
@@ -83,8 +84,9 @@ defmodule UptimeChecker.InvitationService do
       {:ok, %{user: user, user_contact: _user_contact, organization_user: organization_user}} ->
         {:ok, user, organization_user}
 
-      {:error, _name, changeset, _changes_so_far} ->
-        {:error, changeset}
+      {:error, name, changeset, _changes_so_far} ->
+        Logger.error("Failed to join new user #{inspect(attrs)}, error: #{inspect(changeset.errors)}")
+        {:error, name, changeset}
     end
   end
 

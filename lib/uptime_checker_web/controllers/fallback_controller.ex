@@ -16,7 +16,16 @@ defmodule UptimeCheckerWeb.FallbackController do
     |> render("error.json", changeset: changeset)
   end
 
+  # This clause handles errors returned by Ecto's multi.
   def call(conn, {:error, name, %Ecto.Changeset{} = changeset}) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> put_view(UptimeCheckerWeb.ChangesetView)
+    |> render("error.json", name: name, changeset: changeset)
+  end
+
+  # This clause handles errors returned by Ecto's multi.
+  def call(conn, {:error, name, %Ecto.Changeset{} = changeset, _changes_so_far}) do
     conn
     |> put_status(:unprocessable_entity)
     |> put_view(UptimeCheckerWeb.ChangesetView)

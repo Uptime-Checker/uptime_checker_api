@@ -2,7 +2,9 @@ defmodule UptimeChecker.Customer do
   @moduledoc """
   The Customer context.
   """
+  require Logger
   import Ecto.Query, warn: false
+
   alias UptimeChecker.Repo
   alias UptimeChecker.Authorization
   alias UptimeChecker.Error.RepoError
@@ -37,6 +39,7 @@ defmodule UptimeChecker.Customer do
         {:ok, organization}
 
       {:error, name, changeset, _changes_so_far} ->
+        Logger.error("Failed to create organization for user #{user.id}, error: #{inspect(changeset.errors)}")
         {:error, name, changeset}
     end
   end
@@ -70,8 +73,9 @@ defmodule UptimeChecker.Customer do
       {:ok, %{user: user, user_contact: _user_contact}} ->
         {:ok, user}
 
-      {:error, _name, changeset, _changes_so_far} ->
-        {:error, changeset}
+      {:error, name, updated_changeset, _changes_so_far} ->
+        Logger.error("Failed to add user, error: #{inspect(updated_changeset.errors)}")
+        {:error, name, updated_changeset}
     end
   end
 
