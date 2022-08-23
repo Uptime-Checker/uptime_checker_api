@@ -4,6 +4,8 @@ defmodule UptimeChecker.Repo.Migrations.CreateSubscriptions do
   def change do
     create table(:subscriptions) do
       add :expires_at, :utc_datetime
+      add :cancelled_at, :utc_datetime
+      add :is_trial, :boolean, default: false
 
       add :plan_id, references(:plans)
       add :product_id, references(:products)

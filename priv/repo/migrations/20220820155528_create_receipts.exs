@@ -6,6 +6,10 @@ defmodule UptimeChecker.Repo.Migrations.CreateReceipts do
       add :price, :float, null: false
       add :external_id, :string
       add :paid, :boolean, default: false
+      add :paid_at, :utc_datetime
+      add :from, :date
+      add :to, :date
+      add :is_trial, :boolean, default: false
 
       add :plan_id, references(:plans)
       add :product_id, references(:products)

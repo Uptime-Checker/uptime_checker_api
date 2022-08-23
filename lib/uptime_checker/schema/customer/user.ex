@@ -2,7 +2,7 @@ defmodule UptimeChecker.Schema.Customer.User do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias UptimeChecker.Schema.Customer.{Organization, UserContact}
+  alias UptimeChecker.Schema.Customer.{Organization, UserContact, Role}
 
   schema "users" do
     field :email, :string
@@ -15,6 +15,7 @@ defmodule UptimeChecker.Schema.Customer.User do
 
     has_many :user_contacts, UserContact
     belongs_to :organization, Organization
+    belongs_to :role, Role
 
     timestamps(type: :utc_datetime)
   end

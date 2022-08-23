@@ -69,9 +69,10 @@ defmodule UptimeChecker.Customer do
   def get_customer_by_id(id) do
     query =
       from user in User,
+        left_join: r in assoc(user, :role),
         left_join: o in assoc(user, :organization),
         where: user.id == ^id,
-        preload: [organization: o]
+        preload: [organization: o, role: r]
 
     Repo.one(query)
     |> case do

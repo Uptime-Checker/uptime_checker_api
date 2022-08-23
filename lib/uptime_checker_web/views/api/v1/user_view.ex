@@ -1,5 +1,7 @@
 defmodule UptimeCheckerWeb.Api.V1.UserView do
   use UptimeCheckerWeb, :view
+
+  alias UptimeCheckerWeb.Api.V1.RoleView
   alias UptimeCheckerWeb.Api.V1.UserView
   alias UptimeCheckerWeb.Api.V1.OrganizationView
 
@@ -16,6 +18,7 @@ defmodule UptimeCheckerWeb.Api.V1.UserView do
       id: user.id,
       name: user.name,
       email: user.email,
+      role: render_role(user.role),
       organization: render_org(user.organization)
     }
   end
@@ -36,4 +39,10 @@ defmodule UptimeCheckerWeb.Api.V1.UserView do
   end
 
   defp render_org(_org), do: nil
+
+  defp render_role(%{:id => _id} = role) do
+    render_one(role, RoleView, "role.json")
+  end
+
+  defp render_role(_role), do: nil
 end
