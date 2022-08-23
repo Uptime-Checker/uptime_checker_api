@@ -17,6 +17,7 @@ RegionService.create_region(%{name: "Frankfurt, Germany", key: "fra"})
 RegionService.create_region(%{name: "Tokyo, Japan", key: "nrt"})
 RegionService.create_region(%{name: "Sydney, Australia", key: "syd"})
 
+Authorization.create_role(%{name: "Super Admin", type: :superadmin})
 Authorization.create_role(%{name: "Admin", type: :admin})
 Authorization.create_role(%{name: "Editor", type: :editor})
 Authorization.create_role(%{name: "Member", type: :member})

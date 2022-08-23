@@ -56,7 +56,11 @@ defmodule UptimeChecker.InvitationService do
   end
 
   def join_new_user(attrs, invitation) do
-    user_params = Util.key_to_atom(attrs) |> Map.put(:organization_id, invitation.organization.id)
+    user_params =
+      Util.key_to_atom(attrs)
+      |> Map.put(:role_id, invitation.organization.role.id)
+      |> Map.put(:organization_id, invitation.organization.id)
+
     organization_user_params = %{organization: invitation.organization, role: invitation.role}
 
     Ecto.Multi.new()

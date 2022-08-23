@@ -4,8 +4,9 @@ defmodule UptimeChecker.Customer do
   """
   import Ecto.Query, warn: false
   alias UptimeChecker.Repo
+  alias UptimeChecker.Authorization
   alias UptimeChecker.Error.RepoError
-  alias UptimeChecker.Schema.Customer.{Organization, User, UserContact}
+  alias UptimeChecker.Schema.Customer.{Organization, User, UserContact, OrganizationUser}
 
   def get_organization_by_slug(slug) do
     Organization
@@ -17,15 +18,23 @@ defmodule UptimeChecker.Customer do
   end
 
   def create_organization(attrs \\ %{}, user) do
+    role = Authorization.get_role_by_type!(:superadmin)
+
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:organization, Organization.changeset(%Organization{}, attrs))
     |> Ecto.Multi.update(:user, fn %{organization: organization} ->
-      Ecto.Changeset.change(user, organization_id: organization.id)
+      Ecto.Changeset.change(user, organization_id: organization.id, role_id: role.id)
     end)
+    |> Ecto.Multi.insert(
+      :organization_user,
+      fn %{organization: organization, user: user} ->
+        OrganizationUser.changeset(%OrganizationUser{}, %{organization: organization, user: user, role: role})
+      end
+    )
     |> Repo.transaction()
     |> case do
-      {:ok, %{organization: organization, user: user}} ->
-        {:ok, organization, user}
+      {:ok, %{organization: organization, user: _user, organization_user: _organization_user}} ->
+        {:ok, organization}
 
       {:error, _name, changeset, _changes_so_far} ->
         {:error, changeset}
