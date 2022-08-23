@@ -1,6 +1,13 @@
 defmodule UptimeCheckerWeb.ChangesetView do
   use UptimeCheckerWeb, :view
 
+  def format_changeset_errors(%Ecto.Changeset{} = changeset) do
+    translate_errors(changeset)
+    |> Enum.map(fn {key, value} ->
+      {to_string(key), Enum.at(value, 0)}
+    end)
+  end
+
   @doc """
   Traverses and translates changeset errors.
 
