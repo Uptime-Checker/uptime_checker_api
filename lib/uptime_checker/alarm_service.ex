@@ -62,8 +62,13 @@ defmodule UptimeChecker.AlarmService do
 
       {:ok, %Alarm{} = alarm} ->
         if up_monitor_region_count >= check.monitor.region_threshold do
-          with {:ok, updated_alarm} <- resolve_alarm(check.monitor, alarm, now, check) do
-            update_duration_in_daily_report_async(check.organization, check.monitor, updated_alarm)
+          case resolve_alarm(check.monitor, alarm, now, check) do
+            {:ok, updated_alarm} ->
+              Logger.info("#{tracing_id} Alarm resolved #{alarm.id}, monitor: #{check.monitor.id}")
+              update_duration_in_daily_report_async(check.organization, check.monitor, updated_alarm)
+
+            {:error, %Ecto.Changeset{} = changeset} ->
+              Logger.error("#{tracing_id}, Failed to resolve alarm, error: #{inspect(changeset.errors)}")
           end
 
           Worker.ScheduleNotificationAsync.enqueue(alarm)
