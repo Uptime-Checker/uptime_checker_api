@@ -7,7 +7,7 @@ defmodule UptimeChecker.InvitationService do
   alias UptimeChecker.Authorization
   alias UptimeChecker.Helper.Strings
   alias UptimeChecker.Error.{RepoError, ServiceError}
-  alias UptimeChecker.Schema.Customer.{Organization, User, UserContact, OrganizationUser, Invitation}
+  alias UptimeChecker.Schema.Customer.{User, UserContact, OrganizationUser, Invitation}
 
   def create_invitation(attrs \\ %{}, organization) do
     now = Timex.now()

@@ -3,7 +3,7 @@ defmodule UptimeCheckerWeb.Api.V1.InvitationController do
 
   alias UptimeChecker.Auth
   alias UptimeChecker.TaskSupervisor
-  alias UptimeChecker.{Customer, InvitationService}
+  alias UptimeChecker.InvitationService
   alias UptimeChecker.Schema.Customer.{User, Invitation, OrganizationUser}
 
   plug UptimeCheckerWeb.Plugs.Org when action in [:create]
