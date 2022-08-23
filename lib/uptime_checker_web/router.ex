@@ -39,6 +39,8 @@ defmodule UptimeCheckerWeb.Router do
       post "/provider_login", UserController, :provider_login
       post "/guest_user", UserController, :guest_user
       post "/email_link_login", UserController, :email_link_login
+
+      post "/join_new_invitation", InvitationController, :join
     end
 
     scope "/v1", V1, as: :v1 do

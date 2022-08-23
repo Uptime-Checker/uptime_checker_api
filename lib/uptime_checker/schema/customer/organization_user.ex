@@ -4,7 +4,7 @@ defmodule UptimeChecker.Schema.Customer.OrganizationUser do
 
   alias UptimeChecker.Schema.Customer.{Organization, User, Role}
 
-  schema "organization_users" do
+  schema "organization_user_junction" do
     belongs_to :user, User
     belongs_to :role, Role
     belongs_to :organization, Organization

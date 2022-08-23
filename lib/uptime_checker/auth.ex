@@ -4,6 +4,7 @@ defmodule UptimeChecker.Auth do
   import Ecto.Query, warn: false
 
   alias UptimeChecker.Repo
+  alias UptimeChecker.Guardian
   alias UptimeChecker.Error.{RepoError, ServiceError}
   alias UptimeChecker.Schema.Customer.{User, GuestUser}
 
@@ -90,5 +91,9 @@ defmodule UptimeChecker.Auth do
 
   def delete_guest_user(%GuestUser{} = guest_user) do
     Repo.delete(guest_user)
+  end
+
+  def encode_and_sign(user) do
+    Guardian.encode_and_sign(user, %{}, token_type: "access", ttl: {180, :day})
   end
 end

@@ -4,7 +4,6 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
 
   alias UptimeChecker.Auth
   alias UptimeChecker.Customer
-  alias UptimeChecker.Guardian
   alias UptimeChecker.TaskSupervisor
   alias UptimeChecker.Module.Firebase
   alias UptimeChecker.Schema.Customer.{User, GuestUser}
@@ -15,7 +14,7 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
     updated_params = params |> Map.put("name", name_from_email(params["email"]))
 
     with {:ok, %User{} = user} <- Customer.create_user(updated_params) do
-      {:ok, access_token, _claims} = encode_and_sign(user)
+      {:ok, access_token, _claims} = Auth.encode_and_sign(user)
 
       conn
       |> put_status(:created)
@@ -25,7 +24,7 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
 
   def login(conn, %{"email" => email, "password" => password}) do
     with {:ok, %User{} = user} <- Auth.authenticate_user(email, password) do
-      {:ok, access_token, _claims} = encode_and_sign(user)
+      {:ok, access_token, _claims} = Auth.encode_and_sign(user)
 
       conn
       |> put_status(:accepted)
@@ -45,7 +44,7 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
              provider: params["provider"],
              last_login_at: Timex.now()
            }) do
-      {:ok, access_token, _claims} = encode_and_sign(updated_user)
+      {:ok, access_token, _claims} = Auth.encode_and_sign(updated_user)
 
       conn
       |> put_status(:accepted)
@@ -55,7 +54,7 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
         updated_params = firebase_user |> Map.put(:provider, params["provider"])
 
         with {:ok, %User{} = user} <- Customer.create_user_for_provider(updated_params) do
-          {:ok, access_token, _claims} = encode_and_sign(user)
+          {:ok, access_token, _claims} = Auth.encode_and_sign(user)
 
           conn
           |> put_status(:created)
@@ -112,11 +111,7 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
 
   defp after_email_link_login_successful(guest_user, user) do
     Task.Supervisor.start_child(TaskSupervisor, Auth, :delete_guest_user, [guest_user], restart: :transient)
-    {:ok, access_token, _claims} = encode_and_sign(user)
+    {:ok, access_token, _claims} = Auth.encode_and_sign(user)
     access_token
-  end
-
-  defp encode_and_sign(user) do
-    Guardian.encode_and_sign(user, %{}, token_type: "access", ttl: {180, :day})
   end
 end

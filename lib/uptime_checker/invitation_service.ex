@@ -6,8 +6,8 @@ defmodule UptimeChecker.InvitationService do
   alias UptimeChecker.Helper.Util
   alias UptimeChecker.Authorization
   alias UptimeChecker.Helper.Strings
-  alias UptimeChecker.Schema.Customer.Invitation
   alias UptimeChecker.Error.{RepoError, ServiceError}
+  alias UptimeChecker.Schema.Customer.{User, Invitation, OrganizationUser}
 
   def create_invitation(attrs \\ %{}, organization) do
     now = Timex.now()
@@ -53,6 +53,31 @@ defmodule UptimeChecker.InvitationService do
           {:ok, invitation}
       end
     end
+  end
+
+  def join_new_user(attrs, invitation) do
+    organization_user_params = %{organization: invitation.organization, role: invitation.role}
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:user, User.join_user_changeset(%User{}, attrs))
+    |> Ecto.Multi.insert(
+      :organization_user,
+      fn %{user: user} ->
+        OrganizationUser.changeset(%OrganizationUser{}, organization_user_params |> Map.put(:user, user))
+      end
+    )
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{user: user, organization_user: organization_user}} ->
+        {:ok, user, organization_user}
+
+      {:error, _name, changeset, _changes_so_far} ->
+        {:error, changeset}
+    end
+  end
+
+  def delete_invitation(%Invitation{} = invitation) do
+    Repo.delete(invitation)
   end
 
   defp get_invitation_with_org_from_code(code) do
