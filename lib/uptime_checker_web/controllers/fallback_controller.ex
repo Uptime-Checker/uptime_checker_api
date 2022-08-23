@@ -16,6 +16,13 @@ defmodule UptimeCheckerWeb.FallbackController do
     |> render("error.json", changeset: changeset)
   end
 
+  def call(conn, {:error, name, %Ecto.Changeset{} = changeset}) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> put_view(UptimeCheckerWeb.ChangesetView)
+    |> render("error.json", name: name, changeset: changeset)
+  end
+
   def call(conn, {:error, %ErrorMessage{code: code} = e}) do
     conn
     |> put_status(code)

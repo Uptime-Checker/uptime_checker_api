@@ -36,8 +36,8 @@ defmodule UptimeChecker.Customer do
       {:ok, %{organization: organization, user: _user, organization_user: _organization_user}} ->
         {:ok, organization}
 
-      {:error, _name, changeset, _changes_so_far} ->
-        {:error, changeset}
+      {:error, name, changeset, _changes_so_far} ->
+        {:error, name, changeset}
     end
   end
 
