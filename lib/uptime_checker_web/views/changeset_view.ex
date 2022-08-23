@@ -3,8 +3,8 @@ defmodule UptimeCheckerWeb.ChangesetView do
 
   def format_changeset_errors(name, %Ecto.Changeset{} = changeset) do
     translate_errors(changeset)
-    |> Enum.map(fn {key, value} ->
-      %{schema: name, field: to_string(key), messages: value}
+    |> Enum.reduce(%{}, fn {key, value}, acc ->
+      Map.put(acc, "#{name}:#{key}", value)
     end)
   end
 
