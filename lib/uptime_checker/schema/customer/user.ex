@@ -32,7 +32,7 @@ defmodule UptimeChecker.Schema.Customer.User do
 
   def join_user_changeset(user, attrs) do
     user
-    |> cast(attrs, [:name, :email, :password, :firebase_uid, :provider, :picture_url, :last_login_at])
+    |> cast(attrs, [:name, :email, :password, :firebase_uid, :provider, :organization_id, :picture_url, :last_login_at])
     |> validate_required([:name, :email, :provider])
     |> validate_format(:email, ~r/@/)
     |> validate_length(:name, min: 2, max: 30)

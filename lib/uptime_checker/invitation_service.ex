@@ -7,7 +7,7 @@ defmodule UptimeChecker.InvitationService do
   alias UptimeChecker.Authorization
   alias UptimeChecker.Helper.Strings
   alias UptimeChecker.Error.{RepoError, ServiceError}
-  alias UptimeChecker.Schema.Customer.{User, Invitation, OrganizationUser}
+  alias UptimeChecker.Schema.Customer.{Organization, User, UserContact, OrganizationUser, Invitation}
 
   def create_invitation(attrs \\ %{}, organization) do
     now = Timex.now()
@@ -56,19 +56,27 @@ defmodule UptimeChecker.InvitationService do
   end
 
   def join_new_user(attrs, invitation) do
+    user_params = Util.key_to_atom(attrs) |> Map.put(:organization_id, invitation.organization.id)
     organization_user_params = %{organization: invitation.organization, role: invitation.role}
 
     Ecto.Multi.new()
-    |> Ecto.Multi.insert(:user, User.join_user_changeset(%User{}, attrs))
+    |> Ecto.Multi.insert(:user, User.join_user_changeset(%User{}, user_params))
+    |> Ecto.Multi.run(:user_contact, fn _repo, %{user: user} ->
+      user_contact_params = %{email: user.email, mode: :email, verified: true} |> Map.put(:user, user)
+
+      %UserContact{}
+      |> UserContact.changeset(user_contact_params)
+      |> Repo.insert()
+    end)
     |> Ecto.Multi.insert(
       :organization_user,
-      fn %{user: user} ->
+      fn %{user: user, user_contact: _user_contact} ->
         OrganizationUser.changeset(%OrganizationUser{}, organization_user_params |> Map.put(:user, user))
       end
     )
     |> Repo.transaction()
     |> case do
-      {:ok, %{user: user, organization_user: organization_user}} ->
+      {:ok, %{user: user, user_contact: _user_contact, organization_user: organization_user}} ->
         {:ok, user, organization_user}
 
       {:error, _name, changeset, _changes_so_far} ->
