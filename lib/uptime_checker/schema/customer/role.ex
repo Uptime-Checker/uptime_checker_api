@@ -2,7 +2,7 @@ defmodule UptimeChecker.Schema.Customer.Role do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @role_types [admin: 1, editor: 2, member: 3]
+  @role_types [superadmin: 1, admin: 2, editor: 3, member: 4]
 
   schema "roles" do
     field :name, :string

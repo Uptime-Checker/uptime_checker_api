@@ -15,6 +15,7 @@ defmodule UptimeChecker.Schema.Customer.OrganizationUser do
   def changeset(organization_user, attrs) do
     organization_user
     |> cast(attrs, [])
+    |> unique_constraint([:role_id, :user_id])
     |> unique_constraint([:user_id, :organization_id])
     |> put_assoc(:user, attrs.user)
     |> put_assoc(:role, attrs.role)

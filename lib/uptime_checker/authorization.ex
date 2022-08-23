@@ -22,6 +22,11 @@ defmodule UptimeChecker.Authorization do
     end
   end
 
+  def get_role_by_type!(type) do
+    Role
+    |> Repo.get_by!(type)
+  end
+
   def list_roles do
     Repo.all(Role)
   end

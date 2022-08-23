@@ -10,6 +10,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateOrganizationUser do
       timestamps()
     end
 
+    create unique_index(:organization_user_junction, [:role_id, :user_id])
     create unique_index(:organization_user_junction, [:user_id, :organization_id])
 
     create index(:organization_user_junction, [:role_id])

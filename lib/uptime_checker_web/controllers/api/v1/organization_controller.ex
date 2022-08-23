@@ -9,7 +9,7 @@ defmodule UptimeCheckerWeb.Api.V1.OrganizationController do
   def create(conn, params) do
     user = current_user(conn)
 
-    with {:ok, %Organization{} = organization, _user} <- Customer.create_organization(params, user) do
+    with {:ok, %Organization{} = organization} <- Customer.create_organization(params, user) do
       conn
       |> put_status(:created)
       |> render("show.json", organization: organization)
