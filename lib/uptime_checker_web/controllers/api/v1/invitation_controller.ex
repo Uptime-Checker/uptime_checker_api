@@ -5,6 +5,7 @@ defmodule UptimeCheckerWeb.Api.V1.InvitationController do
   alias UptimeChecker.Auth
   alias UptimeChecker.Authorization
   alias UptimeChecker.TaskSupervisor
+  alias UptimeChecker.Helper.Strings
   alias UptimeChecker.InvitationService
   alias UptimeChecker.Schema.Customer.{User, Invitation}
 
@@ -14,9 +15,10 @@ defmodule UptimeCheckerWeb.Api.V1.InvitationController do
 
   def create(conn, params) do
     user = current_user(conn)
+    code = Strings.random_string(15)
 
-    with {:ok, %Invitation{} = invitation} <- InvitationService.create_invitation(params, user.organization) do
-      Logger.info("Created new invitation for #{invitation.email} with code: #{invitation.code}")
+    with {:ok, %Invitation{} = invitation} <- InvitationService.create_invitation(params, user.organization, code) do
+      Logger.info("Created new invitation for #{invitation.email} with code: #{code}")
 
       conn
       |> put_status(:created)
@@ -36,26 +38,21 @@ defmodule UptimeCheckerWeb.Api.V1.InvitationController do
       role = invitation.role
       organization = invitation.organization
 
-      case Auth.get_by_email(invitation.email) do
+      case Auth.get_by_email_with_org_and_role(invitation.email) do
         {:ok, user} ->
-          if is_binary(user.organization) && user.organization.id == organization.id do
-            Logger.info("1 Invited user #{user.id} already exists in the org #{organization.id}")
-            serve_access_token_when_join(conn, invitation, user)
-          else
-            case Authorization.get_organization_user(organization, user) do
-              {:ok, _organization_user} ->
-                Logger.info("2 Invited user #{user.id} already exists in the org #{organization.id}")
+          case Authorization.get_organization_user(organization, user) do
+            {:ok, _organization_user} ->
+              Logger.info("Invited user #{user.id} already exists in the org #{organization.id}")
 
-                with {:ok, updated_user} <- Authorization.update_default_organization_role(user, organization, role) do
-                  serve_access_token_when_join(conn, invitation, updated_user)
-                end
+              with {:ok, updated_user} <- Authorization.update_default_organization_role(user, organization, role) do
+                serve_access_token_when_join(conn, invitation, updated_user)
+              end
 
-              {:error, %ErrorMessage{code: :not_found} = _e} ->
-                with {:ok, _organization_user} <-
-                       Authorization.create_organization_user(organization, role, user) do
-                  serve_access_token_when_join(conn, invitation, user)
-                end
-            end
+            {:error, %ErrorMessage{code: :not_found} = _e} ->
+              with {:ok, _organization_user, updated_user} <-
+                     Authorization.create_organization_user(user, organization, role) do
+                serve_access_token_when_join(conn, invitation, updated_user)
+              end
           end
 
         {:error, %ErrorMessage{code: :not_found} = _e} ->

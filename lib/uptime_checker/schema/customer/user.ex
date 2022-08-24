@@ -62,6 +62,13 @@ defmodule UptimeChecker.Schema.Customer.User do
     |> validate_required([:firebase_uid, :provider])
   end
 
+  def update_organization_role_changeset(user, attrs) do
+    user
+    |> cast(attrs, [])
+    |> put_assoc(:role, attrs.role)
+    |> put_assoc(:organization, attrs.organization)
+  end
+
   defp encrypt_and_put_password(user) do
     with password <- fetch_field!(user, :password) do
       encrypted_password = Bcrypt.Base.hash_password(password, Bcrypt.Base.gen_salt(12, true))

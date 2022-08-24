@@ -10,12 +10,10 @@ defmodule UptimeChecker.InvitationService do
   alias UptimeChecker.Error.{RepoError, ServiceError}
   alias UptimeChecker.Schema.Customer.{User, UserContact, OrganizationUser, Invitation}
 
-  def create_invitation(attrs \\ %{}, organization) do
+  def create_invitation(attrs \\ %{}, organization, code) do
     now = Timex.now()
     params = Util.key_to_atom(attrs)
     role = Authorization.get_role!(params[:role_id])
-
-    code = Strings.random_string(15)
 
     updated_params =
       params

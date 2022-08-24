@@ -32,6 +32,21 @@ defmodule UptimeChecker.Auth do
     end
   end
 
+  def get_by_email_with_org_and_role(email) do
+    query =
+      from user in User,
+        left_join: r in assoc(user, :role),
+        left_join: o in assoc(user, :organization),
+        where: user.email == ^email,
+        preload: [organization: o, role: r]
+
+    Repo.one(query)
+    |> case do
+      nil -> {:error, RepoError.user_not_found() |> ErrorMessage.not_found(%{email: email})}
+      user -> {:ok, user}
+    end
+  end
+
   def authenticate_user(email, password) do
     with {:ok, user} <- get_by_email(email) do
       case validate_password(password, user.password) do
