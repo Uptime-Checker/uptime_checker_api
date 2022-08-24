@@ -36,18 +36,18 @@ defmodule UptimeChecker.AlarmService do
 
           case create_alarm(check.monitor, params) do
             {:ok, %Alarm{} = alarm} ->
-              Logger.info("#{tracing_id} Alarm created #{alarm.id}, monitor: #{check.monitor.id}")
+              Logger.info("#{tracing_id} 1 Alarm created #{alarm.id}, monitor: #{check.monitor.id}")
               Worker.ScheduleNotificationAsync.enqueue(alarm)
 
             {:error, %Ecto.Changeset{} = changeset} ->
-              Logger.error("#{tracing_id}, Failed to create alarm, error: #{inspect(changeset.errors)}")
+              Logger.error("#{tracing_id} 2 Failed to create alarm, error: #{inspect(changeset.errors)}")
           end
         else
-          Logger.debug("#{tracing_id}, Region threshold did not raise alarm, down count: #{down_monitor_region_count}")
+          Logger.debug("#{tracing_id} 3 Region threshold did not raise alarm, down count: #{down_monitor_region_count}")
         end
 
       {:ok, %Alarm{} = alarm} ->
-        Logger.debug("#{tracing_id}, Alarm already there, #{alarm.id} |> #{alarm.ongoing}")
+        Logger.debug("#{tracing_id} 4 Alarm already there, #{alarm.id} |> #{alarm.ongoing}")
     end
   end
 
