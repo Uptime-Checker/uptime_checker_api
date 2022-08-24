@@ -15,9 +15,12 @@ defmodule UptimeChecker.InvitationService do
     params = Util.key_to_atom(attrs)
     role = Authorization.get_role!(params[:role_id])
 
+    code = Strings.random_string(15)
+    Logger.info("Creating new invitation for #{attrs["email"]} with code: #{code}")
+
     updated_params =
       params
-      |> Map.put(:code, Strings.random_string(15))
+      |> Map.put(:code, code |> Strings.hash_string())
       |> Map.put(:expires_at, Timex.shift(now, days: +7))
       |> Map.put(:role, role)
       |> Map.put(:organization, organization)
@@ -28,13 +31,13 @@ defmodule UptimeChecker.InvitationService do
   end
 
   def get_invitation_by_code(code) do
-    with {:ok, invitation} <- get_invitation_with_org_from_code(code) do
+    with {:ok, invitation} <- get_invitation_with_org_from_code(Strings.hash_string(code)) do
       case Auth.get_by_email_with_org(invitation.email) do
         {:ok, user} ->
           %{invitation: invitation, user: user}
 
         {:error, %ErrorMessage{code: :not_found} = _e} ->
-          %{invitation: invitation}
+          %{invitation: invitation, user: nil}
       end
     end
   end
@@ -42,7 +45,7 @@ defmodule UptimeChecker.InvitationService do
   def verify_invitation(email, code) do
     now = Timex.now()
 
-    with {:ok, invitation} <- get_invitation_with_org_from_code(code) do
+    with {:ok, invitation} <- get_invitation_with_org_from_code(Strings.hash_string(code)) do
       cond do
         invitation.email != email ->
           {:error, ServiceError.email_mismatch() |> ErrorMessage.forbidden(%{email: email})}
@@ -59,7 +62,7 @@ defmodule UptimeChecker.InvitationService do
   def join_new_user(attrs, invitation) do
     user_params =
       Util.key_to_atom(attrs)
-      |> Map.put(:role_id, invitation.organization.role.id)
+      |> Map.put(:role_id, invitation.role.id)
       |> Map.put(:organization_id, invitation.organization.id)
 
     organization_user_params = %{organization: invitation.organization, role: invitation.role}

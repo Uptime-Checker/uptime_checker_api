@@ -10,10 +10,6 @@ defmodule UptimeCheckerWeb.Api.V1.InvitationView do
     %{data: render_many(invitations, InvitationView, "invitation.json")}
   end
 
-  def render("show.json", %{invitation: invitation}) do
-    %{data: render_one(invitation, InvitationView, "invitation.json")}
-  end
-
   def render("show.json", %{invitation: invitation, user: user}) do
     %{
       data: %{
@@ -21,6 +17,10 @@ defmodule UptimeCheckerWeb.Api.V1.InvitationView do
         user: render_user(user)
       }
     }
+  end
+
+  def render("show.json", %{invitation: invitation}) do
+    %{data: render_one(invitation, InvitationView, "invitation.json")}
   end
 
   def render("invitation.json", %{invitation: invitation}) do

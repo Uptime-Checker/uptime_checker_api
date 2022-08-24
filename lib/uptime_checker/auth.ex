@@ -5,6 +5,7 @@ defmodule UptimeChecker.Auth do
 
   alias UptimeChecker.Repo
   alias UptimeChecker.Guardian
+  alias UptimeChecker.Helper.Strings
   alias UptimeChecker.Error.{RepoError, ServiceError}
   alias UptimeChecker.Schema.Customer.{User, GuestUser}
 
@@ -48,7 +49,7 @@ defmodule UptimeChecker.Auth do
     now = Timex.now()
 
     GuestUser
-    |> Repo.get_by(code: code)
+    |> Repo.get_by(code: Strings.hash_string(code))
     |> case do
       nil ->
         {:error, RepoError.guest_user_not_found() |> ErrorMessage.forbidden(%{code: code})}
@@ -69,7 +70,7 @@ defmodule UptimeChecker.Auth do
 
   def create_guest_user(email, code) do
     now = Timex.now()
-    attrs = %{email: email, code: code, expires_at: Timex.shift(now, minutes: +10)}
+    attrs = %{email: email, code: Strings.hash_string(code), expires_at: Timex.shift(now, minutes: +10)}
 
     %GuestUser{}
     |> GuestUser.changeset(attrs)
@@ -78,7 +79,7 @@ defmodule UptimeChecker.Auth do
 
   def get_guest_user_by_code(code) do
     GuestUser
-    |> Repo.get_by(code: code)
+    |> Repo.get_by(code: Strings.hash_string(code))
     |> case do
       nil -> {:error, RepoError.guest_user_not_found() |> ErrorMessage.not_found(%{code: code})}
       guest_user -> {:ok, guest_user}
