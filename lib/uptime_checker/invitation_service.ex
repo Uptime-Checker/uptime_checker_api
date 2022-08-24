@@ -16,7 +16,6 @@ defmodule UptimeChecker.InvitationService do
     role = Authorization.get_role!(params[:role_id])
 
     code = Strings.random_string(15)
-    Logger.info("Creating new invitation for #{attrs["email"]} with code: #{code}")
 
     updated_params =
       params
