@@ -6,7 +6,7 @@ defmodule UptimeCheckerWeb.Api.V1.InvitationController do
   alias UptimeChecker.Authorization
   alias UptimeChecker.TaskSupervisor
   alias UptimeChecker.InvitationService
-  alias UptimeChecker.Schema.Customer.{User, Invitation, OrganizationUser}
+  alias UptimeChecker.Schema.Customer.{User, Invitation}
 
   plug UptimeCheckerWeb.Plugs.Org when action in [:create]
 
@@ -16,6 +16,8 @@ defmodule UptimeCheckerWeb.Api.V1.InvitationController do
     user = current_user(conn)
 
     with {:ok, %Invitation{} = invitation} <- InvitationService.create_invitation(params, user.organization) do
+      Logger.info("Created new invitation for #{invitation.email} with code: #{invitation.code}")
+
       conn
       |> put_status(:created)
       |> render("show.json", invitation: invitation)
@@ -31,24 +33,26 @@ defmodule UptimeCheckerWeb.Api.V1.InvitationController do
 
   def join(conn, params) do
     with {:ok, invitation} <- InvitationService.verify_invitation(params["email"], params["code"]) do
+      role = invitation.role
+      organization = invitation.organization
+
       case Auth.get_by_email(invitation.email) do
         {:ok, user} ->
-          if is_binary(user.organization) && user.organization.id == invitation.organization.id do
-            Logger.info("1 Invited user #{user.id} already exists in the org #{invitation.organization.id}")
+          if is_binary(user.organization) && user.organization.id == organization.id do
+            Logger.info("1 Invited user #{user.id} already exists in the org #{organization.id}")
             serve_access_token_when_join(conn, invitation, user)
           else
-            case Authorization.get_organization_user(invitation.organization, user) do
+            case Authorization.get_organization_user(organization, user) do
               {:ok, _organization_user} ->
-                Logger.info("2 Invited user #{user.id} already exists in the org #{invitation.organization.id}")
-                serve_access_token_when_join(conn, invitation, user)
+                Logger.info("2 Invited user #{user.id} already exists in the org #{organization.id}")
+
+                with {:ok, updated_user} <- Authorization.update_default_organization_role(user, organization, role) do
+                  serve_access_token_when_join(conn, invitation, updated_user)
+                end
 
               {:error, %ErrorMessage{code: :not_found} = _e} ->
                 with {:ok, _organization_user} <-
-                       Authorization.create_organization_user(%{
-                         organization: invitation.organization,
-                         role: invitation.role,
-                         user: user
-                       }) do
+                       Authorization.create_organization_user(organization, role, user) do
                   serve_access_token_when_join(conn, invitation, user)
                 end
             end
