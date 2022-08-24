@@ -19,6 +19,15 @@ defmodule UptimeChecker.Customer do
     end
   end
 
+  def get_organization(id) do
+    Organization
+    |> Repo.get(id)
+    |> case do
+      nil -> {:error, RepoError.organization_not_found() |> ErrorMessage.not_found(%{id: id})}
+      organization -> {:ok, organization}
+    end
+  end
+
   def create_organization(attrs \\ %{}, user) do
     role = Authorization.get_role_by_type!(:superadmin)
 

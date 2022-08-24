@@ -8,7 +8,7 @@ defmodule UptimeChecker.Mail.MonitorStatus do
     new_email()
     |> from({"[#{Constant.Misc.app_name()} | #{alert(monitor.down)}]", Constant.Email.no_reply_email_address()})
     |> to(user_contact.email)
-    |> subject("Monitor #{down(monitor.down)}")
+    |> subject("Monitor is #{down(monitor.down)}: #{monitor.name}")
     |> assign(:monitor, monitor)
     |> assign(:alarm, alarm)
     |> put_html_layout({UptimeCheckerWeb.LayoutView, Constant.Email.layout()})
