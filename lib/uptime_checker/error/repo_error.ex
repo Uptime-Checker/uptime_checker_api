@@ -7,6 +7,7 @@ defmodule UptimeChecker.Error.RepoError do
   const(:guest_user_not_found, "guest_user_not_found")
   const(:user_contact_not_found, "user_contact_not_found")
   const(:organization_not_found, "organization_not_found")
+  const(:organization_user_not_found, "organization_user_not_found")
 
   const(:monitor_not_found, "monitor_not_found")
   const(:monitor_region_not_found, "monitor_region_not_found")

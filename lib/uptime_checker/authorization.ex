@@ -3,7 +3,7 @@ defmodule UptimeChecker.Authorization do
 
   alias UptimeChecker.Repo
   alias UptimeChecker.Error.RepoError
-  alias UptimeChecker.Schema.Customer.Role
+  alias UptimeChecker.Schema.Customer.{Role, OrganizationUser}
 
   def create_role(attrs \\ %{}) do
     %Role{}
@@ -29,5 +29,25 @@ defmodule UptimeChecker.Authorization do
 
   def list_roles do
     Repo.all(Role)
+  end
+
+  def create_organization_user(attrs) do
+    %OrganizationUser{}
+    |> OrganizationUser.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def get_organization_user(organization, user) do
+    OrganizationUser
+    |> Repo.get_by(organization_id: organization.id, user_id: user.id)
+    |> case do
+      nil ->
+        {:error,
+         RepoError.organization_user_not_found()
+         |> ErrorMessage.not_found(%{organization_id: organization.id, user: user.id})}
+
+      organization_user ->
+        {:ok, organization_user}
+    end
   end
 end

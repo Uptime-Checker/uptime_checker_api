@@ -84,8 +84,8 @@ defmodule UptimeChecker.InvitationService do
     )
     |> Repo.transaction()
     |> case do
-      {:ok, %{user: user, user_contact: _user_contact, organization_user: organization_user}} ->
-        {:ok, user, organization_user}
+      {:ok, %{user: user, user_contact: _user_contact, organization_user: _organization_user}} ->
+        {:ok, user}
 
       {:error, name, changeset, _changes_so_far} ->
         Logger.error("Failed to join new user #{inspect(attrs)}, error: #{inspect(changeset.errors)}")

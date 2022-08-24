@@ -1,7 +1,9 @@
 defmodule UptimeCheckerWeb.Api.V1.InvitationController do
+  require Logger
   use UptimeCheckerWeb, :controller
 
   alias UptimeChecker.Auth
+  alias UptimeChecker.Authorization
   alias UptimeChecker.TaskSupervisor
   alias UptimeChecker.InvitationService
   alias UptimeChecker.Schema.Customer.{User, Invitation, OrganizationUser}
@@ -29,19 +31,43 @@ defmodule UptimeCheckerWeb.Api.V1.InvitationController do
 
   def join(conn, params) do
     with {:ok, invitation} <- InvitationService.verify_invitation(params["email"], params["code"]) do
-      with {:ok, user} <- Auth.get_by_email(invitation.email) do
-      else
-        {:error, %ErrorMessage{code: :not_found} = _e} ->
-          with {:ok, %User{} = user, %OrganizationUser{} = _organization_user} <-
-                 InvitationService.join_new_user(params, invitation) do
-            access_token = after_join_successful(invitation, user)
+      case Auth.get_by_email(invitation.email) do
+        {:ok, user} ->
+          if is_binary(user.organization) && user.organization.id == invitation.organization.id do
+            Logger.info("1 Invited user #{user.id} already exists in the org #{invitation.organization.id}")
+            serve_access_token_when_join(conn, invitation, user)
+          else
+            case Authorization.get_organization_user(invitation.organization, user) do
+              {:ok, _organization_user} ->
+                Logger.info("2 Invited user #{user.id} already exists in the org #{invitation.organization.id}")
+                serve_access_token_when_join(conn, invitation, user)
 
-            conn
-            |> put_status(:created)
-            |> json(%{access_token: access_token})
+              {:error, %ErrorMessage{code: :not_found} = _e} ->
+                with {:ok, _organization_user} <-
+                       Authorization.create_organization_user(%{
+                         organization: invitation.organization,
+                         role: invitation.role,
+                         user: user
+                       }) do
+                  serve_access_token_when_join(conn, invitation, user)
+                end
+            end
+          end
+
+        {:error, %ErrorMessage{code: :not_found} = _e} ->
+          with {:ok, %User{} = user} <- InvitationService.join_new_user(params, invitation) do
+            serve_access_token_when_join(conn, invitation, user)
           end
       end
     end
+  end
+
+  def serve_access_token_when_join(conn, invitation, user) do
+    access_token = after_join_successful(invitation, user)
+
+    conn
+    |> put_status(:created)
+    |> json(%{access_token: access_token})
   end
 
   defp after_join_successful(invitation, user) do
