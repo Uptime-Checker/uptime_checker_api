@@ -8,6 +8,7 @@ defmodule UptimeChecker.Schema.Customer.Invitation do
     field :email, :string
     field :code, :string
     field :expires_at, :utc_datetime
+    field :notification_count, :integer
 
     belongs_to :role, Role
     belongs_to :organization, Organization
@@ -17,7 +18,7 @@ defmodule UptimeChecker.Schema.Customer.Invitation do
 
   def changeset(invitation, attrs) do
     invitation
-    |> cast(attrs, [:email, :code, :expires_at])
+    |> cast(attrs, [:email, :code, :expires_at, :notification_count])
     |> validate_required([:email, :code, :expires_at])
     |> validate_length(:code, min: 10, max: 100)
     |> unique_constraint(:code)

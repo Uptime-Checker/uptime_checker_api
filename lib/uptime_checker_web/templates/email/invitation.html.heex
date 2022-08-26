@@ -1,1 +1,10 @@
-<p>Hello</p>
+<p><%= @user.name %> has invited you to join <%= @organization.name %></p>
+<p>Welcome to the club, your account is almost active.</p>
+
+<p>
+    To finalize your account creation and join the <%= @organization.name %> team on UptimeCheckr.com,
+    please click through to complete your account setup:
+</p>
+<%= link("Join #{@organization.name}", to: invitation_url(@code)) %>
+
+<p>If you experience any issues, don't hesitate to contact us. We're here and happy to help.</p>

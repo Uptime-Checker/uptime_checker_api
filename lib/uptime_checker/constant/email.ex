@@ -7,4 +7,6 @@ defmodule UptimeChecker.Constant.Email do
   const(:invitation_template, "invitation.html")
 
   const(:no_reply_email_address, "no-reply@uptimecheckr.com")
+
+  const(:join_new_user_url, "/invitation/join_new_user")
 end

@@ -9,6 +9,10 @@ defmodule UptimeCheckerWeb.EmailView do
     down(monitor.down)
   end
 
+  def invitation_url(code) do
+    "#{Constant.Env.web_url()}#{Constant.Email.join_new_user_url()}#{code}"
+  end
+
   def format_time(time) do
     time |> Timex.format!("{RFC1123}")
   end

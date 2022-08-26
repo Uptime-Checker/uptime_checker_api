@@ -10,7 +10,8 @@ defmodule UptimeChecker.Mail.Invitation do
     |> to(invitation.email)
     |> subject("You are invited to join #{user.organization.name}")
     |> assign(:user, user)
-    |> assign(:invitation, invitation)
+    |> assign(:organization, user.organization)
+    |> assign(:code, invitation.code)
     |> put_html_layout({UptimeCheckerWeb.LayoutView, Constant.Email.layout()})
     |> render(Constant.Email.invitation_template())
   end
