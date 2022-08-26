@@ -98,10 +98,11 @@ defmodule UptimeChecker.InvitationService do
   defp get_invitation_with_org_from_code(code) do
     query =
       from invitation in Invitation,
+        left_join: i in assoc(invitation, :invited_by),
         left_join: o in assoc(invitation, :organization),
         left_join: r in assoc(invitation, :role),
         where: invitation.code == ^code,
-        preload: [organization: o, role: r]
+        preload: [organization: o, role: r, invited_by: i]
 
     Repo.one(query)
     |> case do

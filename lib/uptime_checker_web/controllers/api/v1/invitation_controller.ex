@@ -19,7 +19,7 @@ defmodule UptimeCheckerWeb.Api.V1.InvitationController do
     user = current_user(conn)
     code = Strings.random_string(15)
 
-    with {:ok, %Invitation{} = invitation} <- InvitationService.create_invitation(params, user.organization, code) do
+    with {:ok, %Invitation{} = invitation} <- InvitationService.create_invitation(params, user, code) do
       Logger.info("Created new invitation for #{invitation.email} with code: #{code}")
 
       Mail.Invitation.compose(user, invitation)
@@ -50,26 +50,31 @@ defmodule UptimeCheckerWeb.Api.V1.InvitationController do
               Logger.info("Invited user #{user.id} already exists in the org #{organization.id}")
 
               with {:ok, updated_user} <- Authorization.update_default_organization_role(user, organization, role) do
-                serve_access_token_when_join(conn, invitation, updated_user)
+                serve_access_token_when_join(conn, invitation, updated_user, false)
               end
 
             {:error, %ErrorMessage{code: :not_found} = _e} ->
               with {:ok, _organization_user, updated_user} <-
                      Authorization.create_organization_user(user, organization, role) do
-                serve_access_token_when_join(conn, invitation, updated_user)
+                serve_access_token_when_join(conn, invitation, updated_user, true)
               end
           end
 
         {:error, %ErrorMessage{code: :not_found} = _e} ->
           with {:ok, %User{} = user} <- InvitationService.join_new_user(params, invitation) do
-            serve_access_token_when_join(conn, invitation, user)
+            serve_access_token_when_join(conn, invitation, user, true)
           end
       end
     end
   end
 
-  def serve_access_token_when_join(conn, invitation, user) do
+  def serve_access_token_when_join(conn, invitation, user, is_new_user) do
     access_token = after_join_successful(invitation, user)
+
+    if is_new_user do
+      Mail.JoinOrg.compose(user, invitation)
+      |> Mailer.deliver_later!()
+    end
 
     conn
     |> put_status(:created)
