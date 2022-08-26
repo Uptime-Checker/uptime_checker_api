@@ -8,6 +8,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateInvitations do
       add :expires_at, :utc_datetime, null: false
       add :notification_count, :integer, default: 1
 
+      add :invited_by_user_id, references(:users)
       add :role_id, references(:roles)
       add :organization_id, references(:organizations, on_delete: :delete_all)
 

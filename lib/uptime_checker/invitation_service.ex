@@ -10,7 +10,7 @@ defmodule UptimeChecker.InvitationService do
   alias UptimeChecker.Error.{RepoError, ServiceError}
   alias UptimeChecker.Schema.Customer.{User, UserContact, OrganizationUser, Invitation}
 
-  def create_invitation(attrs \\ %{}, organization, code) do
+  def create_invitation(attrs \\ %{}, user, code) do
     now = Timex.now()
     params = Util.key_to_atom(attrs)
     role = Authorization.get_role!(params[:role_id])
@@ -19,8 +19,9 @@ defmodule UptimeChecker.InvitationService do
       params
       |> Map.put(:code, code |> Strings.hash_string())
       |> Map.put(:expires_at, Timex.shift(now, days: +7))
+      |> Map.put(:invited_by, user)
       |> Map.put(:role, role)
-      |> Map.put(:organization, organization)
+      |> Map.put(:organization, user.organization)
 
     %Invitation{}
     |> Invitation.changeset(updated_params)
