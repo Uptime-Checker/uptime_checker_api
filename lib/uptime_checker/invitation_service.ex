@@ -12,20 +12,26 @@ defmodule UptimeChecker.InvitationService do
 
   def create_invitation(attrs \\ %{}, user, code) do
     now = Timex.now()
+    later = Timex.shift(now, days: +7)
+    hashed_code = code |> Strings.hash_string()
+
     params = Util.key_to_atom(attrs)
     role = Authorization.get_role!(params[:role_id])
 
     updated_params =
       params
-      |> Map.put(:code, code |> Strings.hash_string())
-      |> Map.put(:expires_at, Timex.shift(now, days: +7))
+      |> Map.put(:code, hashed_code)
+      |> Map.put(:expires_at, later)
       |> Map.put(:invited_by, user)
       |> Map.put(:role, role)
       |> Map.put(:organization, user.organization)
 
     %Invitation{}
     |> Invitation.changeset(updated_params)
-    |> Repo.insert()
+    |> Repo.insert(
+      on_conflict: [set: [code: hashed_code, expires_at: later], inc: [notification_count: 1]],
+      conflict_target: [:email, :organization_id]
+    )
   end
 
   def get_invitation_by_code(code) do

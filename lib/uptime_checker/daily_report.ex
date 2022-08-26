@@ -25,7 +25,7 @@ defmodule UptimeChecker.DailyReport do
           })
           |> Repo.insert(
             on_conflict: [inc: [successful_checks: success_count(success), error_checks: error_count(success)]],
-            conflict_target: [:monitor_id, :date]
+            conflict_target: [:date, :monitor_id]
           )
         end
     end
