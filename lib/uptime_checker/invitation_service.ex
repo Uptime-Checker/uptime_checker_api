@@ -46,6 +46,15 @@ defmodule UptimeChecker.InvitationService do
     end
   end
 
+  def get_invitation_by_organization(organization, email) do
+    Invitation
+    |> Repo.get_by(email: email, organization_id: organization.id)
+    |> case do
+      nil -> {:error, RepoError.invitation_not_found() |> ErrorMessage.not_found(%{email: email})}
+      invitation -> {:ok, invitation}
+    end
+  end
+
   def verify_invitation(email, code) do
     now = Timex.now()
 

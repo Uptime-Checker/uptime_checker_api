@@ -1,5 +1,7 @@
 defmodule UptimeCheckerWeb.Api.V1.InvitationController do
   require Logger
+
+  use Timex
   use UptimeCheckerWeb, :controller
 
   alias UptimeChecker.Mail
@@ -9,6 +11,7 @@ defmodule UptimeCheckerWeb.Api.V1.InvitationController do
   alias UptimeChecker.TaskSupervisor
   alias UptimeChecker.Helper.Strings
   alias UptimeChecker.InvitationService
+  alias UptimeChecker.Error.ServiceError
   alias UptimeChecker.Schema.Customer.{User, Invitation}
 
   plug UptimeCheckerWeb.Plugs.Org when action in [:create]
@@ -16,7 +19,25 @@ defmodule UptimeCheckerWeb.Api.V1.InvitationController do
   action_fallback UptimeCheckerWeb.FallbackController
 
   def create(conn, params) do
+    now = Timex.now()
     user = current_user(conn)
+
+    case InvitationService.get_invitation_by_organization(user.organization, params["email"]) do
+      {:ok, invitation} ->
+        diff = Timex.diff(now, invitation.inserted_at, :minute)
+
+        if diff > 60 do
+          create_invitation(conn, params, user)
+        else
+          {:error, ServiceError.invitation_sent_already() |> ErrorMessage.bad_request(%{remaining: diff})}
+        end
+
+      {:error, %ErrorMessage{code: :not_found} = _e} ->
+        create_invitation(conn, params, user)
+    end
+  end
+
+  defp create_invitation(conn, params, user) do
     code = Strings.random_string(15)
 
     with {:ok, %Invitation{} = invitation} <- InvitationService.create_invitation(params, user, code) do
