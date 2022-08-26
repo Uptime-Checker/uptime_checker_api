@@ -10,7 +10,11 @@ defmodule UptimeCheckerWeb.EmailView do
   end
 
   def invitation_url(code) do
-    "#{Constant.Env.web_url()}#{Constant.Email.join_new_user_url()}#{code}"
+    "#{System.get_env(Constant.Env.web_url())}#{Constant.Email.join_new_user_url()}/#{code}"
+  end
+
+  def changse_role_url(organization) do
+    "#{System.get_env(Constant.Env.web_url())}/organization/#{organization.id}/users"
   end
 
   def format_time(time) do

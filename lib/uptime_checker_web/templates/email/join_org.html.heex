@@ -1,0 +1,6 @@
+<p><%= @user.name %> has accepted your invitation and joined <%= @organization.name %></p>
+<p><%= @user.name %> has the role of <%= @role.name %></p>
+<p>To change the role, please please click through the following link</p>
+<%= link("Change Role", to: changse_role_url(@organization)) %>
+
+<p>If you experience any issues, don't hesitate to contact us. We're here and happy to help.</p>
