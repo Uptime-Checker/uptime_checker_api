@@ -2,7 +2,9 @@ defmodule UptimeCheckerWeb.Api.V1.InvitationController do
   require Logger
   use UptimeCheckerWeb, :controller
 
+  alias UptimeChecker.Mail
   alias UptimeChecker.Auth
+  alias UptimeChecker.Module.Mailer
   alias UptimeChecker.Authorization
   alias UptimeChecker.TaskSupervisor
   alias UptimeChecker.Helper.Strings
@@ -19,6 +21,9 @@ defmodule UptimeCheckerWeb.Api.V1.InvitationController do
 
     with {:ok, %Invitation{} = invitation} <- InvitationService.create_invitation(params, user.organization, code) do
       Logger.info("Created new invitation for #{invitation.email} with code: #{code}")
+
+      Mail.Invitation.compose(user, invitation)
+      |> Mailer.deliver_later!()
 
       conn
       |> put_status(:created)
