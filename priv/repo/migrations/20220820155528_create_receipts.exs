@@ -4,7 +4,11 @@ defmodule UptimeChecker.Repo.Migrations.CreateReceipts do
   def change do
     create table(:receipts) do
       add :price, :float, null: false
+      add :currency, :string, default: "usd"
       add :external_id, :string
+      add :external_customer_id, :string
+      add :url, :string
+      add :status, :integer
       add :paid, :boolean, default: false
       add :paid_at, :utc_datetime
       add :from, :date
@@ -20,6 +24,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateReceipts do
     end
 
     create unique_index(:receipts, [:external_id])
+    create unique_index(:receipts, [:external_customer_id])
 
     create index(:receipts, [:plan_id])
     create index(:receipts, [:product_id])

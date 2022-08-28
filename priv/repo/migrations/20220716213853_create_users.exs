@@ -13,6 +13,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateUsers do
       add :email, :string, null: false
       add :picture_url, :string
       add :password, :string
+      add :payment_customer_id, :string
 
       add :firebase_uid, :string
       add :provider, :provider_name, null: false
@@ -26,6 +27,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateUsers do
 
     create unique_index(:users, [:email])
     create unique_index(:users, [:firebase_uid])
+    create unique_index(:users, [:payment_customer_id])
 
     create index(:users, [:role_id])
     create index(:users, [:organization_id])
