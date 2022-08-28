@@ -25,6 +25,11 @@ end
 # Configure sentry dsn
 config :sentry, dsn: System.get_env("SENTRY_DSN")
 
+# Configure Stripe SDK
+config :stripity_stripe,
+  api_key: System.get_env("STRIPE_API_KEY"),
+  signing_secret: System.get_env("STRIPE_WEBHOOK_SIGNING_SECRET")
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||
