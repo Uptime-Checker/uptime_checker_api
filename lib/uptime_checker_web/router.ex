@@ -33,6 +33,7 @@ defmodule UptimeCheckerWeb.Router do
       get "/status", SettingsController, :status
       get "/guest_user", UserController, :get_guest_user
       get "/invitation", InvitationController, :get
+      get "/external_products", ProductController, :list_external_products
 
       post "/register", UserController, :register
       post "/login", UserController, :login
