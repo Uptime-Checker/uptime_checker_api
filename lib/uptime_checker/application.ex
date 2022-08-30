@@ -25,7 +25,9 @@ defmodule UptimeChecker.Application do
       # Oban
       {Oban, Application.fetch_env!(:uptime_checker, Oban)},
       # Start a worker on startup
-      {Task, &UptimeChecker.Event.InitStart.run/0}
+      {Task, &UptimeChecker.Event.InitStart.run/0},
+      # Caches
+      Supervisor.child_spec({Cachex, name: :payment}, id: :payment)
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

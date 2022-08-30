@@ -60,6 +60,7 @@ defmodule UptimeChecker.MixProject do
       {:quantum, "~> 3.0"},
       {:oban, "~> 2.13"},
       {:x509, "~> 0.8"},
+      {:cachex, "~> 3.4"},
       {:httpoison, "~> 1.8"},
       {:sentry, "~> 8.0"},
       {:joken, "~> 2.5"},
