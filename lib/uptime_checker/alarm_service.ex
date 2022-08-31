@@ -42,11 +42,11 @@ defmodule UptimeChecker.AlarmService do
               Logger.error("#{tracing_id} 2 Failed to create alarm, error: #{inspect(changeset.errors)}")
           end
         else
-          Logger.debug("#{tracing_id} 3 Region threshold did not raise alarm, down count: #{down_monitor_region_count}")
+          Logger.info("#{tracing_id} 3 Region threshold did not raise alarm, down count: #{down_monitor_region_count}")
         end
 
       {:ok, %Alarm{} = alarm} ->
-        Logger.debug("#{tracing_id} 4 Alarm already there, #{alarm.id} |> #{alarm.ongoing}")
+        Logger.info("#{tracing_id} 4 Alarm already there, #{alarm.id} |> #{alarm.ongoing}")
     end
   end
 

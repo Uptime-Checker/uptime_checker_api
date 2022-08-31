@@ -4,7 +4,27 @@ defmodule UptimeChecker.Schema.WatchDog.ErrorLog do
 
   alias UptimeChecker.Schema.WatchDog.Check
 
-  @error_types [status_code_mismatch: 1, bad_status_code: 2]
+  @error_types [
+    status_code_mismatch: 1,
+    bad_status_code: 2,
+    nxdomain: 3,
+    etimedout: 4,
+    etime: 5,
+    erefused: 6,
+    epipe: 7,
+    enospc: 8,
+    enomem: 9,
+    enoent: 10,
+    enetdown: 11,
+    emfile: 12,
+    ehostunreach: 13,
+    ehostdown: 14,
+    econnreset: 15,
+    econnrefused: 16,
+    econnaborted: 17,
+    ecomm: 18,
+    bad: 19
+  ]
 
   schema "error_logs" do
     field :text, :string
