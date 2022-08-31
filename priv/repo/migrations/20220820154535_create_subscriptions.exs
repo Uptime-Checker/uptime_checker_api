@@ -18,7 +18,6 @@ defmodule UptimeChecker.Repo.Migrations.CreateSubscriptions do
 
     create index(:subscriptions, [:expires_at])
     create unique_index(:subscriptions, [:external_id])
-    create unique_index(:subscriptions, [:external_customer_id])
 
     create index(:subscriptions, [:plan_id])
     create index(:subscriptions, [:product_id])

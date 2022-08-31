@@ -21,6 +21,7 @@ defmodule UptimeChecker.Schema.Payment.Plan do
     plan
     |> cast(attrs, [:price, :external_id, :type])
     |> validate_required([:price, :type])
+    |> unique_constraint(:external_id)
     |> put_assoc(:product, attrs.product)
   end
 end
