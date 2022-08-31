@@ -35,6 +35,7 @@ defmodule UptimeChecker.Job.HitApi do
     Logger.info("#{tracing_id} RESPONSE #{check.monitor.url} CODE ==> #{response.status_code} DURATION ==> #{duration}")
 
     if response.status_code >= code(:ok) && response.status_code < code(:bad_request) do
+      # good status code
       if is_nil(List.first(check.monitor.status_codes)) do
         HandleNextCheck.act(tracing_id, monitor_region, check, duration, true)
       else
@@ -42,12 +43,19 @@ defmodule UptimeChecker.Job.HitApi do
 
         if Enum.member?(success_status_codes, response.status_code) do
           HandleNextCheck.act(tracing_id, monitor_region, check, duration, true)
+        else
+          handle_failure(tracing_id, response, monitor_region, check, duration, :status_code_mismatch)
         end
       end
     else
-      HandleNextCheck.act(tracing_id, monitor_region, check, duration, false)
-      create_error_log(response, check, :status_code_mismatch)
+      # status code ranges from >= 400 to 500+
+      handle_failure(tracing_id, response, monitor_region, check, duration, :bad_status_code)
     end
+  end
+
+  defp handle_failure(tracing_id, response, monitor_region, check, duration, error_type) do
+    HandleNextCheck.act(tracing_id, monitor_region, check, duration, false)
+    create_error_log(response, check, error_type)
   end
 
   defp hit_api(tracing_id, monitor) do

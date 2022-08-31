@@ -4,7 +4,7 @@ defmodule UptimeChecker.Schema.WatchDog.ErrorLog do
 
   alias UptimeChecker.Schema.WatchDog.Check
 
-  @error_types [status_code_mismatch: 1]
+  @error_types [status_code_mismatch: 1, bad_status_code: 2]
 
   schema "error_logs" do
     field :text, :string
