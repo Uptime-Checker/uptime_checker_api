@@ -133,7 +133,7 @@ defmodule UptimeChecker.Job.HitApi do
         create_error_log(Constant.Api.error_communication_error_on_send(), -16, check, :ecomm)
 
       other ->
-        create_error_log(other, -1000, check, :bad)
+        create_error_log(other, -1000, check, :ebad)
     end
   end
 
