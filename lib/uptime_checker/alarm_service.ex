@@ -6,7 +6,6 @@ defmodule UptimeChecker.AlarmService do
   alias UptimeChecker.Repo
   alias UptimeChecker.Worker
   alias UptimeChecker.Helper.Times
-  alias UptimeChecker.TaskSupervisor
   alias UptimeChecker.Error.RepoError
   alias UptimeChecker.Schema.WatchDog.Alarm
   alias UptimeChecker.{WatchDog, DailyReport}
