@@ -17,7 +17,7 @@ defmodule UptimeChecker.Schema.MonitorStatusCode do
     monitor_status_code
     |> cast(attrs, [:monitor_id, :status_code_id])
     |> put_assoc(:monitor, attrs.monitor)
-    |> put_assoc(:monitor, attrs.status_code)
+    |> put_assoc(:status_code, attrs.status_code)
     |> unique_constraint([:status_code_id, :monitor_id])
   end
 end

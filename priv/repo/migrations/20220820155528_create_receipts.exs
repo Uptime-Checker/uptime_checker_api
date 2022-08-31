@@ -24,7 +24,6 @@ defmodule UptimeChecker.Repo.Migrations.CreateReceipts do
     end
 
     create unique_index(:receipts, [:external_id])
-    create unique_index(:receipts, [:external_customer_id])
 
     create index(:receipts, [:plan_id])
     create index(:receipts, [:product_id])
