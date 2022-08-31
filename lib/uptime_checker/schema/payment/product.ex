@@ -2,7 +2,7 @@ defmodule UptimeChecker.Schema.Payment.Product do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @tiers [free: 1, startup: 2, team: 3, business: 4]
+  @tiers [free: 1, developer: 2, startup: 3, enterprise: 4]
 
   schema "products" do
     field :name, :string
