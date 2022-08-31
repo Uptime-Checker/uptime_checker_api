@@ -23,7 +23,8 @@ defmodule UptimeChecker.Schema.WatchDog.ErrorLog do
     econnrefused: 63,
     econnaborted: 64,
     ecomm: 65,
-    ebad: 66
+    timeout: 66,
+    ebad: 67
   ]
 
   schema "error_logs" do

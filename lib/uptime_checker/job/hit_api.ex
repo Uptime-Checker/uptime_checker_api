@@ -132,6 +132,9 @@ defmodule UptimeChecker.Job.HitApi do
       :ecomm ->
         create_error_log(Constant.Api.error_communication_error_on_send(), -16, check, :ecomm)
 
+      :timeout ->
+        create_error_log(Constant.Api.error_request_timed_out(), -17, check, :timeout)
+
       other ->
         create_error_log(other, -1000, check, :ebad)
     end

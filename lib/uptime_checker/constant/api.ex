@@ -28,4 +28,5 @@ defmodule UptimeChecker.Constant.Api do
   const(:error_connection_refused, "Connection refused")
   const(:error_connection_aborted, "Software caused connection abort")
   const(:error_communication_error_on_send, "Communication error on send")
+  const(:error_request_timed_out, "Request timed out")
 end
