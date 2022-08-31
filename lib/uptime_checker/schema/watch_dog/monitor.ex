@@ -43,6 +43,13 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
 
   @doc false
   def changeset(monitor, attrs) do
+    max_timeout = round(attrs.interval / 2)
+
+    max_timeout =
+      if max_timeout > 30 do
+        30
+      end
+
     monitor
     |> cast(attrs, [
       :name,
@@ -71,7 +78,7 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
     |> validate_url(:url)
     |> unique_constraint([:url, :organization_id])
     |> validate_inclusion(:interval, 20..86_400)
-    |> validate_inclusion(:timeout, 1..10)
+    |> validate_inclusion(:timeout, 1..max_timeout)
     |> validate_inclusion(:resolve_threshold, 1..10)
     |> validate_inclusion(:error_threshold, 1..10)
     |> put_assoc(:user, attrs.user)
