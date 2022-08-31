@@ -109,6 +109,9 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
     end
   end
 
+  def stripe_customer(conn, params) do
+  end
+
   defp after_email_link_login_successful(guest_user, user) do
     Task.Supervisor.start_child(TaskSupervisor, Auth, :delete_guest_user, [guest_user], restart: :transient)
     {:ok, access_token, _claims} = Auth.encode_and_sign(user)
