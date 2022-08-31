@@ -5,7 +5,7 @@ defmodule UptimeChecker.Job.HitApi do
   alias UptimeChecker.WatchDog
   alias UptimeChecker.Constant
   alias UptimeChecker.Helper.Strings
-  alias UptimeChecker.Event.HandleNextCheck
+  alias UptimeChecker.Event.{HandleNextCheck, HandleErrorLog}
   alias UptimeChecker.Schema.WatchDog.{MonitorRegion, Check, ErrorLog}
 
   import Plug.Conn.Status, only: [code: 1]
@@ -64,7 +64,7 @@ defmodule UptimeChecker.Job.HitApi do
 
   defp handle_failure_from_response(tracing_id, response, monitor_region, check, duration, error_type) do
     HandleNextCheck.act(tracing_id, monitor_region, check, duration, false)
-    create_error_log(tracing_id, response.body, response.status_code, check, error_type)
+    HandleErrorLog.create(tracing_id, response.body, response.status_code, check, error_type)
   end
 
   defp hit_api(tracing_id, monitor) do
@@ -95,77 +95,6 @@ defmodule UptimeChecker.Job.HitApi do
 
   defp handle_failure_from_poison(tracing_id, reason, monitor_region, check, duration) do
     HandleNextCheck.act(tracing_id, monitor_region, check, duration, false)
-
-    case reason do
-      :nxdomain ->
-        create_error_log(tracing_id, Constant.Api.error_host_or_domain_not_found(), -1, check, :nxdomain)
-
-      :etimedout ->
-        create_error_log(tracing_id, Constant.Api.error_connection_timed_out(), -2, check, :etimedout)
-
-      :etime ->
-        create_error_log(tracing_id, Constant.Api.error_timer_expired(), -3, check, :etime)
-
-      :erefused ->
-        create_error_log(tracing_id, Constant.Api.error_erefused(), -4, check, :erefused)
-
-      :epipe ->
-        create_error_log(tracing_id, Constant.Api.error_broken_pipe(), -5, check, :epipe)
-
-      :enospc ->
-        create_error_log(tracing_id, Constant.Api.error_no_space_left_on_device(), -6, check, :enospc)
-
-      :enomem ->
-        create_error_log(tracing_id, Constant.Api.error_not_enough_memory(), -7, check, :enomem)
-
-      :enoent ->
-        create_error_log(tracing_id, Constant.Api.error_no_such_file_or_directory(), -8, check, :enoent)
-
-      :enetdown ->
-        create_error_log(tracing_id, Constant.Api.error_network_is_down(), -9, check, :enetdown)
-
-      :emfile ->
-        create_error_log(tracing_id, Constant.Api.error_too_many_open_files(), -10, check, :emfile)
-
-      :ehostunreach ->
-        create_error_log(tracing_id, Constant.Api.host_or_domain_not_found(), -11, check, :ehostunreach)
-
-      :ehostdown ->
-        create_error_log(tracing_id, Constant.Api.error_host_is_down(), -12, check, :ehostdown)
-
-      :econnreset ->
-        create_error_log(tracing_id, Constant.Api.error_connection_reset_by_peer(), -13, check, :econnreset)
-
-      :econnrefused ->
-        create_error_log(tracing_id, Constant.Api.error_connection_refused(), -14, check, :econnrefused)
-
-      :econnaborted ->
-        create_error_log(tracing_id, Constant.Api.error_connection_aborted(), -15, check, :econnaborted)
-
-      :ecomm ->
-        create_error_log(tracing_id, Constant.Api.error_communication_error_on_send(), -16, check, :ecomm)
-
-      :timeout ->
-        create_error_log(tracing_id, Constant.Api.error_request_timed_out(), -17, check, :timeout)
-
-      other ->
-        create_error_log(tracing_id, to_string(other), -1000, check, :ebad)
-    end
-  end
-
-  defp create_error_log(tracing_id, text, code, check, type) do
-    attrs = %{
-      text: text,
-      status_code: code,
-      type: type
-    }
-
-    case WatchDog.create_error_log(attrs, check) do
-      {:ok, %ErrorLog{} = error_log} ->
-        Logger.debug("#{tracing_id} 1 Created new error log #{error_log.id}")
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        Logger.error("#{tracing_id} 2 Failed to create error log, error: #{inspect(changeset.errors)}")
-    end
+    HandleErrorLog.finalize(tracing_id, reason, check)
   end
 end
