@@ -6,7 +6,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateSubscriptions do
       add :expires_at, :utc_datetime
       add :cancelled_at, :utc_datetime
       add :is_trial, :boolean, default: false
-      add :external_id, :string, null: false
+      add :external_id, :string
       add :external_customer_id, :string
 
       add :plan_id, references(:plans)

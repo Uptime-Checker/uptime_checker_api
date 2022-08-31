@@ -5,7 +5,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateProducts do
     create table(:products) do
       add :name, :string, null: false
       add :description, :string
-      add :external_id, :string, null: false
+      add :external_id, :string
 
       add :tier, :integer, default: 1
 
