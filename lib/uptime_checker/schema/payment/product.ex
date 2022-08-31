@@ -14,8 +14,8 @@ defmodule UptimeChecker.Schema.Payment.Product do
   end
 
   @doc false
-  def changeset(error_log, attrs) do
-    error_log
+  def changeset(product, attrs) do
+    product
     |> cast(attrs, [:name, :description, :external_id, :tier])
     |> validate_required([:name, :tier])
   end
