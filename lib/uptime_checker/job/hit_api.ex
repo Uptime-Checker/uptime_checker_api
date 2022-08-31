@@ -4,9 +4,9 @@ defmodule UptimeChecker.Job.HitApi do
   alias UptimeChecker.Http.Api
   alias UptimeChecker.WatchDog
   alias UptimeChecker.Helper.Strings
-  alias UptimeChecker.TaskSupervisor
   alias UptimeChecker.Event.HandleNextCheck
   alias UptimeChecker.Schema.WatchDog.MonitorRegion
+
   import Plug.Conn.Status, only: [code: 1]
 
   def work(monitor_region_id) do
@@ -45,8 +45,8 @@ defmodule UptimeChecker.Job.HitApi do
         end
       end
     else
-      create_error_log_async(response, check, :status_code_mismatch)
       HandleNextCheck.act(tracing_id, monitor_region, check, duration, false)
+      create_error_log(response, check, :status_code_mismatch)
     end
   end
 
@@ -68,13 +68,13 @@ defmodule UptimeChecker.Job.HitApi do
     WatchDog.create_check(%{}, monitor, region, org)
   end
 
-  defp create_error_log_async(response, check, type) do
+  defp create_error_log(response, check, type) do
     attrs = %{
       text: response.body,
       status_code: response.status_code,
       type: type
     }
 
-    Task.Supervisor.start_child(TaskSupervisor, WatchDog, :create_error_log, [attrs, check], restart: :transient)
+    WatchDog.create_error_log(attrs, check)
   end
 end

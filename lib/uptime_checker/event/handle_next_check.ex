@@ -31,14 +31,8 @@ defmodule UptimeChecker.Event.HandleNextCheck do
       {:ok, _monitor, monitor_region, _check} ->
         Logger.info("#{tracing_id} Next check Monitor Region #{monitor_region.id}, at #{monitor_region.next_check_at}")
 
-        # Spin up checking alarm in a separate thread
-        Task.Supervisor.start_child(
-          TaskSupervisor,
-          AlarmService,
-          :handle_alarm,
-          [tracing_id, check, monitor_region.down],
-          restart: :transient
-        )
+        # Check for checking alarm
+        AlarmService.handle_alarm(tracing_id, check, monitor_region.down)
 
         # Await on the daily report task
         daily_report_task |> Task.await()

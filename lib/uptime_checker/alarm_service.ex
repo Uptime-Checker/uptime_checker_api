@@ -65,13 +65,12 @@ defmodule UptimeChecker.AlarmService do
           case resolve_alarm(check.monitor, alarm, now, check) do
             {:ok, updated_alarm} ->
               Logger.info("#{tracing_id} Alarm resolved #{alarm.id}, monitor: #{check.monitor.id}")
-              update_duration_in_daily_report_async(check.organization, check.monitor, updated_alarm)
+              Worker.ScheduleNotificationAsync.enqueue(updated_alarm)
+              update_duration_in_daily_report(check.organization, check.monitor, updated_alarm)
 
             {:error, %Ecto.Changeset{} = changeset} ->
               Logger.error("#{tracing_id}, Failed to resolve alarm, error: #{inspect(changeset.errors)}")
           end
-
-          Worker.ScheduleNotificationAsync.enqueue(alarm)
         else
           Logger.debug("#{tracing_id}, Region threshold did not resolve alarm, up count: #{up_monitor_region_count}")
         end
@@ -137,13 +136,11 @@ defmodule UptimeChecker.AlarmService do
     end
   end
 
-  defp update_duration_in_daily_report_async(organization, monitor, alarm) do
-    Task.Supervisor.start_child(
-      TaskSupervisor,
-      DailyReport,
-      :update_duration,
-      [monitor, organization, Times.get_duration_in_seconds(alarm.resolved_at, alarm.inserted_at)],
-      restart: :transient
+  defp update_duration_in_daily_report(organization, monitor, alarm) do
+    DailyReport.update_duration(
+      monitor,
+      organization,
+      Times.get_duration_in_seconds(alarm.resolved_at, alarm.inserted_at)
     )
   end
 end
