@@ -6,6 +6,8 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
   alias UptimeChecker.Schema.WatchDog.{Check, MonitorRegion}
   alias UptimeChecker.Schema.{Region, StatusCode, MonitorStatusCode}
 
+  @highest_acceptable_timeout 30
+
   schema "monitors" do
     field :name, :string
     field :url, :string
@@ -46,8 +48,8 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
     max_timeout = round(attrs.interval / 2)
 
     max_timeout =
-      if max_timeout > 30 do
-        30
+      if max_timeout > @highest_acceptable_timeout do
+        @highest_acceptable_timeout
       end
 
     monitor
