@@ -59,7 +59,13 @@ config :uptime_checker, UptimeChecker.Module.Scheduler,
 # Oban for tasks
 config :uptime_checker, Oban,
   repo: UptimeChecker.Repo,
-  plugins: [Oban.Plugins.Pruner],
+  plugins: [
+    Oban.Plugins.Pruner,
+    {Oban.Plugins.Cron,
+     crontab: [
+       {"0 * * * *", UptimeChecker.Worker.SyncProductsAsync}
+     ]}
+  ],
   queues: [default: 10, notification: 100]
 
 # Import environment specific config. This must remain at the bottom

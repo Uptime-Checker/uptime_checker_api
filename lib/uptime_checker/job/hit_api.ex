@@ -3,10 +3,9 @@ defmodule UptimeChecker.Job.HitApi do
 
   alias UptimeChecker.Http.Api
   alias UptimeChecker.WatchDog
-  alias UptimeChecker.Constant
   alias UptimeChecker.Helper.Strings
+  alias UptimeChecker.Schema.WatchDog.{MonitorRegion, Check}
   alias UptimeChecker.Event.{HandleNextCheck, HandleErrorLog}
-  alias UptimeChecker.Schema.WatchDog.{MonitorRegion, Check, ErrorLog}
 
   import Plug.Conn.Status, only: [code: 1]
 
