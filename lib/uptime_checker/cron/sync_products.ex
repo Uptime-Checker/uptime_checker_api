@@ -15,14 +15,14 @@ defmodule UptimeChecker.Cron.SyncProducts do
              }) do
         filtered_prices =
           Enum.filter(prices.data, fn price ->
-            if price.product == product.id do
+            if price.product == product.external_id do
               price
             end
           end)
 
         Enum.each(filtered_prices, fn price ->
           plan_type =
-            if price.interval == "year" do
+            if price.recurring.interval == "year" do
               :yearly
             else
               :monthly
