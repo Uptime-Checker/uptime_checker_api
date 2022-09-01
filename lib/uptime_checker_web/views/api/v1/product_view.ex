@@ -11,8 +11,14 @@ defmodule UptimeCheckerWeb.Api.V1.ProductView do
   end
 
   def render("product.json", %{product: product}) do
+    plans = Enum.map(product.plans, fn plan -> render_plan(plan) end)
+
     %{
-      id: product.id
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      external_id: product.external_id,
+      plans: plans
     }
   end
 
@@ -38,6 +44,14 @@ defmodule UptimeCheckerWeb.Api.V1.ProductView do
       type: price.type,
       interval: price.recurring.interval,
       trial_period_days: price.recurring.trial_period_days
+    }
+  end
+
+  def render_plan(plan) do
+    %{
+      id: plan.id,
+      price: plan.price,
+      type: plan.type
     }
   end
 end
