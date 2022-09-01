@@ -1,6 +1,8 @@
 defmodule UptimeChecker.Module.Stripe.Webhook do
   @behaviour Stripe.WebhookHandler
 
+  alias UptimeChecker.{Customer, ProductService, Payment}
+
   @customer_subscription_created "customer.subscription.created"
   @customer_subscription_updated "customer.subscription.updated"
   @customer_subscription_deleted "customer.subscription.deleted"
@@ -12,37 +14,38 @@ defmodule UptimeChecker.Module.Stripe.Webhook do
 
   @impl true
   def handle_event(%Stripe.Event{type: @customer_subscription_created} = event) do
-    IO.inspect(event)
+    :ok
   end
 
   @impl true
   def handle_event(%Stripe.Event{type: @customer_subscription_updated} = event) do
-    IO.inspect(event)
+    :ok
   end
 
   @impl true
   def handle_event(%Stripe.Event{type: @customer_subscription_deleted} = event) do
-    IO.inspect(event)
+    :ok
   end
 
   @impl true
   def handle_event(%Stripe.Event{type: @invoice_created} = event) do
-    IO.inspect(event)
+    {:ok, user} = Customer.get_customer_by_payment_id(event.data.customer)
+    {:ok, plan} = ProductService.get_plan_with_product_from_external_id(event.data.customer)
   end
 
   @impl true
   def handle_event(%Stripe.Event{type: @invoice_paid} = event) do
-    IO.inspect(event)
+    :ok
   end
 
   @impl true
   def handle_event(%Stripe.Event{type: @invoice_payment_failed} = event) do
-    IO.inspect(event)
+    :ok
   end
 
   @impl true
   def handle_event(%Stripe.Event{type: @invoice_finalization_failed} = event) do
-    IO.inspect(event)
+    :ok
   end
 
   # Return HTTP 200 for unhandled events
