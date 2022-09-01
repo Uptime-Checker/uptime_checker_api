@@ -4,6 +4,7 @@ defmodule UptimeCheckerWeb.Api.V1.ProductController do
   alias UptimeChecker.Cache
   alias UptimeChecker.Constant
   alias UptimeChecker.TaskSupervisor
+  alias UptimeChecker.ProductService
 
   action_fallback UptimeCheckerWeb.FallbackController
 
@@ -45,7 +46,8 @@ defmodule UptimeCheckerWeb.Api.V1.ProductController do
     end
   end
 
-  def list_products(conn, params) do
-    
+  def list_products(conn, _params) do
+    products = ProductService.list_products_with_plan()
+    render(conn, "index.json", products: products)
   end
 end
