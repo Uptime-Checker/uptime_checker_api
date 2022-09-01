@@ -50,6 +50,8 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
     max_timeout =
       if max_timeout > @highest_acceptable_timeout do
         @highest_acceptable_timeout
+      else
+        max_timeout
       end
 
     monitor

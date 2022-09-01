@@ -118,6 +118,8 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
         {:ok, stripe_customer} = Stripe.Customer.create(%{name: user.name, email: user.email})
         user |> Map.put(:payment_customer_id, stripe_customer.id)
         Customer.update_payment_customer(user, stripe_customer.id)
+      else
+        user
       end
 
     render(conn, "show.json", user: user)
