@@ -16,6 +16,9 @@ defmodule UptimeChecker.ProductService do
   def create_plan(attrs) do
     %Plan{}
     |> Plan.changeset(attrs)
-    |> Repo.insert(on_conflict: :nothing)
+    |> Repo.insert(
+      on_conflict: [set: [price: attrs.price]],
+      conflict_target: :external_id
+    )
   end
 end
