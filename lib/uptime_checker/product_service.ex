@@ -21,4 +21,15 @@ defmodule UptimeChecker.ProductService do
       conflict_target: :external_id
     )
   end
+
+  def list_products_with_plan() do
+    query =
+      from user in User,
+        left_join: r in assoc(user, :role),
+        left_join: o in assoc(user, :organization),
+        where: user.id == ^id,
+        preload: [organization: o, role: r]
+
+    Repo.one(query)
+  end
 end
