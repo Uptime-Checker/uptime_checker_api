@@ -14,7 +14,7 @@ defmodule UptimeChecker.Schema.WatchDog.Check do
     belongs_to :region, Region
     belongs_to :organization, Organization
 
-    has_many :error_logs, ErrorLog
+    has_one :error_logs, ErrorLog
 
     timestamps(type: :utc_datetime)
   end

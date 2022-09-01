@@ -12,9 +12,7 @@ defmodule UptimeCheckerWeb.Api.V1.ProductView do
 
   def render("product.json", %{product: product}) do
     %{
-      id: product.id,
-      success: product.success,
-      duration: product.duration
+      id: product.id
     }
   end
 

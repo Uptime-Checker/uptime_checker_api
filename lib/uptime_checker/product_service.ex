@@ -24,12 +24,10 @@ defmodule UptimeChecker.ProductService do
 
   def list_products_with_plan() do
     query =
-      from user in User,
-        left_join: r in assoc(user, :role),
-        left_join: o in assoc(user, :organization),
-        where: user.id == ^id,
-        preload: [organization: o, role: r]
+      from product in Product,
+        left_join: p in assoc(product, :plans),
+        preload: [plans: p]
 
-    Repo.one(query)
+    Repo.all(query)
   end
 end

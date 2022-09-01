@@ -1,6 +1,7 @@
 defmodule UptimeChecker.Schema.Payment.Product do
   use Ecto.Schema
   import Ecto.Changeset
+  alias UptimeChecker.Schema.Payment.Plan
 
   @tiers [free: 1, developer: 2, startup: 3, enterprise: 4]
 
@@ -9,6 +10,8 @@ defmodule UptimeChecker.Schema.Payment.Product do
     field :description, :string
     field :external_id, :string
     field :tier, Ecto.Enum, values: @tiers
+
+    has_many :plans, Plan
 
     timestamps(type: :utc_datetime)
   end
