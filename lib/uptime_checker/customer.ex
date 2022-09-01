@@ -103,6 +103,20 @@ defmodule UptimeChecker.Customer do
     end
   end
 
+  def get_customer_by_payment_id(id) do
+    query =
+      from user in User,
+        left_join: o in assoc(user, :organization),
+        where: user.payment_customer_id == ^id,
+        preload: [organization: o]
+
+    Repo.one(query)
+    |> case do
+      nil -> {:error, RepoError.user_not_found() |> ErrorMessage.not_found(%{id: id})}
+      user -> {:ok, user}
+    end
+  end
+
   def update_payment_customer(%User{} = user, payment_customer_id) do
     user
     |> User.update_payment_changeset(%{payment_customer_id: payment_customer_id})
