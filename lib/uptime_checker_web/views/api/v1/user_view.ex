@@ -18,6 +18,7 @@ defmodule UptimeCheckerWeb.Api.V1.UserView do
       id: user.id,
       name: user.name,
       email: user.email,
+      payment_customer_id: user.payment_customer_id,
       role: render_role(user.role),
       organization: render_org(user.organization)
     }

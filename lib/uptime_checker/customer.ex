@@ -103,6 +103,12 @@ defmodule UptimeChecker.Customer do
     end
   end
 
+  def update_payment_customer(%User{} = user, payment_customer_id) do
+    user
+    |> User.update_payment_changeset(%{payment_customer_id: payment_customer_id})
+    |> Repo.update()
+  end
+
   def update_user_provider(%User{} = user, attrs) do
     user
     |> User.update_provider_changeset(attrs)
