@@ -116,8 +116,8 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
     user =
       if Strings.blank?(user.payment_customer_id) do
         {:ok, stripe_customer} = Stripe.Customer.create(%{name: user.name, email: user.email})
-        user |> Map.put(:payment_customer_id, stripe_customer.id)
-        Customer.update_payment_customer(user, stripe_customer.id)
+        {:ok, updated_user} = Customer.update_payment_customer(user, stripe_customer.id)
+        updated_user
       else
         user
       end
