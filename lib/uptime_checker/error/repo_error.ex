@@ -17,4 +17,9 @@ defmodule UptimeChecker.Error.RepoError do
   const(:region_not_found, "region_not_found")
 
   const(:alarm_not_found, "alarm_not_found")
+
+  const(:product_not_found, "product_not_found")
+  const(:plan_not_found, "plan_not_found")
+  const(:receipt_not_found, "receipt_not_found")
+  const(:subscription_not_found, "subscription_not_found")
 end
