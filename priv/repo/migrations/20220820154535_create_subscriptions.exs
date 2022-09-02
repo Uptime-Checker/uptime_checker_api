@@ -3,8 +3,10 @@ defmodule UptimeChecker.Repo.Migrations.CreateSubscriptions do
 
   def change do
     create table(:subscriptions) do
+      add :status, :integer
+      add :starts_at, :utc_datetime
       add :expires_at, :utc_datetime
-      add :cancelled_at, :utc_datetime
+      add :canceled_at, :utc_datetime
       add :is_trial, :boolean, default: false
       add :external_id, :string
       add :external_customer_id, :string
@@ -16,6 +18,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateSubscriptions do
       timestamps()
     end
 
+    create index(:subscriptions, [:active])
     create index(:subscriptions, [:expires_at])
     create unique_index(:subscriptions, [:external_id])
 

@@ -23,9 +23,18 @@ defmodule UptimeChecker.Payment do
   end
 
   def create_subscription(attrs) do
-    %Receipt{}
-    |> Receipt.changeset(attrs)
-    |> Repo.insert()
+    %Subscription{}
+    |> Subscription.changeset(attrs)
+    |> Repo.insert(
+      on_conflict: [
+        set: [
+          status: attrs.status,
+          expires_at: attrs.expires_at,
+          canceled_at: attrs.canceled_at
+        ]
+      ],
+      conflict_target: :external_id
+    )
   end
 
   def get_subscription_by_external_id(id) do

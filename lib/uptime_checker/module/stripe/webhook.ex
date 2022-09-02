@@ -17,16 +17,19 @@ defmodule UptimeChecker.Module.Stripe.Webhook do
 
   @impl true
   def handle_event(%Stripe.Event{type: @customer_subscription_created} = event) do
+    create_or_update_subscription(event)
     :ok
   end
 
   @impl true
   def handle_event(%Stripe.Event{type: @customer_subscription_updated} = event) do
+    create_or_update_subscription(event)
     :ok
   end
 
   @impl true
   def handle_event(%Stripe.Event{type: @customer_subscription_deleted} = event) do
+    create_or_update_subscription(event)
     :ok
   end
 
@@ -52,6 +55,29 @@ defmodule UptimeChecker.Module.Stripe.Webhook do
   @impl true
   def handle_event(_event), do: :ok
 
+  defp create_or_update_subscription(event) do
+    data = event.data
+    item = Enum.at(data.items.data, 0)
+    {:ok, user} = Customer.get_customer_by_payment_id(event.data.customer)
+    {:ok, plan} = ProductService.get_plan_with_product_from_external_id(item.price.id)
+
+    params = %{
+      status: data.status,
+      starts_at: data.start_date |> Timex.from_unix(),
+      expires_at: data.current_period_end |> Timex.from_unix(),
+      canceled_at: data.canceled_at |> Timex.from_unix(),
+      is_trial: false,
+      external_id: data.id,
+      external_customer_id: data.customer,
+      plan: plan,
+      product: plan.product,
+      organization: user.organization
+    }
+
+    {:ok, subscription} = Payment.create_subscription(params)
+    Logger.info("Subscription #{subscription.id} for org #{user.organization.id}, plan #{plan.id}, event #{event.type}")
+  end
+
   defp create_or_update_receipt(event) do
     data = event.data
     line = Enum.at(data.lines.data, 0)
@@ -68,8 +94,8 @@ defmodule UptimeChecker.Module.Stripe.Webhook do
       status: data.status,
       paid: data.paid,
       paid_at: get_paid_at(event),
-      from: Timex.from_unix(data.period_start),
-      to: Timex.from_unix(data.period_end),
+      from: data.period_start |> Timex.from_unix() |> Timex.to_date(),
+      to: data.period_end |> Timex.from_unix() |> Timex.to_date(),
       is_trial: false,
       plan: plan,
       product: plan.product,
