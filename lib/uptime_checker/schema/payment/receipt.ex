@@ -36,6 +36,7 @@ defmodule UptimeChecker.Schema.Payment.Receipt do
       :currency,
       :external_id,
       :external_customer_id,
+      :subscription_id,
       :url,
       :status,
       :paid,
