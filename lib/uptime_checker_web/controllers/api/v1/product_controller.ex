@@ -3,8 +3,8 @@ defmodule UptimeCheckerWeb.Api.V1.ProductController do
 
   alias UptimeChecker.Cache
   alias UptimeChecker.Constant
-  alias UptimeChecker.TaskSupervisor
   alias UptimeChecker.ProductService
+  alias UptimeChecker.TaskSupervisors
 
   action_fallback UptimeCheckerWeb.FallbackController
 
@@ -13,12 +13,12 @@ defmodule UptimeCheckerWeb.Api.V1.ProductController do
 
     if is_nil(cached_products) do
       products_fetch_task =
-        Task.Supervisor.async(TaskSupervisor, fn ->
+        Task.Supervisor.async({:via, PartitionSupervisor, {TaskSupervisors, self()}}, fn ->
           Stripe.Product.list()
         end)
 
       prices_fetch_task =
-        Task.Supervisor.async(TaskSupervisor, fn ->
+        Task.Supervisor.async({:via, PartitionSupervisor, {TaskSupervisors, self()}}, fn ->
           Stripe.Price.list()
         end)
 

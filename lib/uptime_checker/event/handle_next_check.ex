@@ -2,7 +2,7 @@ defmodule UptimeChecker.Event.HandleNextCheck do
   use Timex
   require Logger
 
-  alias UptimeChecker.TaskSupervisor
+  alias UptimeChecker.TaskSupervisors
   alias UptimeChecker.{AlarmService, WatchDog, DailyReport}
 
   def act(tracing_id, monitor_region, check, duration, success) do
@@ -11,7 +11,7 @@ defmodule UptimeChecker.Event.HandleNextCheck do
     monitor = monitor_region.monitor
 
     daily_report_task =
-      Task.Supervisor.async(TaskSupervisor, fn ->
+      Task.Supervisor.async({:via, PartitionSupervisor, {TaskSupervisors, self()}}, fn ->
         DailyReport.upsert(monitor, check.organization, success)
       end)
 

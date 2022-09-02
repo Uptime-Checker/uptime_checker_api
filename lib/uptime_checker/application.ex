@@ -21,7 +21,7 @@ defmodule UptimeChecker.Application do
       # Scheduler
       UptimeChecker.Module.Scheduler,
       # Task Supervisor
-      {Task.Supervisor, name: UptimeChecker.TaskSupervisor},
+      {PartitionSupervisor, child_spec: Task.Supervisor, name: UptimeChecker.TaskSupervisors},
       # Oban
       {Oban, Application.fetch_env!(:uptime_checker, Oban)},
       # Start a worker on startup

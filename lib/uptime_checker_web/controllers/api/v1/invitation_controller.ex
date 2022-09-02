@@ -8,8 +8,8 @@ defmodule UptimeCheckerWeb.Api.V1.InvitationController do
   alias UptimeChecker.Auth
   alias UptimeChecker.Module.Mailer
   alias UptimeChecker.Authorization
-  alias UptimeChecker.TaskSupervisor
   alias UptimeChecker.Helper.Strings
+  alias UptimeChecker.TaskSupervisors
   alias UptimeChecker.InvitationService
   alias UptimeChecker.Error.ServiceError
   alias UptimeChecker.Schema.Customer.{User, Invitation}
@@ -104,7 +104,7 @@ defmodule UptimeCheckerWeb.Api.V1.InvitationController do
 
   defp after_join_successful(invitation, user) do
     Task.Supervisor.start_child(
-      TaskSupervisor,
+      {:via, PartitionSupervisor, {TaskSupervisors, self()}},
       InvitationService,
       :delete_invitation,
       [invitation],

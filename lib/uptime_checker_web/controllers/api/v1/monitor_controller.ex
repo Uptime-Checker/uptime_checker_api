@@ -3,7 +3,7 @@ defmodule UptimeCheckerWeb.Api.V1.MonitorController do
   import UptimeChecker.Helper.Util
 
   alias UptimeChecker.WatchDog
-  alias UptimeChecker.TaskSupervisor
+  alias UptimeChecker.TaskSupervisors
   alias UptimeChecker.Schema.WatchDog.Monitor
 
   plug UptimeCheckerWeb.Plugs.Org
@@ -19,10 +19,20 @@ defmodule UptimeCheckerWeb.Api.V1.MonitorController do
     attrs = key_to_atom(params)
 
     with {:ok, %Monitor{} = monitor} <- WatchDog.create_monitor(attrs, current_user(conn)) do
-      Task.Supervisor.start_child(TaskSupervisor, WatchDog, :create_monitor_regions, [monitor], restart: :transient)
+      Task.Supervisor.start_child(
+        {:via, PartitionSupervisor, {TaskSupervisors, self()}},
+        WatchDog,
+        :create_monitor_regions,
+        [monitor],
+        restart: :transient
+      )
 
       if Map.has_key?(attrs, :user_ids) do
-        Task.Supervisor.start_child(TaskSupervisor, WatchDog, :create_monitor_users, [monitor, attrs.user_ids],
+        Task.Supervisor.start_child(
+          {:via, PartitionSupervisor, {TaskSupervisors, self()}},
+          WatchDog,
+          :create_monitor_users,
+          [monitor, attrs.user_ids],
           restart: :transient
         )
       end

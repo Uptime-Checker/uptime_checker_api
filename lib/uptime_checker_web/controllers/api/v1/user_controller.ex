@@ -5,7 +5,7 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
   alias UptimeChecker.Auth
   alias UptimeChecker.Customer
   alias UptimeChecker.Helper.Strings
-  alias UptimeChecker.TaskSupervisor
+  alias UptimeChecker.TaskSupervisors
   alias UptimeChecker.Module.Firebase
   alias UptimeChecker.Schema.Customer.{User, GuestUser}
 
@@ -126,7 +126,14 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
   end
 
   defp after_email_link_login_successful(guest_user, user) do
-    Task.Supervisor.start_child(TaskSupervisor, Auth, :delete_guest_user, [guest_user], restart: :transient)
+    Task.Supervisor.start_child(
+      {:via, PartitionSupervisor, {TaskSupervisors, self()}},
+      Auth,
+      :delete_guest_user,
+      [guest_user],
+      restart: :transient
+    )
+
     {:ok, access_token, _claims} = Auth.encode_and_sign(user)
     access_token
   end

@@ -2,7 +2,7 @@ defmodule UptimeChecker.Job.RunChecksOnStartup do
   use Timex
   alias UptimeChecker.WatchDog
   alias UptimeChecker.Helper.Strings
-  alias UptimeChecker.TaskSupervisor
+  alias UptimeChecker.TaskSupervisors
 
   def work() do
     handle_active_monitors(nil)
@@ -15,7 +15,7 @@ defmodule UptimeChecker.Job.RunChecksOnStartup do
 
     _ =
       Task.Supervisor.async_stream(
-        TaskSupervisor,
+        {:via, PartitionSupervisor, {TaskSupervisors, self()}},
         entries,
         fn entry -> update_monitor_region(entry, now) end,
         max_concurrency: 5
