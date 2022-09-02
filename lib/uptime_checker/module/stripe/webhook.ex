@@ -14,7 +14,6 @@ defmodule UptimeChecker.Module.Stripe.Webhook do
   @invoice_created "invoice.created"
   @invoice_paid "invoice.paid"
   @invoice_payment_failed "invoice.payment_failed"
-  @invoice_finalization_failed "invoice.finalization_failed"
 
   @impl true
   def handle_event(%Stripe.Event{type: @customer_subscription_created} = event) do
@@ -45,11 +44,7 @@ defmodule UptimeChecker.Module.Stripe.Webhook do
 
   @impl true
   def handle_event(%Stripe.Event{type: @invoice_payment_failed} = event) do
-    :ok
-  end
-
-  @impl true
-  def handle_event(%Stripe.Event{type: @invoice_finalization_failed} = event) do
+    create_or_update_receipt(event)
     :ok
   end
 
@@ -72,6 +67,7 @@ defmodule UptimeChecker.Module.Stripe.Webhook do
       url: data.hosted_invoice_url,
       status: data.status,
       paid: data.paid,
+      paid_at: get_paid_at(event),
       from: Timex.from_unix(data.period_start),
       to: Timex.from_unix(data.period_end),
       is_trial: false,
@@ -95,6 +91,14 @@ defmodule UptimeChecker.Module.Stripe.Webhook do
         {:error, %ErrorMessage{code: :not_found} = _e} ->
           nil
       end
+    end
+  end
+
+  defp get_paid_at(event) do
+    if event.type == @invoice_paid do
+      Timex.from_unix(event.data.created)
+    else
+      nil
     end
   end
 end
