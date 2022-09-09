@@ -9,7 +9,7 @@ defmodule UptimeChecker.Schema.Payment.Receipt do
 
   schema "receipts" do
     field :price, :float
-    field :currency, :float
+    field :currency, :string
     field :external_id, :string
     field :external_customer_id, :string
     field :url, :string
@@ -28,23 +28,35 @@ defmodule UptimeChecker.Schema.Payment.Receipt do
     timestamps(type: :utc_datetime)
   end
 
+  @allowed_changes [
+    :price,
+    :currency,
+    :external_id,
+    :external_customer_id,
+    :subscription_id,
+    :url,
+    :status,
+    :paid,
+    :paid_at,
+    :from,
+    :to,
+    :is_trial
+  ]
+
   @doc false
   def changeset(receipt, attrs) do
     receipt
-    |> cast(attrs, [
-      :price,
-      :currency,
-      :external_id,
-      :external_customer_id,
-      :subscription_id,
-      :url,
-      :status,
-      :paid,
-      :paid_at,
-      :from,
-      :to,
-      :is_trial
-    ])
+    |> cast(attrs, @allowed_changes)
+    |> validate_required([:price, :from, :to, :is_trial])
+    |> unique_constraint(:external_id)
+    |> put_assoc(:plan, attrs.plan)
+    |> put_assoc(:product, attrs.product)
+    |> put_assoc(:organization, attrs.organization)
+  end
+
+  def changeset_with_subscription(receipt, attrs) do
+    receipt
+    |> cast(attrs, @allowed_changes)
     |> validate_required([:price, :from, :to, :is_trial])
     |> unique_constraint(:external_id)
     |> put_assoc(:plan, attrs.plan)
