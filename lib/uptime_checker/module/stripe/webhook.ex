@@ -56,16 +56,16 @@ defmodule UptimeChecker.Module.Stripe.Webhook do
   def handle_event(_event), do: :ok
 
   defp create_or_update_subscription(event) do
-    data = event.data
+    data = event.data.object
     item = Enum.at(data.items.data, 0)
-    {:ok, user} = Customer.get_customer_by_payment_id(event.data.customer)
+    {:ok, user} = Customer.get_customer_by_payment_id(data.customer)
     {:ok, plan} = ProductService.get_plan_with_product_from_external_id(item.price.id)
 
     params = %{
       status: data.status,
       starts_at: data.start_date |> Timex.from_unix(),
       expires_at: data.current_period_end |> Timex.from_unix(),
-      canceled_at: data.canceled_at |> Timex.from_unix(),
+      canceled_at: get_canceled_at(data),
       is_trial: false,
       external_id: data.id,
       external_customer_id: data.customer,
@@ -79,9 +79,9 @@ defmodule UptimeChecker.Module.Stripe.Webhook do
   end
 
   defp create_or_update_receipt(event) do
-    data = event.data
+    data = event.data.object
     line = Enum.at(data.lines.data, 0)
-    {:ok, user} = Customer.get_customer_by_payment_id(event.data.customer)
+    {:ok, user} = Customer.get_customer_by_payment_id(data.customer)
     {:ok, plan} = ProductService.get_plan_with_product_from_external_id(line.price.id)
 
     params = %{
@@ -122,9 +122,17 @@ defmodule UptimeChecker.Module.Stripe.Webhook do
 
   defp get_paid_at(event) do
     if event.type == @invoice_paid do
-      Timex.from_unix(event.data.created)
+      Timex.from_unix(event.created)
     else
       nil
+    end
+  end
+
+  defp get_canceled_at(data) do
+    if Strings.blank?(data.canceled_at) do
+      nil
+    else
+      data.canceled_at |> Timex.from_unix()
     end
   end
 end

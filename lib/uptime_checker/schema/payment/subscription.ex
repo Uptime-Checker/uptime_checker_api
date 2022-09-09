@@ -26,7 +26,7 @@ defmodule UptimeChecker.Schema.Payment.Subscription do
   @doc false
   def changeset(subscription, attrs) do
     subscription
-    |> cast(attrs, [:expires_at, :canceled_at, :is_trial, :external_id, :external_customer_id])
+    |> cast(attrs, [:status, :starts_at, :expires_at, :canceled_at, :is_trial, :external_id, :external_customer_id])
     |> validate_required([:expires_at, :is_trial])
     |> unique_constraint(:external_id)
     |> put_assoc(:plan, attrs.plan)
