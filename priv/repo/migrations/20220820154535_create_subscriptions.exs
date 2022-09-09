@@ -18,7 +18,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateSubscriptions do
       timestamps()
     end
 
-    create index(:subscriptions, [:active])
+    create index(:subscriptions, [:status])
     create index(:subscriptions, [:expires_at])
     create unique_index(:subscriptions, [:external_id])
 
