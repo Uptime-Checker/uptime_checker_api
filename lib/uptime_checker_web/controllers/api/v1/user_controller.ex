@@ -4,7 +4,6 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
 
   alias UptimeChecker.Auth
   alias UptimeChecker.Customer
-  alias UptimeChecker.Helper.Strings
   alias UptimeChecker.TaskSupervisors
   alias UptimeChecker.Module.Firebase
   alias UptimeChecker.Schema.Customer.{User, GuestUser}
@@ -113,16 +112,9 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
   def stripe_customer(conn, _params) do
     user = current_user(conn)
 
-    user =
-      if Strings.blank?(user.payment_customer_id) do
-        {:ok, stripe_customer} = Stripe.Customer.create(%{name: user.name, email: user.email})
-        {:ok, updated_user} = Customer.update_payment_customer(user, stripe_customer.id)
-        updated_user
-      else
-        user
-      end
-
-    render(conn, "show.json", user: user)
+    with {:ok, updated_user} <- UptimeChecker.Module.Stripe.User.create_stripe_customer(user) do
+      render(conn, "show.json", user: updated_user)
+    end
   end
 
   defp after_email_link_login_successful(guest_user, user) do
