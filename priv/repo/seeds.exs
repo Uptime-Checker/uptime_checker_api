@@ -22,5 +22,3 @@ Authorization.create_role(%{name: "Super Admin", type: :superadmin})
 Authorization.create_role(%{name: "Admin", type: :admin})
 Authorization.create_role(%{name: "Editor", type: :editor})
 Authorization.create_role(%{name: "Member", type: :member})
-
-ProductService.create_product(%{name: "Free", description: "Free for lifetime", tier: :free})

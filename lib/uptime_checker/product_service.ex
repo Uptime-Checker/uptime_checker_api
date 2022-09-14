@@ -45,4 +45,18 @@ defmodule UptimeChecker.ProductService do
       plan -> {:ok, plan}
     end
   end
+
+  def get_plan_with_product_from_tier(tier) do
+    query =
+      from plan in Plan,
+        left_join: p in assoc(plan, :product),
+        where: plan.tier == ^tier,
+        preload: [product: p]
+
+    Repo.one(query)
+    |> case do
+      nil -> {:error, RepoError.plan_not_found() |> ErrorMessage.not_found(%{tier: tier})}
+      plan -> {:ok, plan}
+    end
+  end
 end
