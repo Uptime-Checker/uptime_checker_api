@@ -66,7 +66,7 @@ defmodule UptimeChecker.Module.Stripe.Webhook do
       starts_at: data.start_date |> Timex.from_unix(),
       expires_at: data.current_period_end |> Timex.from_unix(),
       canceled_at: get_canceled_at(data),
-      is_trial: !Strings.blank?(data.trial_end),
+      is_trial: get_is_trial_subscription(data),
       external_id: data.id,
       external_customer_id: data.customer,
       plan: plan,
@@ -133,6 +133,16 @@ defmodule UptimeChecker.Module.Stripe.Webhook do
       nil
     else
       data.canceled_at |> Timex.from_unix()
+    end
+  end
+
+  defp get_is_trial_subscription(data) do
+    if Strings.blank?(data.trial_end) do
+      false
+    else
+      now = Timex.now()
+      trial_end = data.trial_end |> Timex.from_unix()
+      Timex.after?(trial_end, now)
     end
   end
 end
