@@ -76,6 +76,8 @@ defmodule UptimeChecker.Module.Stripe.Webhook do
 
     {:ok, subscription} = Payment.create_subscription(params)
     Logger.info("Subscription #{subscription.id} for org #{user.organization.id}, plan #{plan.id}, event #{event.type}")
+
+    Payment.delete_anonymous_subscription(user.organization.id)
   end
 
   defp create_or_update_receipt(event) do

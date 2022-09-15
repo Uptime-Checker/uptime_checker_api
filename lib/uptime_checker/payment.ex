@@ -39,6 +39,11 @@ defmodule UptimeChecker.Payment do
     )
   end
 
+  def delete_anonymous_subscription(organization_id) do
+    query = from s in Subscription, where: s.organization_id == ^organization_id, where: is_nil(s.external_id)
+    Repo.delete_all(query)
+  end
+
   def get_subscription_by_external_id(id) do
     query = from s in Subscription, where: s.external_id == ^id
 
