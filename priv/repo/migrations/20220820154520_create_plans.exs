@@ -14,5 +14,6 @@ defmodule UptimeChecker.Repo.Migrations.CreatePlans do
 
     create index(:plans, [:product_id])
     create unique_index(:plans, [:external_id])
+    create unique_index(:plans, [:price, :type])
   end
 end
