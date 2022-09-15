@@ -13,8 +13,9 @@ defmodule UptimeChecker.Payment do
         set: [
           url: attrs.url,
           paid: attrs.paid,
-          paid_at: attrs.paid_at,
           status: attrs.status,
+          paid_at: attrs.paid_at,
+          is_trial: attrs.is_trial,
           subscription_id: attrs.subscription_id
         ]
       ],
@@ -29,6 +30,7 @@ defmodule UptimeChecker.Payment do
       on_conflict: [
         set: [
           status: attrs.status,
+          is_trial: attrs.is_trial,
           expires_at: attrs.expires_at,
           canceled_at: attrs.canceled_at
         ]

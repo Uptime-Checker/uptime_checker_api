@@ -6,7 +6,6 @@ defmodule UptimeChecker.Module.Stripe.Billing do
   alias UptimeChecker.Schema.Customer.User
 
   def create_subscription(%User{} = user, %Plan{} = plan, is_trial) do
-    dbg(get_create_subscription_params(user, plan, is_trial))
     get_create_subscription_params(user, plan, is_trial) |> Stripe.Subscription.create()
   end
 
