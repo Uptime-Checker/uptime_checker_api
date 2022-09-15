@@ -11,7 +11,6 @@
 # and so on) as they will fail if something goes wrong.
 alias UptimeChecker.Authorization
 alias UptimeChecker.RegionService
-alias UptimeChecker.ProductService
 
 RegionService.create_region(%{name: "Sunnyvale, California (US)", key: "sjc"})
 RegionService.create_region(%{name: "Frankfurt, Germany", key: "fra"})
