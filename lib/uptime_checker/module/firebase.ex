@@ -20,7 +20,7 @@ defmodule UptimeChecker.Module.Firebase do
   def verify_id_token!(token) do
     now = Timex.now()
     fields = verify!(token)
-    expires_at = fields["exp"] |> DateTime.from_unix!()
+    expires_at = fields["exp"] |> Timex.from_unix()
 
     cond do
       fields["iss"] != System.get_env("FIREBASE_ISSUER") ->
