@@ -47,4 +47,18 @@ defmodule UptimeChecker.Payment do
       subscription -> {:ok, subscription}
     end
   end
+
+  def get_active_subsription_from_user(organization_id) do
+    now = Timex.now()
+
+    query =
+      from s in Subscription,
+        where: s.organization_id == ^organization_id,
+        where: s.expires_at > ^now
+
+    case Repo.one(query) do
+      nil -> {:error, RepoError.subscription_not_found() |> ErrorMessage.not_found(%{organization_id: organization_id})}
+      subscription -> {:ok, subscription}
+    end
+  end
 end
