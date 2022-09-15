@@ -4,7 +4,6 @@ defmodule UptimeChecker.Module.Stripe.Webhook do
 
   @behaviour Stripe.WebhookHandler
 
-  alias UptimeChecker.Constant
   alias UptimeChecker.Helper.Strings
   alias UptimeChecker.{Customer, ProductService, Payment}
 
@@ -15,8 +14,6 @@ defmodule UptimeChecker.Module.Stripe.Webhook do
   @invoice_created "invoice.created"
   @invoice_paid "invoice.paid"
   @invoice_payment_failed "invoice.payment_failed"
-
-  @checkout_session_completed "checkout.session.completed"
 
   @impl true
   def handle_event(%Stripe.Event{type: @customer_subscription_created} = event) do
@@ -51,34 +48,6 @@ defmodule UptimeChecker.Module.Stripe.Webhook do
   @impl true
   def handle_event(%Stripe.Event{type: @invoice_payment_failed} = event) do
     create_or_update_receipt(event)
-    :ok
-  end
-
-  @impl true
-  def handle_event(%Stripe.Event{type: @checkout_session_completed} = event) do
-    data = event.data.object
-    {:ok, customer} = Stripe.Customer.retrieve(data.customer)
-    dbg(customer)
-
-    {:ok, payment_methods} =
-      Stripe.PaymentMethod.list(%{customer: customer.id, type: Constant.Default.payment_method_type()})
-
-    dbg(payment_methods)
-    payment_method = Enum.at(payment_methods.data, 0)
-
-    {:ok, user} = Customer.get_customer_by_payment_id(data.customer)
-    {:ok, local_subscription} = Payment.get_active_subsription_from_user(user.organization_id)
-    dbg(local_subscription)
-    {:ok, remote_subscription} = Stripe.Subscription.retrieve(customer.id)
-    dbg(remote_subscription)
-
-    {:ok, updated_remote_subscription} =
-      Stripe.Subscription.update(local_subscription.external_id, %{
-        default_payment_method: payment_method.id
-      })
-
-    dbg(updated_remote_subscription)
-
     :ok
   end
 
