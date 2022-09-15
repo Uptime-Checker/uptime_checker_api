@@ -9,6 +9,18 @@ defmodule UptimeCheckerWeb.Api.V1.OrganizationView do
     %{data: render_many(organizations, OrganizationView, "organization.json")}
   end
 
+  def render("show.json", %{organization: organization, subscription: subscription, plan: plan}) do
+    %{
+      data: %{
+        id: organization.id,
+        name: organization.name,
+        slug: organization.slug,
+        subscription: render_sub(subscription),
+        plan: render_plan(plan)
+      }
+    }
+  end
+
   def render("show.json", %{organization: organization}) do
     %{data: render_one(organization, OrganizationView, "organization.json")}
   end
@@ -18,16 +30,6 @@ defmodule UptimeCheckerWeb.Api.V1.OrganizationView do
       id: organization.id,
       name: organization.name,
       slug: organization.slug
-    }
-  end
-
-  def render("organization.json", %{organization: organization, subscription: subscription, plan: plan}) do
-    %{
-      id: organization.id,
-      name: organization.name,
-      slug: organization.slug,
-      subscription: render_sub(subscription),
-      plan: render_plan(plan)
     }
   end
 
