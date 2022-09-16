@@ -9,7 +9,7 @@ defmodule UptimeCheckerWeb.Api.V1.ProductController do
   action_fallback UptimeCheckerWeb.FallbackController
 
   def list_external_products(conn, _params) do
-    cached_products = Cache.Payment.get(Constant.Cache.external_products())
+    cached_products = Cache.Payment.get_products(Constant.Cache.external_products())
 
     if is_nil(cached_products) do
       products_fetch_task =
@@ -38,7 +38,7 @@ defmodule UptimeCheckerWeb.Api.V1.ProductController do
           product |> Map.put(:prices, filtered_prices)
         end)
 
-      Cache.Payment.put(Constant.Cache.external_products(), updated_products)
+      Cache.Payment.put_products(Constant.Cache.external_products(), updated_products)
 
       render(conn, "external_products_index.json", external_products: updated_products)
     else

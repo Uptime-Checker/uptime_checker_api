@@ -4,6 +4,7 @@ defmodule UptimeChecker.Module.Stripe.Webhook do
 
   @behaviour Stripe.WebhookHandler
 
+  alias UptimeChecker.Cache
   alias UptimeChecker.Helper.Strings
   alias UptimeChecker.{Customer, ProductService, Payment}
 
@@ -56,6 +57,7 @@ defmodule UptimeChecker.Module.Stripe.Webhook do
   def handle_event(_event), do: :ok
 
   defp create_or_update_subscription(event) do
+    event_at = event.created |> Timex.from_unix()
     data = event.data.object
     item = Enum.at(data.items.data, 0)
     {:ok, user} = Customer.get_customer_by_payment_id(data.customer)
@@ -74,13 +76,30 @@ defmodule UptimeChecker.Module.Stripe.Webhook do
       organization: user.organization
     }
 
-    {:ok, subscription} = Payment.create_subscription(params)
-    Logger.info("Subscription #{subscription.id} for org #{user.organization.id}, plan #{plan.id}, event #{event.type}")
+    last_event_at = Cache.Payment.get_subscription_event(data.customer)
 
-    Payment.delete_anonymous_subscription(user.organization.id)
+    if is_nil(last_event_at) do
+      handle_create_subscription(params, event, event_at)
+    else
+      if Timex.after?(event_at, last_event_at) do
+        handle_create_subscription(params, event, event_at)
+      end
+    end
+  end
+
+  defp handle_create_subscription(params, event, event_at) do
+    {:ok, subscription} = Payment.create_subscription(params)
+    Cache.Payment.put_subscription_event(params.external_customer_id, event_at)
+
+    Logger.info(
+      "Subscription #{subscription.id}, org #{params.organization.id}, plan #{params.plan.id}, event #{event.type}"
+    )
+
+    Payment.delete_anonymous_subscription(params.user.organization.id)
   end
 
   defp create_or_update_receipt(event) do
+    event_at = event.created |> Timex.from_unix()
     data = event.data.object
     line = Enum.at(data.lines.data, 0)
     {:ok, user} = Customer.get_customer_by_payment_id(data.customer)
@@ -104,8 +123,21 @@ defmodule UptimeChecker.Module.Stripe.Webhook do
       organization: user.organization
     }
 
+    last_event_at = Cache.Payment.get_receipt_event(data.customer)
+
+    if is_nil(last_event_at) do
+      handle_create_receipt(params, event, event_at)
+    else
+      if Timex.after?(event_at, last_event_at) do
+        handle_create_receipt(params, event, event_at)
+      end
+    end
+  end
+
+  defp handle_create_receipt(params, event, event_at) do
     {:ok, receipt} = Payment.create_receipt(params)
-    Logger.info("Receipt #{receipt.id} for org #{user.organization.id}, plan #{plan.id}, event #{event.type}")
+    Cache.Payment.put_receipt_event(params.external_customer_id, event_at)
+    Logger.info("Receipt #{receipt.id} for org #{params.organization.id}, plan #{params.plan.id}, event #{event.type}")
   end
 
   defp get_subscription_id(data) do
