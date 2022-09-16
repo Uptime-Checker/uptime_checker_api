@@ -25,3 +25,11 @@ Authorization.create_role(%{name: "Member", type: :member})
 
 {:ok, product} = ProductService.create_product(%{name: "Free", description: "Free for lifetime", tier: :free})
 ProductService.create_plan(%{price: 0, type: :monthly, product: product})
+
+# Features
+{:ok, monitoring_feature_api_check_count} = ProductService.create_feature(%{name: "API_CHECK_COUNT", type: :monitoring})
+
+{:ok, monitoring_feature_api_check_interval} =
+  ProductService.create_feature(%{name: "API_CHECK_INTERVAL", type: :monitoring})
+
+# Product features

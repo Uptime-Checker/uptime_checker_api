@@ -3,7 +3,7 @@ defmodule UptimeChecker.ProductService do
 
   alias UptimeChecker.Repo
   alias UptimeChecker.Error.RepoError
-  alias UptimeChecker.Schema.Payment.{Product, Plan}
+  alias UptimeChecker.Schema.Payment.{Product, Plan, Feature}
 
   def create_product(attrs) do
     %Product{}
@@ -12,6 +12,12 @@ defmodule UptimeChecker.ProductService do
       on_conflict: [set: [name: attrs.name]],
       conflict_target: :name
     )
+  end
+
+  def create_feature(attrs) do
+    %Feature{}
+    |> Feature.changeset(attrs)
+    |> Repo.insert()
   end
 
   def create_plan(attrs) do
