@@ -27,7 +27,8 @@ defmodule UptimeChecker.Application do
       # Start a worker on startup
       {Task, &UptimeChecker.Event.InitStart.run/0},
       # Caches
-      Supervisor.child_spec({Cachex, name: :payment}, id: :payment)
+      Supervisor.child_spec({Cachex, name: :cache_payment}, id: :cache_payment),
+      Supervisor.child_spec({Cachex, name: :cache_stripe_webhook}, id: :cache_stripe_webhook)
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

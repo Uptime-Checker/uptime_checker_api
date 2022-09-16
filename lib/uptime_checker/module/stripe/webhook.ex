@@ -95,7 +95,7 @@ defmodule UptimeChecker.Module.Stripe.Webhook do
       "Subscription #{subscription.id}, org #{params.organization.id}, plan #{params.plan.id}, event #{event.type}"
     )
 
-    Payment.delete_anonymous_subscription(params.user.organization.id)
+    Payment.delete_anonymous_subscription(params.organization.id)
   end
 
   defp create_or_update_receipt(event) do
