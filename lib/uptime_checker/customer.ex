@@ -88,13 +88,15 @@ defmodule UptimeChecker.Customer do
     end
   end
 
+  # This is run in every authenticated request
   def get_customer_by_id(id) do
     query =
       from user in User,
         left_join: r in assoc(user, :role),
         left_join: o in assoc(user, :organization),
+        left_join: claims in assoc(r, :claims),
         where: user.id == ^id,
-        preload: [organization: o, role: r]
+        preload: [organization: o, role: {r, claims: claims}]
 
     Repo.one(query)
     |> case do
