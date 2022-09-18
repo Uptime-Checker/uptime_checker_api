@@ -4,11 +4,23 @@ defmodule UptimeChecker.Authorization do
 
   alias UptimeChecker.Repo
   alias UptimeChecker.Error.RepoError
-  alias UptimeChecker.Schema.Customer.{User, Role, OrganizationUser}
+  alias UptimeChecker.Schema.Customer.{User, Role, OrganizationUser, Claim, RoleClaim}
 
   def create_role(attrs \\ %{}) do
     %Role{}
     |> Role.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def create_claim(attrs \\ %{}) do
+    %Claim{}
+    |> Claim.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def create_role_claim(attrs \\ %{}) do
+    %RoleClaim{}
+    |> RoleClaim.changeset(attrs)
     |> Repo.insert()
   end
 
