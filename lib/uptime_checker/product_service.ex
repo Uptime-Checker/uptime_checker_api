@@ -44,6 +44,26 @@ defmodule UptimeChecker.ProductService do
     Repo.all(query)
   end
 
+  def get_feature!(id), do: Repo.get!(Feature, id)
+
+  def get_feature_by_name_type(name, type) do
+    query = from u in Feature, where: u.name == ^name, where: u.type == ^type
+
+    case Repo.one(query) do
+      nil -> {:error, RepoError.feature_not_found() |> ErrorMessage.not_found(%{name: name, type: type})}
+      feature -> {:ok, feature}
+    end
+  end
+
+  def get_product_by_name(name) do
+    Product
+    |> Repo.get_by(name: name)
+    |> case do
+      nil -> {:error, RepoError.product_not_found() |> ErrorMessage.not_found(%{name: name})}
+      product -> {:ok, product}
+    end
+  end
+
   def get_plan_with_product(id) do
     query =
       from plan in Plan,
