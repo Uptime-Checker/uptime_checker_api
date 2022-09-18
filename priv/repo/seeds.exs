@@ -32,4 +32,9 @@ ProductService.create_plan(%{price: 0, type: :monthly, product: product})
 {:ok, monitoring_feature_api_check_interval} =
   ProductService.create_feature(%{name: "API_CHECK_INTERVAL", type: :monitoring})
 
+{:ok, team_feature_user_count} = ProductService.create_feature(%{name: "USER_COUNT", type: :team})
+
 # Product features
+ProductService.create_product_feature(%{product: product, feature: monitoring_feature_api_check_count, count: 5})
+ProductService.create_product_feature(%{product: product, feature: monitoring_feature_api_check_interval, count: 300})
+ProductService.create_product_feature(%{product: product, feature: team_feature_user_count, count: 1})

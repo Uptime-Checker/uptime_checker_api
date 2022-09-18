@@ -11,7 +11,8 @@ defmodule UptimeChecker.Schema.Payment.Feature do
     support: 6,
     integration: 7,
     security: 8,
-    analytics: 9
+    analytics: 9,
+    team: 10
   ]
 
   schema "features" do
