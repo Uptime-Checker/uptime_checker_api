@@ -11,10 +11,20 @@ defmodule UptimeCheckerWeb.Api.V1.RoleView do
   end
 
   def render("role.json", %{role: role}) do
+    claims = Enum.map(role.claims, fn claim -> render_claim(claim) end)
+
     %{
       id: role.id,
       name: role.name,
-      type: role.type
+      type: role.type,
+      claims: claims
+    }
+  end
+
+  def render_claim(claim) do
+    %{
+      id: claim.id,
+      name: claim.name
     }
   end
 end

@@ -90,22 +90,13 @@ defmodule UptimeChecker.Customer do
 
   # This is run in every authenticated request
   def get_customer_by_id(id) do
-    now = Timex.now()
-
     query =
       from user in User,
         left_join: r in assoc(user, :role),
         left_join: o in assoc(user, :organization),
         left_join: claims in assoc(r, :claims),
-        left_join: subscriptions in assoc(o, :subscriptions),
-        left_join: product in assoc(subscriptions, :product),
-        left_join: features in assoc(product, :features),
         where: user.id == ^id,
-        where: subscriptions.expires_at > ^now,
-        preload: [
-          organization: {o, subscriptions: {subscriptions, product: {product, features: features}}},
-          role: {r, claims: claims}
-        ]
+        preload: [organization: o, role: {r, claims: claims}]
 
     Repo.one(query)
     |> case do
