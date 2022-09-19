@@ -53,7 +53,7 @@ defmodule UptimeChecker.Payment do
     end
   end
 
-  def get_active_subsription_from_user(organization_id) do
+  def get_active_subsription(organization_id) do
     now = Timex.now()
 
     query =

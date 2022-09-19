@@ -3,42 +3,51 @@ defmodule UptimeChecker.Event.HandleNextCheck do
   require Logger
 
   alias UptimeChecker.TaskSupervisors
-  alias UptimeChecker.{AlarmService, WatchDog, DailyReport}
+  alias UptimeChecker.Schema.WatchDog.Check
+  alias UptimeChecker.{AlarmService, WatchDog, DailyReport, Payment}
 
-  def act(tracing_id, monitor_region, check, duration, success) do
+  def act(tracing_id, monitor_region, %Check{} = check, duration, success) do
     # Shift the spent time in hitting api
     now = Timex.now() |> Timex.shift(milliseconds: -duration)
     monitor = monitor_region.monitor
 
-    daily_report_task =
-      Task.Supervisor.async({:via, PartitionSupervisor, {TaskSupervisors, self()}}, fn ->
-        DailyReport.upsert(monitor, check.organization, success)
-      end)
+    case Payment.get_active_subsription(check.organization_id) do
+      {:ok, _subscription} ->
+        daily_report_task =
+          Task.Supervisor.async({:via, PartitionSupervisor, {TaskSupervisors, self()}}, fn ->
+            DailyReport.upsert(monitor, check.organization, success)
+          end)
 
-    check_params = %{
-      success: success,
-      duration: duration
-    }
+        check_params = %{
+          success: success,
+          duration: duration
+        }
 
-    case WatchDog.handle_next_check(
-           monitor,
-           monitor_params(success, now),
-           monitor_region,
-           monitor_region_params(success, now, monitor_region),
-           check,
-           check_params
-         ) do
-      {:ok, _monitor, monitor_region, _check} ->
-        Logger.info("#{tracing_id} Next check Monitor Region #{monitor_region.id}, at #{monitor_region.next_check_at}")
+        case WatchDog.handle_next_check(
+               monitor,
+               monitor_params(success, now),
+               monitor_region,
+               monitor_region_params(success, now, monitor_region),
+               check,
+               check_params
+             ) do
+          {:ok, _monitor, monitor_region, _check} ->
+            Logger.info(
+              "#{tracing_id} Next check Monitor Region #{monitor_region.id}, at #{monitor_region.next_check_at}"
+            )
 
-        # Check for checking alarm
-        AlarmService.handle_alarm(tracing_id, check, monitor_region.down)
+            # Check for checking alarm
+            AlarmService.handle_alarm(tracing_id, check, monitor_region.down)
 
-        # Await on the daily report task
-        daily_report_task |> Task.await()
+            # Await on the daily report task
+            daily_report_task |> Task.await()
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        Logger.error("#{tracing_id} Next check schedule failed, error: #{inspect(changeset.errors)}")
+          {:error, %Ecto.Changeset{} = changeset} ->
+            Logger.error("#{tracing_id} Next check schedule failed, error: #{inspect(changeset.errors)}")
+        end
+
+      {:error, %ErrorMessage{code: :not_found} = e} ->
+        Logger.warn("#{tracing_id} Active subscription not found to start new check, error: #{inspect(e)}")
     end
   end
 
