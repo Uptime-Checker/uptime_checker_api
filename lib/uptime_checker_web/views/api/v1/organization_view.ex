@@ -2,7 +2,7 @@ defmodule UptimeCheckerWeb.Api.V1.OrganizationView do
   use UptimeCheckerWeb, :view
 
   alias UptimeCheckerWeb.Api.V1.PlanView
-  alias UptimeCheckerWeb.Api.V1.SubscriptionView
+  alias UptimeCheckerWeb.Api.V1.PaymentView
   alias UptimeCheckerWeb.Api.V1.OrganizationView
 
   def render("index.json", %{organizations: organizations}) do
@@ -34,7 +34,7 @@ defmodule UptimeCheckerWeb.Api.V1.OrganizationView do
   end
 
   defp render_sub(%{:id => _id} = sub) do
-    render_one(sub, SubscriptionView, "subscription.json")
+    render_one(sub, PaymentView, "subscription.json")
   end
 
   defp render_sub(_sub), do: nil

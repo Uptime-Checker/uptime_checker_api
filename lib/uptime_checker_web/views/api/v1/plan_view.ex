@@ -19,7 +19,7 @@ defmodule UptimeCheckerWeb.Api.V1.PlanView do
     }
   end
 
-  defp render_product(product) do
+  defp render_product(%{:id => _id} = product) do
     %{
       id: product.id,
       name: product.name,
@@ -27,4 +27,6 @@ defmodule UptimeCheckerWeb.Api.V1.PlanView do
       external_id: product.external_id
     }
   end
+
+  defp render_product(_product), do: nil
 end

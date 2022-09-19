@@ -11,14 +11,13 @@ defmodule UptimeCheckerWeb.Api.V1.ProductView do
   end
 
   def render("product.json", %{product: product}) do
-    plans = Enum.map(product.plans, fn plan -> render_plan(plan) end)
-
     %{
       id: product.id,
       name: product.name,
       description: product.description,
       external_id: product.external_id,
-      plans: plans
+      plans: get_plans(product),
+      features: get_features(product)
     }
   end
 
@@ -47,11 +46,31 @@ defmodule UptimeCheckerWeb.Api.V1.ProductView do
     }
   end
 
-  def render_plan(plan) do
+  defp render_plan(plan) do
     %{
       id: plan.id,
       price: plan.price,
       type: plan.type
     }
   end
+
+  defp render_feature(feature) do
+    %{
+      id: feature.id,
+      name: feature.name,
+      type: feature.type
+    }
+  end
+
+  defp get_plans(product) when is_list(product.plans) == true do
+    Enum.map(product.plans, fn plan -> render_plan(plan) end)
+  end
+
+  defp get_plans(_product), do: nil
+
+  defp get_features(product) when is_list(product.features) == true do
+    Enum.map(product.features, fn feature -> render_feature(feature) end)
+  end
+
+  defp get_features(_product), do: nil
 end

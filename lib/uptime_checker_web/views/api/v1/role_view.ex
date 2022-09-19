@@ -21,7 +21,7 @@ defmodule UptimeCheckerWeb.Api.V1.RoleView do
     }
   end
 
-  def render_claim(claim) do
+  defp render_claim(claim) do
     %{
       id: claim.id,
       name: claim.name
