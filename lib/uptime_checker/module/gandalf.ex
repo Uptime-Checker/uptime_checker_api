@@ -6,14 +6,21 @@ defmodule UptimeChecker.Module.Gandalf do
 
   def can_send_invitation(%User{} = user, count) do
     with :ok <- handle_claim(user, Constant.Claim.invite_user()) do
-      handle_feature(user, Constant.Feature.user_count(), :team, count)
+      handle_feature_max(user, Constant.Feature.user_count(), :team, count + 1)
     end
   end
 
-  defp handle_feature(%User{} = user, feature_name, feature_type, count) do
+  def can_create_monitor(%User{} = user, count, interval) do
+    with :ok <- handle_claim(user, Constant.Claim.create_resource()),
+         :ok <- handle_feature_max(user, Constant.Feature.api_check_count(), :monitoring, count + 1) do
+      handle_feature_min(user, Constant.Feature.api_check_interval(), :monitoring, interval)
+    end
+  end
+
+  defp handle_feature_max(%User{} = user, feature_name, feature_type, count) do
     case feature(user, feature_name, feature_type) do
       %{count: max_count} ->
-        if count < max_count do
+        if count <= max_count do
           :ok
         else
           {:error,
@@ -23,6 +30,29 @@ defmodule UptimeChecker.Module.Gandalf do
              feature_type: feature_type,
              count: count,
              max_count: max_count
+           })}
+        end
+
+      nil ->
+        {:error,
+         ServiceError.upgrade_subscription()
+         |> ErrorMessage.forbidden(%{feature_name: feature_name, feature_type: feature_type})}
+    end
+  end
+
+  defp handle_feature_min(%User{} = user, feature_name, feature_type, count) do
+    case feature(user, feature_name, feature_type) do
+      %{count: min_count} ->
+        if count >= min_count do
+          :ok
+        else
+          {:error,
+           ServiceError.upgrade_subscription()
+           |> ErrorMessage.forbidden(%{
+             feature_name: feature_name,
+             feature_type: feature_type,
+             count: count,
+             min_count: min_count
            })}
         end
 

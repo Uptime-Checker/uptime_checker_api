@@ -44,6 +44,15 @@ defmodule UptimeChecker.WatchDog do
     |> Repo.insert()
   end
 
+  def count_monitors(organization) do
+    query =
+      from m in Monitor,
+        where: m.organization_id == ^organization.id,
+        select: count(m.id)
+
+    Repo.one(query)
+  end
+
   def create_monitor_regions(monitor) do
     now = Timex.now()
     regions = RegionService.list_regions()
