@@ -3,7 +3,7 @@ defmodule UptimeChecker.Payment do
 
   alias UptimeChecker.Repo
   alias UptimeChecker.Error.RepoError
-  alias UptimeChecker.Schema.Payment.{Subscription, Receipt}
+  alias UptimeChecker.Schema.Payment.{Subscription, Receipt, Feature, ProductFeature, Product}
 
   def create_receipt(attrs) do
     %Receipt{}
@@ -83,5 +83,23 @@ defmodule UptimeChecker.Payment do
       nil -> {:error, RepoError.subscription_not_found() |> ErrorMessage.not_found(%{organization_id: organization_id})}
       subscription -> {:ok, subscription}
     end
+  end
+
+  def get_active_subscription_features(organization_id) do
+    now = Timex.now()
+
+    query =
+      from f in Feature,
+        left_join: pf in ProductFeature,
+        on: f.id == pf.feature_id,
+        left_join: p in Product,
+        on: pf.product_id == p.id,
+        left_join: s in Subscription,
+        on: p.id == s.product_id,
+        where: s.organization_id == ^organization_id,
+        where: s.expires_at > ^now,
+        select: f
+
+    Repo.all(query)
   end
 end
