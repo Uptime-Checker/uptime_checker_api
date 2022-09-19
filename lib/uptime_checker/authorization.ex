@@ -81,4 +81,13 @@ defmodule UptimeChecker.Authorization do
         {:ok, organization_user}
     end
   end
+
+  def count_users_in_organization(organization) do
+    query =
+      from organization_user in OrganizationUser,
+        where: organization_user.organization_id == ^organization.id,
+        select: count(organization_user.id)
+
+    Repo.one(query)
+  end
 end

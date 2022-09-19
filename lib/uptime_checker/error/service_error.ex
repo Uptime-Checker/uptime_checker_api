@@ -2,9 +2,12 @@ defmodule UptimeChecker.Error.ServiceError do
   import UptimeChecker.Module.Constant
 
   const(:unauthorized, "unauthorized")
-  const(:no_org_found, "no_org_found")
-  const(:email_mismatch, "email_mismatch")
-  const(:code_expired, "code_expired")
+  const(:no_org_found, "no organization found")
+  const(:email_mismatch, "email mismatch")
+  const(:code_expired, "code is expired")
 
-  const(:invitation_sent_already, "invitation_sent_already")
+  const(:invitation_sent_already, "invitation is sent already")
+
+  const(:upgrade_permission, "upgrade user's role")
+  const(:upgrade_subscription, "upgrade subscription")
 end

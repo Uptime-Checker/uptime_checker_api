@@ -98,7 +98,7 @@ defmodule UptimeChecker.Payment do
         on: p.id == s.product_id,
         where: s.organization_id == ^organization_id,
         where: s.expires_at > ^now,
-        select: f
+        select: %{name: f.name, type: f.type, count: pf.count}
 
     Repo.all(query)
   end

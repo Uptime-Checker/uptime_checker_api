@@ -6,13 +6,14 @@ defmodule UptimeCheckerWeb.Api.V1.InvitationController do
 
   alias UptimeChecker.Mail
   alias UptimeChecker.Auth
-  alias UptimeChecker.Module.Mailer
-  alias UptimeChecker.Authorization
+
   alias UptimeChecker.Helper.Strings
   alias UptimeChecker.TaskSupervisors
-  alias UptimeChecker.InvitationService
+
   alias UptimeChecker.Error.ServiceError
+  alias UptimeChecker.Module.{Gandalf, Mailer}
   alias UptimeChecker.Schema.Customer.{User, Invitation}
+  alias UptimeChecker.{Authorization, InvitationService}
 
   plug UptimeCheckerWeb.Plugs.Org when action in [:create]
 
@@ -40,7 +41,9 @@ defmodule UptimeCheckerWeb.Api.V1.InvitationController do
   defp create_invitation(conn, params, user) do
     code = Strings.random_string(15)
 
-    with {:ok, %Invitation{} = invitation} <- InvitationService.create_invitation(params, user, code) do
+    with count <- Authorization.count_users_in_organization(user.organization),
+         :ok <- Gandalf.can_send_invitation(user, count),
+         {:ok, %Invitation{} = invitation} <- InvitationService.create_invitation(params, user, code) do
       Logger.info("Created new invitation for #{invitation.email} with code: #{code}")
 
       Mail.Invitation.compose(user, invitation)
