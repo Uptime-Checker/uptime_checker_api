@@ -5,7 +5,8 @@ defmodule UptimeChecker.Module.Gandalf do
   alias UptimeChecker.Schema.Customer.User
 
   def can_send_invitation(%User{} = user, count) do
-    with :ok <- handle_claim(user, Constant.Claim.invite_user()) do
+    with :ok <- handle_claim(user, Constant.Claim.create_resource()),
+         :ok <- handle_claim(user, Constant.Claim.invite_user()) do
       handle_feature_max(user, Constant.Feature.user_count(), :team, count + 1)
     end
   end
