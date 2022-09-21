@@ -27,7 +27,8 @@ defmodule UptimeCheckerWeb.Api.V1.MonitorView do
       resolve_threshold: monitor.resolve_threshold,
       error_threshold: monitor.error_threshold,
       last_checked_at: monitor.last_checked_at,
-      last_failed_at: monitor.last_failed_at
+      last_failed_at: monitor.last_failed_at,
+      prev_id: monitor.prev_id
     }
   end
 end

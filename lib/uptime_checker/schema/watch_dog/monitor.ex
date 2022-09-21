@@ -3,7 +3,7 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
   import Ecto.Changeset
 
   alias UptimeChecker.Schema.Customer.{Organization, User}
-  alias UptimeChecker.Schema.WatchDog.{Check, MonitorRegion}
+  alias UptimeChecker.Schema.WatchDog.{Check, MonitorRegion, Monitor}
   alias UptimeChecker.Schema.{Region, StatusCode, MonitorStatusCode}
 
   @highest_acceptable_timeout 30
@@ -33,6 +33,7 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
 
     belongs_to :user, User
     belongs_to :organization, Organization
+    belongs_to :prev, Monitor, foreign_key: :prev_id
 
     has_many :checks, Check
     has_many :monitor_regions, MonitorRegion
@@ -72,7 +73,8 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
       :resolve_threshold,
       :error_threshold,
       :last_checked_at,
-      :last_failed_at
+      :last_failed_at,
+      :prev_id
     ])
     |> validate_required([
       :url,
@@ -80,6 +82,7 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
       :interval
     ])
     |> validate_url(:url)
+    |> unique_constraint([:prev_id, :organization_id])
     |> unique_constraint([:url, :organization_id])
     |> validate_inclusion(:interval, 20..86_400)
     |> validate_inclusion(:timeout, 1..max_timeout)
