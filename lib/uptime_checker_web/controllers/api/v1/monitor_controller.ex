@@ -5,6 +5,7 @@ defmodule UptimeCheckerWeb.Api.V1.MonitorController do
   alias UptimeChecker.WatchDog
   alias UptimeChecker.Module.Gandalf
   alias UptimeChecker.TaskSupervisors
+  alias UptimeChecker.Service.MonitorService
   alias UptimeChecker.Schema.WatchDog.Monitor
 
   plug UptimeCheckerWeb.Plugs.Org
@@ -20,9 +21,9 @@ defmodule UptimeCheckerWeb.Api.V1.MonitorController do
     attrs = key_to_atom(params)
     user = current_user(conn)
 
-    with count <- WatchDog.count_monitors(user.organization),
+    with count <- MonitorService.count(user.organization),
          :ok <- Gandalf.can_create_monitor(user, count, attrs.interval),
-         {:ok, %Monitor{} = monitor} <- WatchDog.create_monitor(attrs, user) do
+         {:ok, %Monitor{} = monitor} <- MonitorService.create(attrs, user) do
       Task.Supervisor.start_child(
         {:via, PartitionSupervisor, {TaskSupervisors, self()}},
         WatchDog,

@@ -32,11 +32,13 @@ defmodule UptimeChecker.Repo.Migrations.CreateMonitors do
       add :last_failed_at, :utc_datetime
 
       add :user_id, references(:users)
+      add :prev_id, references(:monitors)
       add :organization_id, references(:organizations, on_delete: :delete_all)
 
       timestamps()
     end
 
+    create unique_index(:monitors, [:prev_id])
     create unique_index(:monitors, [:url, :organization_id])
 
     create index(:monitors, [:user_id])
