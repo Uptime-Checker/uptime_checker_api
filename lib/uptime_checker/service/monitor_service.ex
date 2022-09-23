@@ -5,7 +5,7 @@ defmodule UptimeChecker.Service.MonitorService do
   alias UptimeChecker.Schema.WatchDog.Monitor
   alias UptimeChecker.Schema.Customer.{Organization, User}
 
-  def update_order(%User{} = user, id, before_id) do
+  def update_order(id, before_id, %User{} = user) do
     before = Monitor |> Repo.get_by!(id: before_id, organization_id: user.organization_id)
     current = Monitor |> Repo.get_by!(id: id, organization_id: user.organization_id)
 
@@ -38,6 +38,31 @@ defmodule UptimeChecker.Service.MonitorService do
     %Monitor{}
     |> Monitor.changeset(params)
     |> Repo.insert()
+  end
+
+  def delete(id, %User{} = user) do
+    current = Monitor |> Repo.get_by!(id: id, organization_id: user.organization_id)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:current_m_prev_of, fn _repo, %{} ->
+      Monitor
+      |> where(prev_id: ^current.id)
+      |> update(set: [prev_id: ^current.prev_id])
+      |> Repo.update_all([])
+      |> case do
+        {count, nil} ->
+          {:ok, count}
+      end
+    end)
+    |> Ecto.Multi.delete(:current_m, current)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{current_m_prev_of: _current_m_prev_of, current_m: current_m}} ->
+        {:ok, current_m}
+
+      {:error, _name, changeset, _changes_so_far} ->
+        {:error, changeset}
+    end
   end
 
   def count(%Organization{} = organization) do

@@ -143,22 +143,6 @@ defmodule UptimeChecker.WatchDog do
     |> Repo.update()
   end
 
-  @doc """
-  Deletes a monitor.
-
-  ## Examples
-
-      iex> delete_monitor(monitor)
-      {:ok, %Monitor{}}
-
-      iex> delete_monitor(monitor)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_monitor(%Monitor{} = monitor) do
-    Repo.delete(monitor)
-  end
-
   def list_checks do
     Repo.all(Check)
   end
