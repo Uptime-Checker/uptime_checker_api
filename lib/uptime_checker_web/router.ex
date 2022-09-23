@@ -56,6 +56,8 @@ defmodule UptimeCheckerWeb.Router do
       resources "/organizations", OrganizationController, only: [:create]
       resources "/monitors", MonitorController, only: [:create]
       resources "/invitations", InvitationController, only: [:create]
+
+      post "/monitors/update_order", MonitorController, :update_order
     end
   end
 

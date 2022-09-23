@@ -18,6 +18,10 @@ defmodule UptimeChecker.Module.Gandalf do
     end
   end
 
+  def can_update_monitor(%User{} = user) do
+    handle_claim(user, Constant.Claim.update_resource())
+  end
+
   defp handle_feature_max(%User{} = user, feature_name, feature_type, count) do
     case feature(user, feature_name, feature_type) do
       %{count: max_count} ->

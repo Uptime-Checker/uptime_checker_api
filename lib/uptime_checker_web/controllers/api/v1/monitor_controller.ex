@@ -61,6 +61,15 @@ defmodule UptimeCheckerWeb.Api.V1.MonitorController do
     end
   end
 
+  def update_order(conn, params) do
+    user = current_user(conn)
+
+    with :ok <- Gandalf.can_update_monitor(user),
+         {:ok, %Monitor{} = monitor} <- MonitorService.update_order(user, params["id"], params["before_id"]) do
+      render(conn, "show.json", monitor: monitor)
+    end
+  end
+
   def delete(conn, %{"id" => id}) do
     monitor = WatchDog.get_monitor(id)
 

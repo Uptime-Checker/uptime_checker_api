@@ -104,6 +104,12 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
     |> validate_required([:down])
   end
 
+  def update_order_changeset(monitor, attrs) do
+    monitor
+    |> cast(attrs, [:prev_id])
+    |> validate_required([:prev_id])
+  end
+
   def validate_url(changeset, field, options \\ []) do
     validate_change(changeset, field, fn _, url ->
       case UptimeChecker.Http.UrlValidator.cast(url) do
