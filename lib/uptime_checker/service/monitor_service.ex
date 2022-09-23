@@ -17,14 +17,7 @@ defmodule UptimeChecker.Service.MonitorService do
 
     Ecto.Multi.new()
     |> Ecto.Multi.run(:current_m_prev_of, fn _repo, %{} ->
-      Monitor
-      |> where(prev_id: ^current.id)
-      |> update(set: [prev_id: ^current.prev_id])
-      |> Repo.update_all([])
-      |> case do
-        {count, nil} ->
-          {:ok, count}
-      end
+      Monitor |> update_after_monitor_of_current()
     end)
     |> Ecto.Multi.update(:before_m, Monitor.update_order_changeset(before, %{prev_id: current.id}))
     |> Ecto.Multi.update(:current_m, Monitor.update_order_changeset(current, %{prev_id: before.prev_id}))
@@ -51,14 +44,7 @@ defmodule UptimeChecker.Service.MonitorService do
 
     Ecto.Multi.new()
     |> Ecto.Multi.run(:current_m_prev_of, fn _repo, %{} ->
-      Monitor
-      |> where(prev_id: ^current.id)
-      |> update(set: [prev_id: ^current.prev_id])
-      |> Repo.update_all([])
-      |> case do
-        {count, nil} ->
-          {:ok, count}
-      end
+      Monitor |> update_after_monitor_of_current()
     end)
     |> Ecto.Multi.delete(:current_m, current)
     |> Repo.transaction()
@@ -78,6 +64,17 @@ defmodule UptimeChecker.Service.MonitorService do
         select: count(m.id)
 
     Repo.one(query)
+  end
+
+  defp update_after_monitor_of_current(%Monitor{} = current) do
+    Monitor
+    |> where(prev_id: ^current.id)
+    |> update(set: [prev_id: ^current.prev_id])
+    |> Repo.update_all([])
+    |> case do
+      {count, nil} ->
+        {:ok, count}
+    end
   end
 
   defp get_prev_of_org(%Organization{} = organization) do
