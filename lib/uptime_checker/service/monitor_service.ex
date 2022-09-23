@@ -6,8 +6,8 @@ defmodule UptimeChecker.Service.MonitorService do
   alias UptimeChecker.Schema.Customer.{Organization, User}
 
   def update_order(%User{} = user, id, before_id) do
-    before = Monitor |> Repo.get_by!(id: before_id, organization_id: user.organization_id) |> dbg()
-    current = Monitor |> Repo.get_by!(id: id, organization_id: user.organization_id) |> dbg()
+    before = Monitor |> Repo.get_by!(id: before_id, organization_id: user.organization_id)
+    current = Monitor |> Repo.get_by!(id: id, organization_id: user.organization_id)
 
     Ecto.Multi.new()
     |> Ecto.Multi.run(:current_m_prev_of, fn _repo, %{} ->
