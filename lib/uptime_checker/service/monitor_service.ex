@@ -5,6 +5,12 @@ defmodule UptimeChecker.Service.MonitorService do
   alias UptimeChecker.Schema.WatchDog.Monitor
   alias UptimeChecker.Schema.Customer.{Organization, User}
 
+  def list do
+    Repo.all(Monitor)
+  end
+
+  def get(id), do: Repo.get(Monitor, id)
+
   def update_order(id, before_id, %User{} = user) do
     before = Monitor |> Repo.get_by!(id: before_id, organization_id: user.organization_id)
     current = Monitor |> Repo.get_by!(id: id, organization_id: user.organization_id)

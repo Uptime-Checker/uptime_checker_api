@@ -13,12 +13,6 @@ defmodule UptimeChecker.WatchDog do
   alias UptimeChecker.Schema.Customer.User
   alias UptimeChecker.Schema.WatchDog.{Monitor, Check, MonitorRegion, ErrorLog}
 
-  def list_monitors do
-    Repo.all(Monitor)
-  end
-
-  def get_monitor(id), do: Repo.get(Monitor, id)
-
   def get_monitor_region_status_code(id) do
     query =
       from mr in MonitorRegion,

@@ -13,7 +13,7 @@ defmodule UptimeCheckerWeb.Api.V1.MonitorController do
   action_fallback UptimeCheckerWeb.FallbackController
 
   def index(conn, _params) do
-    monitors = WatchDog.list_monitors()
+    monitors = MonitorService.list()
     render(conn, "index.json", monitors: monitors)
   end
 
@@ -49,12 +49,12 @@ defmodule UptimeCheckerWeb.Api.V1.MonitorController do
   end
 
   def show(conn, %{"id" => id}) do
-    monitor = WatchDog.get_monitor(id)
+    monitor = MonitorService.get(id)
     render(conn, "show.json", monitor: monitor)
   end
 
   def update(conn, %{"id" => id, "monitor" => monitor_params}) do
-    monitor = WatchDog.get_monitor(id)
+    monitor = MonitorService.get(id)
 
     with {:ok, %Monitor{} = monitor} <- WatchDog.update_monitor(monitor, monitor_params) do
       render(conn, "show.json", monitor: monitor)
@@ -64,7 +64,7 @@ defmodule UptimeCheckerWeb.Api.V1.MonitorController do
   def update_order(conn, params) do
     user = current_user(conn)
 
-    with :ok <- Gandalf.can_update_monitor(user),
+    with :ok <- Gandalf.can_update_resource(user),
          {:ok, %Monitor{} = monitor} <- MonitorService.update_order(params["id"], params["before_id"], user) do
       render(conn, "show.json", monitor: monitor)
     end
@@ -73,7 +73,8 @@ defmodule UptimeCheckerWeb.Api.V1.MonitorController do
   def delete(conn, %{"id" => id}) do
     user = current_user(conn)
 
-    with {:ok, %Monitor{} = monitor} <- MonitorService.delete(id, user) do
+    with :ok <- Gandalf.can_delete_resource(user),
+         {:ok, %Monitor{} = monitor} <- MonitorService.delete(id, user) do
       render(conn, "show.json", monitor: monitor)
     end
   end
