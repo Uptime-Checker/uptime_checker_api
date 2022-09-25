@@ -6,22 +6,7 @@ defmodule UptimeChecker.Service.MonitorService do
   alias UptimeChecker.Schema.Customer.{Organization, User}
 
   def list(%Organization{} = organization) do
-    monitor_tree_initial_query =
-      Monitor
-      |> where([m], is_nil(m.prev_id))
-
-    monitor_tree_recursion_query =
-      Monitor
-      |> join(:inner, [m], mt in "monitor_tree", on: m.prev_id == mt.id)
-
-    monitor_tree_query =
-      monitor_tree_initial_query
-      |> union(^monitor_tree_recursion_query)
-
-    {"monitor_tree", Monitor}
-    |> recursive_ctes(true)
-    |> with_cte("monitor_tree", as: ^monitor_tree_query)
-    |> where(organization_id: ^organization.id)
+    list_recursively(organization)
     |> Repo.paginate()
   end
 
@@ -48,11 +33,35 @@ defmodule UptimeChecker.Service.MonitorService do
   end
 
   def create(attrs \\ %{}, %User{} = user) do
-    params = attrs |> Map.put(:user, user) |> Map.put(:prev_id, user.organization |> get_prev_of_org())
+    params = attrs |> Map.put(:user, user) |> Map.put(:prev_id, nil)
+    head = get_head(user.organization)
 
-    %Monitor{}
-    |> Monitor.changeset(params)
-    |> Repo.insert()
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:current_m, %Monitor{} |> Monitor.changeset(params))
+    |> Ecto.Multi.run(:head_m, fn _repo, %{current_m: current_m} ->
+      case head do
+        nil ->
+          {:ok, 0}
+
+        id ->
+          Monitor
+          |> where(id: ^id)
+          |> update(set: [prev_id: ^current_m.id])
+          |> Repo.update_all([])
+          |> case do
+            {count, nil} ->
+              {:ok, count}
+          end
+      end
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{current_m: current_m}} ->
+        {:ok, current_m}
+
+      {:error, _name, changeset, _changes_so_far} ->
+        {:error, changeset}
+    end
   end
 
   def delete(id, %User{} = user) do
@@ -93,19 +102,36 @@ defmodule UptimeChecker.Service.MonitorService do
     end
   end
 
-  defp get_prev_of_org(%Organization{} = organization) do
-    query =
-      from m in Monitor,
-        where: m.organization_id == ^organization.id,
-        # coalesce treats null as 0
-        order_by: [desc: fragment("coalesce(?, 0)", m.prev_id)],
-        limit: 1
+  defp list_recursively(%Organization{} = organization) do
+    monitor_tree_initial_query =
+      Monitor
+      |> where([m], is_nil(m.prev_id))
 
-    query
-    |> Repo.one()
-    |> case do
-      nil -> nil
-      monitor -> monitor.id
+    monitor_tree_recursion_query =
+      Monitor
+      |> join(:inner, [m], mt in "monitor_tree", on: m.prev_id == mt.id)
+
+    monitor_tree_query =
+      monitor_tree_initial_query
+      |> union(^monitor_tree_recursion_query)
+
+    {"monitor_tree", Monitor}
+    |> recursive_ctes(true)
+    |> with_cte("monitor_tree", as: ^monitor_tree_query)
+    |> where(organization_id: ^organization.id)
+  end
+
+  defp get_head(%Organization{} = organization) do
+    monitors =
+      list_recursively(organization)
+      |> limit(1)
+      |> Repo.all()
+
+    if Enum.count(monitors) == 1 do
+      monitor = Enum.at(monitors, 0)
+      monitor.id
+    else
+      nil
     end
   end
 end
