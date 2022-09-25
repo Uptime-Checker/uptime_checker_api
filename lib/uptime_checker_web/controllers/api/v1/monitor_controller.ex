@@ -12,11 +12,11 @@ defmodule UptimeCheckerWeb.Api.V1.MonitorController do
 
   action_fallback UptimeCheckerWeb.FallbackController
 
-  def index(conn, _params) do
+  def index(conn, params) do
     user = current_user(conn)
 
-    %{entries: monitors, metadata: meta} = MonitorService.list(user.organization)
-    render(conn, "index.json", %{monitors: monitors, meta: meta})
+    monitors = MonitorService.list(user.organization, params["offset"])
+    render(conn, "index.json", %{monitors: monitors})
   end
 
   def create(conn, params) do

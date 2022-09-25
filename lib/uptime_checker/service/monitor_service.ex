@@ -2,12 +2,12 @@ defmodule UptimeChecker.Service.MonitorService do
   import Ecto.Query, warn: false
 
   alias UptimeChecker.Repo
+  alias UptimeChecker.Constant.Default
   alias UptimeChecker.Schema.WatchDog.Monitor
   alias UptimeChecker.Schema.Customer.{Organization, User}
 
-  def list(%Organization{} = organization) do
-    list_recursively(organization)
-    |> Repo.paginate()
+  def list(%Organization{} = organization, offset) do
+    list_recursively(organization) |> limit(^Default.offset_limit()) |> offset(^offset) |> Repo.all()
   end
 
   def get(id), do: Repo.get(Monitor, id)
