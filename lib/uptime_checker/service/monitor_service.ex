@@ -6,21 +6,23 @@ defmodule UptimeChecker.Service.MonitorService do
   alias UptimeChecker.Schema.Customer.{Organization, User}
 
   def list(%Organization{} = organization) do
-    coalesce = fn field, _position, value ->
-      case field do
-        :prev_id -> 0
-        _ -> value
-      end
-    end
+    monitor_tree_initial_query =
+      Monitor
+      |> where([m], is_nil(m.prev_id))
 
-    query =
-      from m in Monitor,
-        where: m.organization_id == ^organization.id,
-        # coalesce treats null as 0
-        order_by: [m.prev_id]
+    monitor_tree_recursion_query =
+      Monitor
+      |> join(:inner, [m], mt in "monitor_tree", on: m.prev_id == mt.id)
 
-    query
-    |> Repo.paginate(coalesce: coalesce)
+    monitor_tree_query =
+      monitor_tree_initial_query
+      |> union(^monitor_tree_recursion_query)
+
+    {"monitor_tree", Monitor}
+    |> recursive_ctes(true)
+    |> with_cte("monitor_tree", as: ^monitor_tree_query)
+    |> where(organization_id: ^organization.id)
+    |> Repo.paginate()
   end
 
   def get(id), do: Repo.get(Monitor, id)
