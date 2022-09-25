@@ -1,6 +1,12 @@
 defmodule UptimeCheckerWeb.Api.V1.MonitorView do
   use UptimeCheckerWeb, :view
+
+  alias UptimeCheckerWeb.SharedView
   alias UptimeCheckerWeb.Api.V1.MonitorView
+
+  def render("index.json", %{monitors: monitors, meta: meta}) do
+    %{data: render_many(monitors, MonitorView, "monitor.json"), meta: SharedView.meta(meta)}
+  end
 
   def render("index.json", %{monitors: monitors}) do
     %{data: render_many(monitors, MonitorView, "monitor.json")}

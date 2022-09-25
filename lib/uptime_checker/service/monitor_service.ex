@@ -5,8 +5,22 @@ defmodule UptimeChecker.Service.MonitorService do
   alias UptimeChecker.Schema.WatchDog.Monitor
   alias UptimeChecker.Schema.Customer.{Organization, User}
 
-  def list do
-    Repo.all(Monitor)
+  def list(%Organization{} = organization) do
+    coalesce = fn field, _position, value ->
+      case field do
+        :prev_id -> 0
+        _ -> value
+      end
+    end
+
+    query =
+      from m in Monitor,
+        where: m.organization_id == ^organization.id,
+        # coalesce treats null as 0
+        order_by: [m.prev_id]
+
+    query
+    |> Repo.paginate(coalesce: coalesce)
   end
 
   def get(id), do: Repo.get(Monitor, id)
