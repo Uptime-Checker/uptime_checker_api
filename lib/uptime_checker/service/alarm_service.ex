@@ -110,7 +110,7 @@ defmodule UptimeChecker.Service.AlarmService do
     end)
     |> Ecto.Multi.insert(
       :monitor_status_change,
-      MonitorStatusChange.changeset(%MonitorStatusChange{}, %{status: :down, changed_at: now})
+      MonitorStatusChange.changeset(%MonitorStatusChange{}, %{status: :down, changed_at: now, monitor: monitor})
     )
     |> Repo.transaction()
     |> case do
@@ -133,7 +133,7 @@ defmodule UptimeChecker.Service.AlarmService do
     end)
     |> Ecto.Multi.insert(
       :monitor_status_change,
-      MonitorStatusChange.changeset(%MonitorStatusChange{}, %{status: :up, changed_at: now})
+      MonitorStatusChange.changeset(%MonitorStatusChange{}, %{status: :up, changed_at: now, monitor: monitor})
     )
     |> Repo.transaction()
     |> case do
