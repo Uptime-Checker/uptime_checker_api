@@ -1,6 +1,6 @@
 defmodule UptimeChecker.Worker.HitApiAsync do
   require Logger
-  use Oban.Worker, max_attempts: 1, unique: [period: 10]
+  use Oban.Worker, max_attempts: 1, unique: [period: 15]
 
   alias UptimeChecker.Schema.WatchDog.MonitorRegion
 
