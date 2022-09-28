@@ -32,6 +32,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateMonitors do
       add :last_failed_at, :utc_datetime
 
       add :user_id, references(:users)
+      add :monitor_group_id, references(:monitor_groups)
       add :prev_id, references(:monitors, on_delete: :delete_all)
       add :organization_id, references(:organizations, on_delete: :delete_all)
 
@@ -42,6 +43,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateMonitors do
 
     create index(:monitors, [:user_id])
     create index(:monitors, [:organization_id])
+    create index(:monitors, [:monitor_group_id])
 
     create_prev_id_index =
       "ALTER TABLE monitors ADD CONSTRAINT monitors_unique_previous_id unique (prev_id, organization_id)
