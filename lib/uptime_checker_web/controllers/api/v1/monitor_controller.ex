@@ -6,7 +6,7 @@ defmodule UptimeCheckerWeb.Api.V1.MonitorController do
   alias UptimeChecker.Module.Gandalf
   alias UptimeChecker.TaskSupervisors
   alias UptimeChecker.Service.MonitorService
-  alias UptimeChecker.Schema.WatchDog.Monitor
+  alias UptimeChecker.Schema.WatchDog.{Monitor, MonitorStatusChange}
 
   plug UptimeCheckerWeb.Plugs.Org
 
@@ -31,6 +31,14 @@ defmodule UptimeCheckerWeb.Api.V1.MonitorController do
         WatchDog,
         :create_monitor_regions,
         [monitor],
+        restart: :transient
+      )
+
+      Task.Supervisor.start_child(
+        {:via, PartitionSupervisor, {TaskSupervisors, self()}},
+        WatchDog,
+        :create_monitor_status_change,
+        [:pending, monitor],
         restart: :transient
       )
 

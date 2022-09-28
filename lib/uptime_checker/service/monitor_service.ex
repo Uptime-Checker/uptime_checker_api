@@ -1,4 +1,5 @@
 defmodule UptimeChecker.Service.MonitorService do
+  use Timex
   import Ecto.Query, warn: false
 
   alias UptimeChecker.Repo
@@ -33,8 +34,8 @@ defmodule UptimeChecker.Service.MonitorService do
   end
 
   def create(attrs \\ %{}, %User{} = user) do
-    params = attrs |> Map.put(:user, user) |> Map.put(:prev_id, nil)
     head = get_head(user.organization)
+    params = attrs |> Map.put(:user, user) |> Map.put(:prev_id, nil)
 
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:current_m, %Monitor{} |> Monitor.changeset(params))
@@ -56,7 +57,7 @@ defmodule UptimeChecker.Service.MonitorService do
     end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{current_m: current_m}} ->
+      {:ok, %{current_m: current_m, head_m: _head_m}} ->
         {:ok, current_m}
 
       {:error, _name, changeset, _changes_so_far} ->

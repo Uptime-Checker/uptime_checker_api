@@ -11,7 +11,7 @@ defmodule UptimeChecker.WatchDog do
   alias UptimeChecker.Schema.MonitorUser
   alias UptimeChecker.Schema.Customer.User
   alias UptimeChecker.Service.RegionService
-  alias UptimeChecker.Schema.WatchDog.{Monitor, Check, MonitorRegion, ErrorLog}
+  alias UptimeChecker.Schema.WatchDog.{Monitor, Check, MonitorRegion, ErrorLog, MonitorStatusChange}
 
   def get_monitor_region_status_code(id) do
     query =
@@ -185,6 +185,14 @@ defmodule UptimeChecker.WatchDog do
 
     %ErrorLog{}
     |> ErrorLog.changeset(params)
+    |> Repo.insert()
+  end
+
+  def create_monitor_status_change(status, %Monitor{} = monitor) do
+    now = Timex.now()
+
+    %MonitorStatusChange{}
+    |> MonitorStatusChange.changeset(%{status: status, changed_at: now, monitor: monitor})
     |> Repo.insert()
   end
 end
