@@ -1,5 +1,6 @@
 defmodule UptimeChecker.Job.ScheduleNotification do
-  alias UptimeChecker.{AlarmService, WatchDog}
+  alias UptimeChecker.WatchDog
+  alias UptimeChecker.Service.AlarmService
   alias UptimeChecker.Worker.SendNotificationAsync
 
   def work(alarm_id) do

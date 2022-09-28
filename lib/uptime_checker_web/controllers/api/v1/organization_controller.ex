@@ -3,8 +3,8 @@ defmodule UptimeCheckerWeb.Api.V1.OrganizationController do
   use UptimeCheckerWeb, :controller
 
   alias UptimeChecker.Constant
-  alias UptimeChecker.ProductService
   alias UptimeChecker.{Customer, Payment}
+  alias UptimeChecker.Service.ProductService
   alias UptimeChecker.Schema.Payment.Subscription
   alias UptimeChecker.Schema.Customer.Organization
 

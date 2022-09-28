@@ -1,5 +1,5 @@
 defmodule UptimeChecker.Cron.SyncProducts do
-  alias UptimeChecker.ProductService
+  alias UptimeChecker.Service.ProductService
 
   def work do
     {:ok, products} = Stripe.Product.list()

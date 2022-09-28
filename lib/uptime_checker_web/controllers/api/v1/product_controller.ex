@@ -3,8 +3,8 @@ defmodule UptimeCheckerWeb.Api.V1.ProductController do
 
   alias UptimeChecker.Cache
   alias UptimeChecker.Constant
-  alias UptimeChecker.ProductService
   alias UptimeChecker.TaskSupervisors
+  alias UptimeChecker.Service.ProductService
 
   action_fallback UptimeCheckerWeb.FallbackController
 

@@ -3,8 +3,9 @@ defmodule UptimeChecker.Event.HandleNextCheck do
   require Logger
 
   alias UptimeChecker.TaskSupervisors
+  alias UptimeChecker.Service.AlarmService
   alias UptimeChecker.Schema.WatchDog.Check
-  alias UptimeChecker.{AlarmService, WatchDog, DailyReport, Payment}
+  alias UptimeChecker.{WatchDog, DailyReport, Payment}
 
   def act(tracing_id, monitor_region, %Check{} = check, duration, success) do
     # Shift the spent time in hitting api

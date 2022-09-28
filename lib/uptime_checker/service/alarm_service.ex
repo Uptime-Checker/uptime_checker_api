@@ -1,4 +1,4 @@
-defmodule UptimeChecker.AlarmService do
+defmodule UptimeChecker.Service.AlarmService do
   use Timex
   require Logger
   import Ecto.Query, warn: false
@@ -7,8 +7,8 @@ defmodule UptimeChecker.AlarmService do
   alias UptimeChecker.Worker
   alias UptimeChecker.Helper.Times
   alias UptimeChecker.Error.RepoError
-  alias UptimeChecker.Schema.WatchDog.Alarm
   alias UptimeChecker.{WatchDog, DailyReport}
+  alias UptimeChecker.Schema.WatchDog.{Alarm, MonitorStatusChange}
 
   def handle_alarm(tracing_id, check, is_down) do
     cond do
@@ -101,14 +101,20 @@ defmodule UptimeChecker.AlarmService do
   end
 
   defp create_alarm(monitor, attrs) do
+    now = Timex.now()
+
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:alarm, Alarm.changeset(%Alarm{ongoing: true}, attrs))
     |> Ecto.Multi.run(:monitor, fn _repo, %{alarm: _alarm} ->
       WatchDog.update_monitor_status(monitor, %{down: true})
     end)
+    |> Ecto.Multi.insert(
+      :monitor_status_change,
+      MonitorStatusChange.changeset(%MonitorStatusChange{}, %{status: :down, changed_at: now})
+    )
     |> Repo.transaction()
     |> case do
-      {:ok, %{alarm: alarm, monitor: _monitor}} ->
+      {:ok, %{alarm: alarm, monitor: _monitor, monitor_status_change: _monitor_status_change}} ->
         {:ok, alarm}
 
       {:error, _name, changeset, _changes_so_far} ->
@@ -125,9 +131,13 @@ defmodule UptimeChecker.AlarmService do
     |> Ecto.Multi.run(:monitor, fn _repo, %{alarm: _alarm} ->
       WatchDog.update_monitor_status(monitor, %{down: false})
     end)
+    |> Ecto.Multi.insert(
+      :monitor_status_change,
+      MonitorStatusChange.changeset(%MonitorStatusChange{}, %{status: :up, changed_at: now})
+    )
     |> Repo.transaction()
     |> case do
-      {:ok, %{alarm: alarm, monitor: _monitor}} ->
+      {:ok, %{alarm: alarm, monitor: _monitor, monitor_status_change: _monitor_status_change}} ->
         {:ok, alarm}
 
       {:error, _name, changeset, _changes_so_far} ->

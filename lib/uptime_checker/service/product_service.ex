@@ -1,4 +1,4 @@
-defmodule UptimeChecker.ProductService do
+defmodule UptimeChecker.Service.ProductService do
   import Ecto.Query, warn: false
 
   alias UptimeChecker.Repo

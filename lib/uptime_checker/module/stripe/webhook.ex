@@ -6,7 +6,8 @@ defmodule UptimeChecker.Module.Stripe.Webhook do
 
   alias UptimeChecker.Cache
   alias UptimeChecker.Helper.Strings
-  alias UptimeChecker.{Customer, ProductService, Payment}
+  alias UptimeChecker.Service.ProductService
+  alias UptimeChecker.{Customer, Payment}
 
   @customer_subscription_created "customer.subscription.created"
   @customer_subscription_updated "customer.subscription.updated"

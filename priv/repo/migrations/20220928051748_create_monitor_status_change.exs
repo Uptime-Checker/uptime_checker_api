@@ -9,6 +9,6 @@ defmodule UptimeChecker.Repo.Migrations.CreateMonitorStatusChange do
       add :monitor_id, references(:monitors, on_delete: :delete_all)
     end
 
-    create unique_index(:monitor_status_changes, [:status, :monitor_id])
+    create index(:monitor_status_changes, [:monitor_id])
   end
 end
