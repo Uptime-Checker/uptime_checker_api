@@ -1,7 +1,7 @@
 # mix run priv/repo/seed_features.exs
 
 alias UptimeChecker.Constant
-alias UptimeChecker.ProductService
+alias UptimeChecker.Service.ProductService
 
 # Products
 {:ok, free_product} = ProductService.get_product_by_name("Free")
