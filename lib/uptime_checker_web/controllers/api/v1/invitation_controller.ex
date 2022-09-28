@@ -6,14 +6,15 @@ defmodule UptimeCheckerWeb.Api.V1.InvitationController do
 
   alias UptimeChecker.Mail
   alias UptimeChecker.Auth
+  alias UptimeChecker.Authorization
 
   alias UptimeChecker.Helper.Strings
   alias UptimeChecker.TaskSupervisors
 
   alias UptimeChecker.Error.ServiceError
   alias UptimeChecker.Module.{Gandalf, Mailer}
+  alias UptimeChecker.Service.InvitationService
   alias UptimeChecker.Schema.Customer.{User, Invitation}
-  alias UptimeChecker.{Authorization, InvitationService}
 
   plug UptimeCheckerWeb.Plugs.Org when action in [:create]
 

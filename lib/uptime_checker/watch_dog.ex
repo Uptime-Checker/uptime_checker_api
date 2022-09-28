@@ -7,10 +7,10 @@ defmodule UptimeChecker.WatchDog do
 
   alias UptimeChecker.Repo
   alias UptimeChecker.Customer
-  alias UptimeChecker.RegionService
   alias UptimeChecker.Error.RepoError
   alias UptimeChecker.Schema.MonitorUser
   alias UptimeChecker.Schema.Customer.User
+  alias UptimeChecker.Service.RegionService
   alias UptimeChecker.Schema.WatchDog.{Monitor, Check, MonitorRegion, ErrorLog}
 
   def get_monitor_region_status_code(id) do

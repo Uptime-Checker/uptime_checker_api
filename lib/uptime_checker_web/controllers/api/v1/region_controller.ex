@@ -2,7 +2,7 @@ defmodule UptimeCheckerWeb.Api.V1.RegionController do
   use UptimeCheckerWeb, :controller
 
   alias UptimeChecker.Schema.Region
-  alias UptimeChecker.RegionService
+  alias UptimeChecker.Service.RegionService
 
   action_fallback UptimeCheckerWeb.FallbackController
 

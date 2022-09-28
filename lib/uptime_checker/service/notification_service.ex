@@ -1,4 +1,4 @@
-defmodule UptimeChecker.NotificationService do
+defmodule UptimeChecker.Service.NotificationService do
   require Logger
   import Ecto.Query, warn: false
 

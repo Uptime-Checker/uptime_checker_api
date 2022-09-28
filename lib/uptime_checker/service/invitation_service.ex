@@ -1,4 +1,4 @@
-defmodule UptimeChecker.InvitationService do
+defmodule UptimeChecker.Service.InvitationService do
   require Logger
   import Ecto.Query, warn: false
 
