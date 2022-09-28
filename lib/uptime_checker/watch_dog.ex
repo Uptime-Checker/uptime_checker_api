@@ -195,4 +195,14 @@ defmodule UptimeChecker.WatchDog do
     |> MonitorStatusChange.changeset(%{status: status, changed_at: now, monitor: monitor})
     |> Repo.insert()
   end
+
+  def get_latest_monitor_status_change(monitor_id) do
+    query =
+      from m in MonitorStatusChange,
+        where: m.monitor_id == ^monitor_id,
+        order_by: [desc: m.id],
+        limit: 1
+
+    Repo.one(query)
+  end
 end

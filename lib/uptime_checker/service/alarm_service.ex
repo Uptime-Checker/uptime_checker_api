@@ -8,9 +8,9 @@ defmodule UptimeChecker.Service.AlarmService do
   alias UptimeChecker.Helper.Times
   alias UptimeChecker.Error.RepoError
   alias UptimeChecker.{WatchDog, DailyReport}
-  alias UptimeChecker.Schema.WatchDog.{Alarm, MonitorStatusChange}
+  alias UptimeChecker.Schema.WatchDog.{Alarm, Check, MonitorStatusChange}
 
-  def handle_alarm(tracing_id, check, is_down) do
+  def handle_alarm(tracing_id, %Check{} = check, is_down) do
     cond do
       is_down == true ->
         raise_alarm(tracing_id, check)
@@ -20,7 +20,7 @@ defmodule UptimeChecker.Service.AlarmService do
     end
   end
 
-  defp raise_alarm(tracing_id, check) do
+  defp raise_alarm(tracing_id, %Check{} = check) do
     alarm = get_ongoing_alarm(check.monitor_id)
     down_monitor_region_count = WatchDog.count_monitor_region_by_status(check.monitor_id, true)
 
@@ -50,7 +50,7 @@ defmodule UptimeChecker.Service.AlarmService do
     end
   end
 
-  defp resolve_alarm(tracing_id, check) do
+  defp resolve_alarm(tracing_id, %Check{} = check) do
     now = Timex.now()
     alarm = get_ongoing_alarm(check.monitor_id)
     up_monitor_region_count = WatchDog.count_monitor_region_by_status(check.monitor_id, false)
@@ -58,6 +58,13 @@ defmodule UptimeChecker.Service.AlarmService do
     case alarm do
       {:error, %ErrorMessage{code: :not_found} = _e} ->
         Logger.debug("#{tracing_id}, No active alarm to resolve, check #{check.id}")
+
+        monitor_status_change = WatchDog.get_latest_monitor_status_change(check.monitor_id)
+
+        if !is_nil(monitor_status_change) &&
+             (monitor_status_change.status == :pending || monitor_status_change.status == :paused) do
+          WatchDog.create_monitor_status_change(:up, check.monitor)
+        end
 
       {:ok, %Alarm{} = alarm} ->
         if up_monitor_region_count >= check.monitor.region_threshold do

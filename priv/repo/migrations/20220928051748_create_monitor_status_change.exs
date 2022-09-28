@@ -11,6 +11,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateMonitorStatusChange do
       timestamps()
     end
 
+    create index(:monitor_status_changes, [:status])
     create index(:monitor_status_changes, [:monitor_id])
   end
 end
