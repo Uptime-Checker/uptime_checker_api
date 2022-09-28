@@ -13,9 +13,16 @@ defmodule UptimeChecker.Cron.CheckMonitor do
 
     Logger.info("#{tracing_id} running check monitor")
 
-    Enum.map(monitor_regions, fn monitor_region ->
-      Logger.info("#{tracing_id} enqueue -> #{monitor_region.id}")
-      monitor_region |> Worker.HitApiAsync.enqueue()
-    end)
+    _ =
+      Task.Supervisor.async_stream(
+        {:via, PartitionSupervisor, {TaskSupervisors, self()}},
+        monitor_regions,
+        fn monitor_region ->
+          Logger.info("#{tracing_id} enqueue -> #{monitor_region.id}")
+          monitor_region |> Worker.HitApiAsync.enqueue()
+        end,
+        max_concurrency: 5
+      )
+      |> Enum.to_list()
   end
 end
