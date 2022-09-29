@@ -8,7 +8,8 @@ defmodule UptimeChecker.Service.AlarmService do
   alias UptimeChecker.Helper.Times
   alias UptimeChecker.Error.RepoError
   alias UptimeChecker.{WatchDog, DailyReport}
-  alias UptimeChecker.Schema.WatchDog.{Alarm, Check, MonitorStatusChange}
+  alias UptimeChecker.Schema.Customer.Organization
+  alias UptimeChecker.Schema.WatchDog.{Alarm, Check, Monitor, MonitorStatusChange}
 
   def handle_alarm(tracing_id, %Check{} = check, is_down) do
     cond do
@@ -107,7 +108,7 @@ defmodule UptimeChecker.Service.AlarmService do
     end
   end
 
-  defp create_alarm(monitor, attrs) do
+  defp create_alarm(%Monitor{} = monitor, attrs) do
     now = Timex.now()
 
     Ecto.Multi.new()
@@ -129,7 +130,7 @@ defmodule UptimeChecker.Service.AlarmService do
     end
   end
 
-  defp resolve_alarm(monitor, alarm, now, check) do
+  defp resolve_alarm(%Monitor{} = monitor, %Alarm{} = alarm, now, %Check{} = check) do
     Ecto.Multi.new()
     |> Ecto.Multi.update(
       :alarm,
@@ -152,7 +153,7 @@ defmodule UptimeChecker.Service.AlarmService do
     end
   end
 
-  defp update_duration_in_daily_report(organization, monitor, alarm) do
+  defp update_duration_in_daily_report(%Organization{} = organization, %Monitor{} = monitor, %Alarm{} = alarm) do
     DailyReport.update_duration(
       monitor,
       organization,
