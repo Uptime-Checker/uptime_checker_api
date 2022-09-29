@@ -13,7 +13,7 @@ defmodule UptimeChecker.Cron.CheckMonitor do
     # in the last 5 seconds upto next 10 seconds. This cron runs every 10 seconds
     monitor_regions = WatchDog.list_monitor_region(-5, +10)
 
-    Logger.info("#{tracing_id} running check monitor cron")
+    Logger.info("#{tracing_id} running check monitor cron, count: #{Enum.count(monitor_regions)}")
 
     _ =
       Task.Supervisor.async_stream(
