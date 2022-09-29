@@ -69,7 +69,7 @@ defmodule UptimeChecker.Service.AlarmService do
 
       {:ok, %Alarm{} = alarm} ->
         if up_monitor_region_count >= check.monitor.region_threshold do
-          case resolve_alarm(check.monitor, alarm, now, check) do
+          case clear_alarm(check.monitor, alarm, now, check) do
             {:ok, updated_alarm} ->
               Logger.info("#{tracing_id} Alarm resolved #{alarm.id}, monitor: #{check.monitor.id}")
               Worker.ScheduleNotificationAsync.enqueue(updated_alarm)
@@ -108,6 +108,7 @@ defmodule UptimeChecker.Service.AlarmService do
     end
   end
 
+  # Ceeates new alarm, updates monitor's status, inserts new entry in monitor status change log
   defp create_alarm(%Monitor{} = monitor, attrs) do
     now = Timex.now()
 
@@ -130,7 +131,8 @@ defmodule UptimeChecker.Service.AlarmService do
     end
   end
 
-  defp resolve_alarm(%Monitor{} = monitor, %Alarm{} = alarm, now, %Check{} = check) do
+  # Resolves alarm, updates monitor's status, inserts new entry in monitor status change log
+  defp clear_alarm(%Monitor{} = monitor, %Alarm{} = alarm, now, %Check{} = check) do
     Ecto.Multi.new()
     |> Ecto.Multi.update(
       :alarm,
