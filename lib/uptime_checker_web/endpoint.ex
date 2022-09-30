@@ -54,6 +54,6 @@ defmodule UptimeCheckerWeb.Endpoint do
   plug Plug.Head
   plug Plug.Session, @session_options
 
-  plug CORSPlug, headers: ["x_api_key"]
+  plug CORSPlug, headers: ["*"]
   plug UptimeCheckerWeb.Router
 end
