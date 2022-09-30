@@ -8,6 +8,8 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
 
   @highest_acceptable_timeout 30
 
+  @body_formats [json: 1, xml: 2, text: 3, html: 4]
+
   schema "monitors" do
     field :name, :string
     field :url, :string
@@ -17,6 +19,7 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
     field :type, Ecto.Enum, values: [api: 1, browser: 2]
 
     field :body, :string
+    field :body_format, Ecto.Enum, values: @body_formats
     field :contains, :string
     field :headers, :map, default: %{}
     field :on, :boolean

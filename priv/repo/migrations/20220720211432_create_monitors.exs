@@ -17,6 +17,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateMonitors do
       add :type, :integer, default: 1
 
       add :body, :string
+      add :body_format, :integer, default: 1
       add :contains, :string
       add :headers, :map, default: %{}
       add :on, :boolean, default: true
