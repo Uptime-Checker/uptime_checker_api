@@ -4,6 +4,8 @@ defmodule UptimeChecker.Schema.Customer.User do
 
   alias UptimeChecker.Schema.Customer.{Organization, UserContact, Role}
 
+  @provider_types [email: 1, google: 2, apple: 3, github: 4]
+
   schema "users" do
     field :email, :string
     field :name, :string
@@ -12,7 +14,7 @@ defmodule UptimeChecker.Schema.Customer.User do
     field :payment_customer_id, :string
     field :picture_url, :string
     field :last_login_at, :utc_datetime
-    field :provider, Ecto.Enum, values: [:email, :google, :apple, :github]
+    field :provider, Ecto.Enum, values: @provider_types
 
     has_many :user_contacts, UserContact
     belongs_to :organization, Organization

@@ -2,12 +2,6 @@ defmodule UptimeChecker.Repo.Migrations.CreateUsers do
   use Ecto.Migration
 
   def change do
-    create_query = "CREATE TYPE provider_name as ENUM(
-      'email', 'google', 'apple', 'github'
-    )"
-    drop_query = "DROP TYPE provider_name"
-    execute(create_query, drop_query)
-
     create table(:users) do
       add :name, :string, null: false
       add :email, :string, null: false
@@ -16,7 +10,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateUsers do
       add :payment_customer_id, :string
 
       add :firebase_uid, :string
-      add :provider, :provider_name, null: false
+      add :provider, :integer, default: 1
       add :last_login_at, :utc_datetime, default: fragment("NOW()")
 
       add :role_id, references(:roles)
