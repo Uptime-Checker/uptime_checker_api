@@ -84,6 +84,7 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
     |> validate_required([:name, :url])
     |> validate_url(:url)
     |> validate_body([:body, :body_format])
+    |> validate_length(:body, max: 1000)
     |> unique_constraint([:prev_id, :organization_id])
     |> unique_constraint([:url, :organization_id])
     |> validate_inclusion(:interval, 20..86_400)
