@@ -12,7 +12,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateMonitors do
       add :name, :string
       add :url, :string, null: false
       add :method, :method_name, null: false
-      add :interval, :integer, default: 60
+      add :interval, :integer, default: 300
       add :timeout, :integer, default: 5
       add :type, :integer, default: 1
 
