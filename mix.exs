@@ -50,6 +50,7 @@ defmodule UptimeChecker.MixProject do
       {:gettext, "~> 0.18"},
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
+      {:cors_plug, "~> 3.0"},
       {:quarto, "~> 1.1.6"},
       {:bcrypt_elixir, "~> 3.0"},
       {:stripity_stripe, "~> 2.0"},
