@@ -9,11 +9,12 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
   @highest_acceptable_timeout 30
 
   @body_formats [json: 1, xml: 2, text: 3, html: 4]
+  @methods [GET: 1, POST: 2, PUT: 3, PATCH: 4, DELETE: 5, HEAD: 6]
 
   schema "monitors" do
     field :name, :string
     field :url, :string
-    field :method, Ecto.Enum, values: [:GET, :POST, :PUT, :DELETE, :PATCH]
+    field :method, Ecto.Enum, values: @methods
     field :interval, :integer
     field :timeout, :integer
     field :type, Ecto.Enum, values: [api: 1, browser: 2]
@@ -79,11 +80,7 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
       :last_failed_at,
       :prev_id
     ])
-    |> validate_required([
-      :url,
-      :method,
-      :interval
-    ])
+    |> validate_required([:name, :url])
     |> validate_url(:url)
     |> unique_constraint([:prev_id, :organization_id])
     |> unique_constraint([:url, :organization_id])

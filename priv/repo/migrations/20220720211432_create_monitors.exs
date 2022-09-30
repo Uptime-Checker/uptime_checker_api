@@ -2,16 +2,10 @@ defmodule UptimeChecker.Repo.Migrations.CreateMonitors do
   use Ecto.Migration
 
   def change do
-    create_query = "CREATE TYPE method_name as ENUM(
-      'GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD'
-    )"
-    drop_query = "DROP TYPE method_name"
-    execute(create_query, drop_query)
-
     create table(:monitors) do
-      add :name, :string
+      add :name, :string, null: false
       add :url, :string, null: false
-      add :method, :method_name, null: false
+      add :method, :integer, default: 1
       add :interval, :integer, default: 300
       add :timeout, :integer, default: 5
       add :type, :integer, default: 1
