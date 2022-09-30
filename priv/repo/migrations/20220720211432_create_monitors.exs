@@ -3,7 +3,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateMonitors do
 
   def change do
     create_query = "CREATE TYPE method_name as ENUM(
-      'GET', 'POST', 'PUT', 'DELETE', 'PATCH'
+      'GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD'
     )"
     drop_query = "DROP TYPE method_name"
     execute(create_query, drop_query)
