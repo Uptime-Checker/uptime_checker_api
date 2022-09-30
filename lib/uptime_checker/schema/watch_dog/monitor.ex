@@ -20,7 +20,7 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
     field :type, Ecto.Enum, values: [api: 1, browser: 2]
 
     field :body, :string
-    field :body_format, Ecto.Enum, values: @body_formats
+    field :body_format, Ecto.Enum, values: @body_formats, default: :json
     field :contains, :string
     field :headers, :map, default: %{}
     field :on, :boolean
@@ -67,6 +67,7 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
       :interval,
       :timeout,
       :body,
+      :body_format,
       :contains,
       :headers,
       :on,
@@ -82,6 +83,7 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
     ])
     |> validate_required([:name, :url])
     |> validate_url(:url)
+    |> validate_body([:body, :body_format])
     |> unique_constraint([:prev_id, :organization_id])
     |> unique_constraint([:url, :organization_id])
     |> validate_inclusion(:interval, 20..86_400)
@@ -114,6 +116,28 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
       case UptimeChecker.Http.UrlValidator.cast(url) do
         {:ok, _} -> []
         :error -> [{field, options[:message] || "invalid url: #{inspect(url)}"}]
+      end
+    end)
+  end
+
+  def validate_body(changeset, fields, options \\ []) do
+    field = Enum.at(fields, 0)
+
+    validate_change(changeset, field, fn _, body ->
+      body_format = get_field(changeset, Enum.at(fields, 1))
+
+      case body_format do
+        :json ->
+          case Jason.decode(body) do
+            {:ok, _} ->
+              []
+
+            {:error, %Jason.DecodeError{data: data}} ->
+              [{field, options[:message] || "invalid body: #{inspect(data)}"}]
+          end
+
+        nil ->
+          []
       end
     end)
   end

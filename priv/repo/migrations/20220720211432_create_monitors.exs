@@ -10,7 +10,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateMonitors do
       add :timeout, :integer, default: 5
       add :type, :integer, default: 1
 
-      add :body, :string
+      add :body, :text
       add :body_format, :integer, default: 1
       add :contains, :string
       add :headers, :map, default: %{}
