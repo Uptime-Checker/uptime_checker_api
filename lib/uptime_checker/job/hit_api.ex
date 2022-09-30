@@ -3,8 +3,9 @@ defmodule UptimeChecker.Job.HitApi do
 
   alias UptimeChecker.Http.Api
   alias UptimeChecker.WatchDog
+  alias UptimeChecker.Schema.Region
   alias UptimeChecker.Helper.Strings
-  alias UptimeChecker.Schema.WatchDog.{MonitorRegion, Check}
+  alias UptimeChecker.Schema.WatchDog.{MonitorRegion, Check, Monitor}
   alias UptimeChecker.Event.{HandleNextCheck, HandleErrorLog, HandleApiResponse}
 
   def work(monitor_region_id) do
@@ -37,7 +38,7 @@ defmodule UptimeChecker.Job.HitApi do
     :ok
   end
 
-  defp hit_api(tracing_id, monitor) do
+  defp hit_api(tracing_id, %Monitor{} = monitor) do
     :timer.tc(fn ->
       Api.hit(
         tracing_id,
@@ -45,13 +46,14 @@ defmodule UptimeChecker.Job.HitApi do
         monitor.method,
         monitor.headers,
         monitor.body || "",
+        monitor.body_format,
         monitor.timeout,
         monitor.follow_redirects
       )
     end)
   end
 
-  defp create_check(tracing_id, monitor, region, org) do
+  defp create_check(tracing_id, %Monitor{} = monitor, %Region{} = region, org) do
     case WatchDog.create_check(%{}, monitor, region, org) do
       {:ok, %Check{} = check} ->
         Logger.debug("#{tracing_id} 1 Created new check #{check.id}")

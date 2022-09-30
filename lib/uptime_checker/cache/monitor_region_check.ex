@@ -13,7 +13,7 @@ defmodule UptimeChecker.Cache.MonitorRegionCheck do
     scheduled_at_timestamp = get_scheduled_at_timestamp(scheduled_at)
     key = get_monitor_region_check_key(monitor_region_id, scheduled_at_timestamp)
     Cachex.put(@cache_monitor_region_check, key, monitor_region_id)
-    Cachex.expire(@cache_monitor_region_check, key, :timer.seconds(60))
+    Cachex.expire(@cache_monitor_region_check, key, :timer.hours(24))
   end
 
   defp get_monitor_region_check_key(monitor_region_id, scheduled_at_timestamp),
