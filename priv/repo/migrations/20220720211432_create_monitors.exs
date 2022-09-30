@@ -27,7 +27,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateMonitors do
 
       add :resolve_threshold, :integer, default: 1
       add :error_threshold, :integer, default: 1
-      add :region_threshold, :integer, default: 2
+      add :region_threshold, :integer, default: 1
 
       add :last_checked_at, :utc_datetime
       add :last_failed_at, :utc_datetime
