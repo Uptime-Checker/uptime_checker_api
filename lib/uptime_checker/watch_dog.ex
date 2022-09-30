@@ -8,9 +8,9 @@ defmodule UptimeChecker.WatchDog do
   alias UptimeChecker.Repo
   alias UptimeChecker.Customer
   alias UptimeChecker.Error.RepoError
-  alias UptimeChecker.Schema.MonitorUser
   alias UptimeChecker.Schema.Customer.User
   alias UptimeChecker.Service.RegionService
+  alias UptimeChecker.Schema.{MonitorUser, Region}
   alias UptimeChecker.Schema.WatchDog.{Monitor, Check, MonitorRegion, ErrorLog, MonitorStatusChange}
 
   def get_monitor_region_status_code(id) do
@@ -30,7 +30,7 @@ defmodule UptimeChecker.WatchDog do
     end
   end
 
-  def create_monitor_regions(monitor) do
+  def create_monitor_regions(%Monitor{} = monitor) do
     now = Timex.now()
     regions = RegionService.list_regions()
 
@@ -90,7 +90,7 @@ defmodule UptimeChecker.WatchDog do
     Repo.one(query)
   end
 
-  def create_monitor_users(monitor, user_ids) do
+  def create_monitor_users(%Monitor{} = monitor, user_ids) do
     Enum.each(user_ids, fn user_id ->
       with {:ok, %User{} = user} <- Customer.get_customer_by_id(user_id) do
         if monitor.organization_id == user.organization_id do
@@ -143,7 +143,7 @@ defmodule UptimeChecker.WatchDog do
 
   def get_check!(id), do: Repo.get!(Check, id)
 
-  def create_check(attrs \\ %{}, monitor, region, organization) do
+  def create_check(attrs \\ %{}, %Monitor{} = monitor, %Region{} = region, organization) do
     params =
       attrs
       |> Map.put(:monitor, monitor)
@@ -155,7 +155,14 @@ defmodule UptimeChecker.WatchDog do
     |> Repo.insert()
   end
 
-  def handle_next_check(monitor, monitor_params, monitor_region, monitor_region_params, check, check_params) do
+  def handle_next_check(
+        %Monitor{} = monitor,
+        monitor_params,
+        %MonitorRegion{} = monitor_region,
+        monitor_region_params,
+        %Check{} = check,
+        check_params
+      ) do
     Ecto.Multi.new()
     |> Ecto.Multi.update(:monitor, Monitor.update_check_changeset(monitor, monitor_params))
     |> Ecto.Multi.update(:monitor_region, MonitorRegion.update_changeset(monitor_region, monitor_region_params))
