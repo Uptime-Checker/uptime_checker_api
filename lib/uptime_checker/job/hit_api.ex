@@ -21,7 +21,7 @@ defmodule UptimeChecker.Job.HitApi do
            ) do
       monitor = monitor_region.monitor
 
-      with {u_secs, result} <- hit_api(tracing_id, monitor) do
+      with {u_secs, result} <- hit(tracing_id, monitor) do
         duration = round(u_secs / 1000)
 
         case result do
@@ -38,7 +38,7 @@ defmodule UptimeChecker.Job.HitApi do
     :ok
   end
 
-  defp hit_api(tracing_id, %Monitor{} = monitor) do
+  def hit(tracing_id, %Monitor{} = monitor) do
     :timer.tc(fn ->
       Api.hit(
         tracing_id,

@@ -2,6 +2,7 @@ defmodule UptimeCheckerWeb.Api.V1.MonitorController do
   use UptimeCheckerWeb, :controller
   import UptimeChecker.Helper.Util
 
+  alias UptimeChecker.Worker
   alias UptimeChecker.WatchDog
   alias UptimeChecker.Module.Gandalf
   alias UptimeChecker.TaskSupervisors
@@ -26,13 +27,7 @@ defmodule UptimeCheckerWeb.Api.V1.MonitorController do
     with count <- MonitorService.count(user.organization),
          :ok <- Gandalf.can_create_monitor(user, count, attrs.interval),
          {:ok, %Monitor{} = monitor} <- MonitorService.create(attrs, user) do
-      Task.Supervisor.start_child(
-        {:via, PartitionSupervisor, {TaskSupervisors, self()}},
-        fn ->
-          WatchDog.create_monitor_regions(monitor)
-        end,
-        restart: :transient
-      )
+      monitor |> Worker.StartMonitorAsync.enqueue()
 
       Task.Supervisor.start_child(
         {:via, PartitionSupervisor, {TaskSupervisors, self()}},
