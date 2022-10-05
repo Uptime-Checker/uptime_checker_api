@@ -107,6 +107,12 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
     |> validate_required([:down])
   end
 
+  def pause_changeset(monitor, attrs) do
+    monitor
+    |> cast(attrs, [:on])
+    |> validate_required([:on])
+  end
+
   def update_order_changeset(monitor, attrs) do
     monitor
     |> cast(attrs, [:prev_id])

@@ -29,6 +29,12 @@ defmodule UptimeChecker.Service.MonitorService do
     end
   end
 
+  def pause_monitor(%Monitor{} = monitor, on) do
+    monitor
+    |> Monitor.pause_changeset(%{on: on})
+    |> Repo.update()
+  end
+
   def update_order(id, before_id, %User{} = user) do
     before = Monitor |> Repo.get_by!(id: before_id, organization_id: user.organization_id)
     current = Monitor |> Repo.get_by!(id: id, organization_id: user.organization_id)

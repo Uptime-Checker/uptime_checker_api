@@ -53,10 +53,12 @@ defmodule UptimeChecker.Job.StartMonitor do
   defp handle_poison_error(tracing_id, reason, %Check{} = check, duration) do
     HandleErrorLog.finalize(tracing_id, reason, check)
     WatchDog.update_check(check, %{success: false, duration: duration})
+    MonitorService.pause_monitor(check.monitor, false)
   end
 
   defp handle_failure_from_response(tracing_id, %HTTPoison.Response{} = response, %Check{} = check, duration, code) do
     HandleErrorLog.create(tracing_id, response.body, response.status_code, check, code)
     WatchDog.update_check(check, %{success: false, duration: duration})
+    MonitorService.pause_monitor(check.monitor, false)
   end
 end
