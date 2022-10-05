@@ -12,7 +12,7 @@ defmodule UptimeChecker.Job.StartMonitor do
     tracing_id = Strings.random_string(10)
     monitor = MonitorService.get(monitor_id)
 
-    with {:ok, org} <- Customer.get_user_contact_by_id(monitor.organization_id),
+    with {:ok, org} <- Customer.get_organization(monitor.organization_id),
          {:ok, region} <- RegionService.get_current_region(),
          {:ok, check} <- WatchDog.create_check(%{}, monitor, region, org) do
       with {u_secs, result} <- HitApi.hit(tracing_id, monitor) do
