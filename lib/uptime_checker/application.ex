@@ -23,7 +23,7 @@ defmodule UptimeChecker.Application do
       # Task Supervisor
       {PartitionSupervisor, child_spec: Task.Supervisor, name: UptimeChecker.TaskSupervisors},
       # Oban
-      {Oban, Application.fetch_env!(:uptime_checker, Oban)},
+      {Oban, oban_opts()},
       # Start a worker on startup
       {Task, &UptimeChecker.Event.InitStart.run/0},
       # Caches
@@ -44,5 +44,27 @@ defmodule UptimeChecker.Application do
   def config_change(changed, _new, removed) do
     UptimeCheckerWeb.Endpoint.config_change(changed, removed)
     :ok
+  end
+
+  defp oban_opts do
+    env_queues = System.get_env("OBAN_QUEUES")
+
+    :uptime_checker
+    |> Application.get_env(Oban)
+    |> Keyword.update(:queues, [], &queues(env_queues, &1))
+    |> dbg()
+  end
+
+  defp queues("*", defaults), do: defaults
+  defp queues(nil, defaults), do: defaults
+  defp queues(false, _), do: false
+
+  defp queues(values, _defaults) when is_binary(values) do
+    values
+    |> String.split(" ", trim: true)
+    |> Enum.map(&String.split(&1, ",", trim: true))
+    |> Keyword.new(fn [queue, limit] ->
+      {String.to_existing_atom(queue), String.to_integer(limit)}
+    end)
   end
 end

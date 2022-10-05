@@ -15,8 +15,9 @@ alias UptimeChecker.Service.ProductService
 
 RegionService.create_region(%{name: "Sunnyvale, California (US)", key: "sjc"})
 RegionService.create_region(%{name: "Frankfurt, Germany", key: "fra"})
-RegionService.create_region(%{name: "Tokyo, Japan", key: "nrt"})
+RegionService.create_region(%{name: "Singapore", key: "sin"})
 RegionService.create_region(%{name: "Sydney, Australia", key: "syd"})
+RegionService.create_region(%{name: "Toronto, Canada", key: "yyz"})
 
 Authorization.create_role(%{name: "Super Admin", type: :superadmin})
 Authorization.create_role(%{name: "Admin", type: :admin})
