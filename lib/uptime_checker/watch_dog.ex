@@ -73,7 +73,7 @@ defmodule UptimeChecker.WatchDog do
     |> join(:left, [mr], m in assoc(mr, :monitor), as: :monitor)
     |> join(:left, [mr], r in assoc(mr, :region), as: :region)
     |> where([mr, m], m.on == true)
-    |> where([mr, r], r.key == ^region_key)
+    |> where([mr, m, r], r.key == ^region_key)
     |> where([mr], mr.next_check_at < ^later)
     |> preload([mr, m, r], monitor: m, region: r)
     |> order_by([mr], asc: mr.next_check_at)
