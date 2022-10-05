@@ -4,6 +4,7 @@ defmodule UptimeChecker.Cron.CheckMonitor do
   alias UptimeChecker.Cache
   alias UptimeChecker.Worker
   alias UptimeChecker.WatchDog
+  alias UptimeChecker.Constant.Env
   alias UptimeChecker.Helper.Strings
   alias UptimeChecker.TaskSupervisors
 
@@ -11,7 +12,7 @@ defmodule UptimeChecker.Cron.CheckMonitor do
     tracing_id = Strings.random_string(10)
     # Load all the monitors for each region that were supposed to be executed
     # in the last 5 seconds upto next 10 seconds. This cron runs every 10 seconds
-    monitor_regions = WatchDog.list_monitor_region(-5, +10)
+    monitor_regions = WatchDog.list_monitor_region(-5, +10, Env.current_region() |> System.get_env())
 
     Logger.info("#{tracing_id} running check monitor cron, count: #{Enum.count(monitor_regions)}")
 
