@@ -1,20 +1,19 @@
 defmodule UptimeChecker.Job.StartMonitor do
   require Logger
 
+  alias UptimeChecker.WatchDog
   alias UptimeChecker.Job.HitApi
   alias UptimeChecker.Helper.Strings
-  alias UptimeChecker.{WatchDog, Customer}
   alias UptimeChecker.Schema.WatchDog.Check
   alias UptimeChecker.Service.{MonitorService, RegionService}
   alias UptimeChecker.Event.{HandleErrorLog, HandleApiResponse}
 
   def work(monitor_id) do
     tracing_id = Strings.random_string(10)
-    monitor = MonitorService.get(monitor_id)
 
-    with {:ok, org} <- Customer.get_organization(monitor.organization_id),
+    with {:ok, monitor} <- MonitorService.get_with_all_assoc(monitor_id),
          {:ok, region} <- RegionService.get_current_region(),
-         {:ok, check} <- WatchDog.create_check(%{}, monitor, region, org) do
+         {:ok, check} <- WatchDog.create_check(%{}, monitor, region, monitor.organization) do
       with {u_secs, result} <- HitApi.hit(tracing_id, monitor) do
         duration = round(u_secs / 1000)
 

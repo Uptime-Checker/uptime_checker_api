@@ -3,6 +3,7 @@ defmodule UptimeChecker.Service.MonitorService do
   import Ecto.Query, warn: false
 
   alias UptimeChecker.Repo
+  alias UptimeChecker.Error.RepoError
   alias UptimeChecker.Constant.Default
   alias UptimeChecker.Schema.WatchDog.Monitor
   alias UptimeChecker.Schema.Customer.{Organization, User}
@@ -12,6 +13,21 @@ defmodule UptimeChecker.Service.MonitorService do
   end
 
   def get(id), do: Repo.get(Monitor, id)
+
+  def get_with_all_assoc(id) do
+    query =
+      from m in Monitor,
+        where: m.id == ^id,
+        left_join: o in assoc(m, :organization),
+        left_join: status_codes in assoc(m, :status_codes),
+        preload: [organization: o, status_codes: status_codes]
+
+    Repo.one(query)
+    |> case do
+      nil -> {:error, RepoError.monitor_not_found() |> ErrorMessage.not_found(%{id: id})}
+      monitor -> {:ok, monitor}
+    end
+  end
 
   def update_order(id, before_id, %User{} = user) do
     before = Monitor |> Repo.get_by!(id: before_id, organization_id: user.organization_id)
