@@ -66,7 +66,7 @@ config :uptime_checker, Oban,
        {"0 * * * *", UptimeChecker.Worker.SyncProductsAsync}
      ]}
   ],
-  queues: [default: 100, notification: 100, sjc: 1000, fra: 1000, sin: 1000, syd: 1000, yyz: 1000]
+  queues: [default: 100, notification: 100]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

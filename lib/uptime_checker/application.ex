@@ -5,6 +5,8 @@ defmodule UptimeChecker.Application do
 
   use Application
 
+  alias UptimeChecker.Constant.Env
+
   @impl true
   def start(_type, _args) do
     Logger.add_backend(Sentry.LoggerBackend)
@@ -23,7 +25,7 @@ defmodule UptimeChecker.Application do
       # Task Supervisor
       {PartitionSupervisor, child_spec: Task.Supervisor, name: UptimeChecker.TaskSupervisors},
       # Oban
-      {Oban, Application.fetch_env!(:uptime_checker, Oban)},
+      {Oban, oban_opts()},
       # Start a worker on startup
       {Task, &UptimeChecker.Event.InitStart.run/0},
       # Caches
@@ -44,5 +46,13 @@ defmodule UptimeChecker.Application do
   def config_change(changed, _new, removed) do
     UptimeCheckerWeb.Endpoint.config_change(changed, removed)
     :ok
+  end
+
+  defp oban_opts do
+    :uptime_checker
+    |> Application.get_env(Oban)
+    |> Keyword.update(:queues, [], fn existing ->
+      existing |> Keyword.put(Env.current_region() |> System.get_env() |> String.to_atom(), 1000)
+    end)
   end
 end
