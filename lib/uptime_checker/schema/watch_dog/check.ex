@@ -8,7 +8,7 @@ defmodule UptimeChecker.Schema.WatchDog.Check do
 
   schema "checks" do
     field :duration, :integer
-    field :success, :boolean, default: false
+    field :success, :boolean
 
     belongs_to :monitor, Monitor
     belongs_to :region, Region

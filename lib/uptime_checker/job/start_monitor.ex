@@ -23,11 +23,11 @@ defmodule UptimeChecker.Job.StartMonitor do
               "#{tracing_id} RESPONSE #{check.monitor.url} CODE ==> #{response.status_code} DURATION ==> #{duration}"
             )
 
-            handle_response(tracing_id, response, check)
+            handle_response(tracing_id, response, check, duration)
 
           {:error, %HTTPoison.Error{reason: reason}} ->
             Logger.error("#{tracing_id} API Request failed #{monitor.url}, reason #{reason}")
-            HandleErrorLog.finalize(tracing_id, reason, check)
+            handle_poison_error(tracing_id, reason, check, duration)
         end
       end
     end
@@ -35,13 +35,28 @@ defmodule UptimeChecker.Job.StartMonitor do
     :ok
   end
 
-  def handle_response(tracing_id, %HTTPoison.Response{} = response, %Check{} = check) do
+  defp handle_response(tracing_id, %HTTPoison.Response{} = response, %Check{} = check, duration) do
     case HandleApiResponse.handle(response, check.monitor) do
       {:ok, _success} ->
-        WatchDog.create_monitor_regions(check.monitor)
+        handle_successful_response(check, duration)
 
       {:error, code} ->
-        HandleErrorLog.create(tracing_id, response.body, response.status_code, check, code)
+        handle_failure_from_response(tracing_id, response, check, duration, code)
     end
+  end
+
+  defp handle_successful_response(%Check{} = check, duration) do
+    WatchDog.create_monitor_regions(check.monitor)
+    WatchDog.update_check(check, %{success: true, duration: duration})
+  end
+
+  defp handle_poison_error(tracing_id, reason, %Check{} = check, duration) do
+    HandleErrorLog.finalize(tracing_id, reason, check)
+    WatchDog.update_check(check, %{success: false, duration: duration})
+  end
+
+  defp handle_failure_from_response(tracing_id, %HTTPoison.Response{} = response, %Check{} = check, duration, code) do
+    WatchDog.update_check(check, %{success: false, duration: duration})
+    HandleErrorLog.create(tracing_id, response.body, response.status_code, check, code)
   end
 end
