@@ -1,6 +1,8 @@
 defmodule UptimeChecker.Job.RunChecksOnStartup do
   use Timex
+
   alias UptimeChecker.WatchDog
+  alias UptimeChecker.Constant.Env
   alias UptimeChecker.Helper.Strings
   alias UptimeChecker.TaskSupervisors
 
@@ -10,7 +12,9 @@ defmodule UptimeChecker.Job.RunChecksOnStartup do
   end
 
   defp handle_active_monitors(after_cursor) do
-    %{entries: entries, metadata: metadata} = WatchDog.list_monitor_region_for_active_monitors(after_cursor)
+    %{entries: entries, metadata: metadata} =
+      WatchDog.list_monitor_region_for_active_monitors(after_cursor, Env.current_region() |> System.get_env())
+
     now = Timex.now()
 
     _ =
