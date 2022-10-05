@@ -1,8 +1,8 @@
 defmodule UptimeChecker.Event.HandleApiResponse do
   require Logger
 
-  alias UptimeChecker.Schema.WatchDog.{Check, MonitorRegion}
   alias UptimeChecker.Event.{HandleNextCheck, HandleErrorLog}
+  alias UptimeChecker.Schema.WatchDog.{Check, MonitorRegion, Monitor}
 
   import Plug.Conn.Status, only: [code: 1]
 
@@ -15,22 +15,32 @@ defmodule UptimeChecker.Event.HandleApiResponse do
       ) do
     Logger.info("#{tracing_id} RESPONSE #{check.monitor.url} CODE ==> #{response.status_code} DURATION ==> #{duration}")
 
+    case handle(response, check.monitor) do
+      {:ok, success} ->
+        HandleNextCheck.act(tracing_id, monitor_region, check, duration, success)
+
+      {:error, code} ->
+        handle_failure_from_response(tracing_id, response, monitor_region, check, duration, code)
+    end
+  end
+
+  def handle(%HTTPoison.Response{} = response, %Monitor{} = monitor) do
     if response.status_code >= code(:ok) && response.status_code < code(:bad_request) do
       # good status code
-      if is_nil(List.first(check.monitor.status_codes)) do
-        HandleNextCheck.act(tracing_id, monitor_region, check, duration, true)
+      if is_nil(List.first(monitor.status_codes)) do
+        {:ok, true}
       else
-        success_status_codes = Enum.map(check.monitor.status_codes, fn status_code -> status_code.code end)
+        success_status_codes = Enum.map(monitor.status_codes, fn status_code -> status_code.code end)
 
         if Enum.member?(success_status_codes, response.status_code) do
-          HandleNextCheck.act(tracing_id, monitor_region, check, duration, true)
+          {:ok, true}
         else
-          handle_failure_from_response(tracing_id, response, monitor_region, check, duration, :status_code_mismatch)
+          {:error, :status_code_mismatch}
         end
       end
     else
       # status code ranges from >= 400 to 500+
-      handle_failure_from_response(tracing_id, response, monitor_region, check, duration, :bad_status_code)
+      {:error, :bad_status_code}
     end
   end
 
