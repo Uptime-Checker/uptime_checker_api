@@ -3,4 +3,5 @@ defmodule UptimeChecker.Constant.Env do
 
   const(:x_api_key, "X_API_KEY")
   const(:web_url, "WEB_URL")
+  const(:current_region, "FLY_REGION")
 end

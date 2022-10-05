@@ -1,8 +1,10 @@
 defmodule UptimeChecker.Worker.HitApiAsync do
   require Logger
-  use Oban.Worker, max_attempts: 1, unique: [period: 15]
 
+  alias UptimeChecker.Constant.Env
   alias UptimeChecker.Schema.WatchDog.MonitorRegion
+
+  use Oban.Worker, max_attempts: 1, unique: [period: 15], queue: Env.current_region() |> System.get_env()
 
   @impl true
   def perform(%Oban.Job{args: %{"monitor_region_id" => monitor_region_id}}) do
@@ -17,7 +19,7 @@ defmodule UptimeChecker.Worker.HitApiAsync do
 
   def enqueue(%MonitorRegion{id: id, next_check_at: next_check_at}) do
     %{monitor_region_id: id}
-    |> new(scheduled_at: next_check_at)
+    |> new(queue: Env.current_region() |> System.get_env(), scheduled_at: next_check_at)
     |> Oban.insert()
   end
 end

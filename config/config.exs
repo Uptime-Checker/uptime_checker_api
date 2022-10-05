@@ -52,7 +52,7 @@ config :uptime_checker, UptimeChecker.Module.Scheduler,
       # Every every 10 seconds
       schedule: {:extended, "*/10"},
       task: {UptimeChecker.Cron.CheckMonitor, :work, []},
-      run_strategy: {Quantum.RunStrategy.Random, :cluster}
+      run_strategy: {Quantum.RunStrategy.All, :cluster}
     ]
   ]
 

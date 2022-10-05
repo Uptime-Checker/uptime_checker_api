@@ -1,1 +1,1 @@
-OBAN_QUEUES="default,10 notification,10 fra,10" FLY_REGION="fra" mix phx.server
+FLY_REGION="fra" mix phx.server
