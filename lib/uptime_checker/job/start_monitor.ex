@@ -56,7 +56,7 @@ defmodule UptimeChecker.Job.StartMonitor do
   end
 
   defp handle_failure_from_response(tracing_id, %HTTPoison.Response{} = response, %Check{} = check, duration, code) do
-    WatchDog.update_check(check, %{success: false, duration: duration})
     HandleErrorLog.create(tracing_id, response.body, response.status_code, check, code)
+    WatchDog.update_check(check, %{success: false, duration: duration})
   end
 end
