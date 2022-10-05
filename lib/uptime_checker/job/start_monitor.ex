@@ -21,5 +21,7 @@ defmodule UptimeChecker.Job.StartMonitor do
           Logger.error("#{tracing_id} API Request failed #{monitor.url}, reason #{reason}")
       end
     end
+
+    :ok
   end
 end

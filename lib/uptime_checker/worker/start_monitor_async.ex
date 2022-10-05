@@ -1,6 +1,6 @@
 defmodule UptimeChecker.Worker.StartMonitorAsync do
   require Logger
-  use Oban.Worker, max_attempts: 1, unique: [period: 15]
+  use Oban.Worker, max_attempts: 1, unique: [period: 15], queue: :default
 
   alias UptimeChecker.Schema.WatchDog.Monitor
 
@@ -17,6 +17,7 @@ defmodule UptimeChecker.Worker.StartMonitorAsync do
 
   def enqueue(%Monitor{id: id}) do
     %{monitor_id: id}
+    |> new(queue: :default)
     |> Oban.insert()
   end
 end

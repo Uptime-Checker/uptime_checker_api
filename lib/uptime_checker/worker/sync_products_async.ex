@@ -1,6 +1,6 @@
 defmodule UptimeChecker.Worker.SyncProductsAsync do
   require Logger
-  use Oban.Worker
+  use Oban.Worker, queue: :default
 
   alias UptimeChecker.Cron.SyncProducts
 

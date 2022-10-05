@@ -31,6 +31,8 @@ defmodule UptimeChecker.Job.RunChecksOnStartup do
         handle_active_monitors(metadata_after_cursor)
       end
     end
+
+    :ok
   end
 
   defp update_monitor_region(monitor_region, now) do

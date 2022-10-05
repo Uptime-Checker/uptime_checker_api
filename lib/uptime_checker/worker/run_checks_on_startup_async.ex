@@ -1,6 +1,9 @@
 defmodule UptimeChecker.Worker.RunChecksOnStartupAsync do
   require Logger
-  use Oban.Worker, max_attempts: 1
+
+  alias UptimeChecker.Constant.Env
+
+  use Oban.Worker, max_attempts: 1, queue: Env.current_region() |> System.get_env()
 
   @impl true
   def perform(%Oban.Job{args: %{}}) do
@@ -15,7 +18,7 @@ defmodule UptimeChecker.Worker.RunChecksOnStartupAsync do
 
   def enqueue() do
     %{}
-    |> new()
+    |> new(queue: Env.current_region() |> System.get_env())
     |> Oban.insert()
   end
 end
