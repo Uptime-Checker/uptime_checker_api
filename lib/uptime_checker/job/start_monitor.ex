@@ -48,6 +48,7 @@ defmodule UptimeChecker.Job.StartMonitor do
   defp handle_successful_response(%Check{} = check, duration) do
     WatchDog.create_monitor_regions(check.monitor)
     WatchDog.update_check(check, %{success: true, duration: duration})
+    WatchDog.create_monitor_status_change(:up, check.monitor)
   end
 
   defp handle_poison_error(tracing_id, reason, %Check{} = check, duration) do
