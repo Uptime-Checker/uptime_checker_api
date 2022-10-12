@@ -11,6 +11,8 @@ defmodule UptimeChecker.Job.StartMonitor do
   def work(monitor_id) do
     tracing_id = Strings.random_string(10)
 
+    Logger.info("#{tracing_id} starting monitor async, monitor: #{monitor_id}")
+
     with {:ok, monitor} <- MonitorService.get_with_all_assoc(monitor_id),
          {:ok, region} <- RegionService.get_current_region(),
          {:ok, check} <- WatchDog.create_check(%{}, monitor, region, monitor.organization) do

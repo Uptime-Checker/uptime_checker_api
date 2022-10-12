@@ -1,7 +1,10 @@
 defmodule UptimeChecker.Cron.SyncProducts do
+  require Logger
   alias UptimeChecker.Service.ProductService
 
   def work do
+    Logger.info("running sync products cron")
+
     {:ok, products} = Stripe.Product.list()
     {:ok, prices} = Stripe.Price.list()
 

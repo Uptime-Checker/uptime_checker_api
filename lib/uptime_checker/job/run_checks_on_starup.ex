@@ -1,5 +1,6 @@
 defmodule UptimeChecker.Job.RunChecksOnStartup do
   use Timex
+  require Logger
 
   alias UptimeChecker.WatchDog
   alias UptimeChecker.Constant.Env
@@ -7,6 +8,8 @@ defmodule UptimeChecker.Job.RunChecksOnStartup do
   alias UptimeChecker.TaskSupervisors
 
   def work() do
+    Logger.info("running active monitor check on startup")
+
     handle_active_monitors(nil)
     :ok
   end
