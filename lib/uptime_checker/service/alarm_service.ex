@@ -60,13 +60,6 @@ defmodule UptimeChecker.Service.AlarmService do
       {:error, %ErrorMessage{code: :not_found} = _e} ->
         Logger.debug("#{tracing_id}, No active alarm to resolve, check #{check.id}")
 
-        monitor_status_change = WatchDog.get_latest_monitor_status_change(check.monitor_id)
-
-        if !is_nil(monitor_status_change) &&
-             (monitor_status_change.status == :pending || monitor_status_change.status == :paused) do
-          WatchDog.create_monitor_status_change(:up, check.monitor)
-        end
-
       {:ok, %Alarm{} = alarm} ->
         if up_monitor_region_count >= check.monitor.region_threshold do
           case clear_alarm(check.monitor, alarm, now, check) do

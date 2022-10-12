@@ -5,8 +5,8 @@ defmodule UptimeChecker.Service.MonitorService do
   alias UptimeChecker.Repo
   alias UptimeChecker.Error.RepoError
   alias UptimeChecker.Constant.Default
-  alias UptimeChecker.Schema.WatchDog.Monitor
   alias UptimeChecker.Schema.Customer.{Organization, User}
+  alias UptimeChecker.Schema.WatchDog.{Monitor, MonitorStatusChange}
 
   def list(%Organization{} = organization, offset) do
     list_recursively(organization) |> limit(^Default.offset_limit()) |> offset(^offset) |> Repo.all()
@@ -30,9 +30,22 @@ defmodule UptimeChecker.Service.MonitorService do
   end
 
   def pause_monitor(%Monitor{} = monitor, on) do
-    monitor
-    |> Monitor.pause_changeset(%{on: on})
-    |> Repo.update()
+    now = Timex.now()
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:monitor, monitor |> Monitor.pause_changeset(%{on: on}))
+    |> Ecto.Multi.insert(
+      :monitor_status_change,
+      MonitorStatusChange.changeset(%MonitorStatusChange{}, %{status: :paused, changed_at: now, monitor: monitor})
+    )
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{monitor: monitor, monitor_status_change: _monitor_status_change}} ->
+        {:ok, monitor}
+
+      {:error, _name, changeset, _changes_so_far} ->
+        {:error, changeset}
+    end
   end
 
   def update_order(id, before_id, %User{} = user) do
