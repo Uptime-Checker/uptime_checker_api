@@ -53,6 +53,18 @@ config :uptime_checker, UptimeChecker.Module.Scheduler,
       schedule: {:extended, "*/10"},
       task: {UptimeChecker.Cron.CheckMonitor, :work, []},
       run_strategy: {Quantum.RunStrategy.All, :cluster}
+    ],
+    error_check: [
+      # Every every 1 hour
+      schedule: "0 * * * *",
+      task: {UptimeChecker.Cron.ErrorCheck, :work, []},
+      run_strategy: {Quantum.RunStrategy.Random, :cluster}
+    ],
+    sync_product: [
+      # Every every 1 hour
+      schedule: "0 * * * *",
+      task: {UptimeChecker.Cron.SyncProducts, :work, []},
+      run_strategy: {Quantum.RunStrategy.Random, :cluster}
     ]
   ]
 
@@ -60,12 +72,7 @@ config :uptime_checker, UptimeChecker.Module.Scheduler,
 config :uptime_checker, Oban,
   repo: UptimeChecker.Repo,
   plugins: [
-    Oban.Plugins.Pruner,
-    {Oban.Plugins.Cron,
-     crontab: [
-       {"0 * * * *", UptimeChecker.Worker.ErrorCheckAsync},
-       {"0 * * * *", UptimeChecker.Worker.SyncProductsAsync}
-     ]}
+    Oban.Plugins.Pruner
   ],
   queues: [default: 100, notification: 100]
 
