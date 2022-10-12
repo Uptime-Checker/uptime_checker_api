@@ -4,6 +4,7 @@ defmodule UptimeChecker.Cron.ErrorCheck do
 
   alias UptimeChecker.WatchDog
   alias UptimeChecker.Helper.Strings
+  alias UptimeChecker.TaskSupervisors
   alias UptimeChecker.Service.MonitorService
   alias UptimeChecker.Schema.WatchDog.{Monitor, MonitorStatusChange}
 

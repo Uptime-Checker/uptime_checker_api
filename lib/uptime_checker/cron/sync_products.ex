@@ -40,5 +40,7 @@ defmodule UptimeChecker.Cron.SyncProducts do
         end)
       end
     end)
+
+    :ok
   end
 end
