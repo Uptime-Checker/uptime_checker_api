@@ -63,6 +63,7 @@ config :uptime_checker, Oban,
     Oban.Plugins.Pruner,
     {Oban.Plugins.Cron,
      crontab: [
+       {"0 * * * *", UptimeChecker.Worker.ErrorCheckAsync},
        {"0 * * * *", UptimeChecker.Worker.SyncProductsAsync}
      ]}
   ],

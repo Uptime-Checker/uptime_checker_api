@@ -8,6 +8,16 @@ defmodule UptimeChecker.Service.MonitorService do
   alias UptimeChecker.Schema.Customer.{Organization, User}
   alias UptimeChecker.Schema.WatchDog.{Monitor, MonitorStatusChange}
 
+  def list_all(on, down, cursor) do
+    query =
+      from m in Monitor,
+        where: m.on == ^on,
+        where: m.down == ^down
+
+    query
+    |> Repo.paginate(after: cursor)
+  end
+
   def list(%Organization{} = organization, offset) do
     list_recursively(organization) |> limit(^Default.offset_limit()) |> offset(^offset) |> Repo.all()
   end
