@@ -49,6 +49,7 @@ defmodule UptimeChecker.Application do
   end
 
   defp oban_opts do
+    # add 1000 concurrency to the hit api job
     :uptime_checker
     |> Application.get_env(Oban)
     |> Keyword.update(:queues, [], fn existing ->
