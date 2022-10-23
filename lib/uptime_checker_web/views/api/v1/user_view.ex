@@ -24,6 +24,17 @@ defmodule UptimeCheckerWeb.Api.V1.UserView do
     }
   end
 
+  def render("show.json", %{guest_user: guest_user, code: code}) do
+    %{
+      data: %{
+        id: guest_user.id,
+        email: guest_user.email,
+        code: code,
+        expires_at: guest_user.expires_at
+      }
+    }
+  end
+
   def render("show.json", %{guest_user: guest_user}) do
     %{data: render_one(guest_user, UserView, "guest_user.json")}
   end
@@ -31,7 +42,8 @@ defmodule UptimeCheckerWeb.Api.V1.UserView do
   def render("guest_user.json", %{user: guest_user}) do
     %{
       id: guest_user.id,
-      email: guest_user.email
+      email: guest_user.email,
+      expires_at: guest_user.expires_at
     }
   end
 

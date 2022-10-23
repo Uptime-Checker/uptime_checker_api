@@ -4,6 +4,7 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
 
   alias UptimeChecker.Auth
   alias UptimeChecker.Customer
+  alias UptimeChecker.Helper.Strings
   alias UptimeChecker.TaskSupervisors
   alias UptimeChecker.Module.Firebase
   alias UptimeChecker.Schema.Customer.{User, GuestUser}
@@ -69,10 +70,12 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
   end
 
   def guest_user(conn, params) do
-    with {:ok, %GuestUser{} = guest_user} <- Auth.create_guest_user(params["email"], params["code"]) do
+    code = Strings.random_string(15)
+
+    with {:ok, %GuestUser{} = guest_user} <- Auth.create_guest_user(params["email"], code) do
       conn
       |> put_status(:created)
-      |> render("show.json", guest_user: guest_user)
+      |> render("show.json", %{guest_user: guest_user, code: code})
     end
   end
 
