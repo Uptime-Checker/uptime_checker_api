@@ -1,4 +1,4 @@
-defmodule UptimeChecker.Cron.ErrorCheck do
+defmodule UptimeChecker.Cron.ErrorCheckToPauseMonitors do
   use Timex
   require Logger
 

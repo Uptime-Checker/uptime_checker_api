@@ -57,7 +57,7 @@ config :uptime_checker, UptimeChecker.Module.Scheduler,
     error_check: [
       # Every every 1 hour
       schedule: "0 * * * *",
-      task: {UptimeChecker.Cron.ErrorCheck, :work, []},
+      task: {UptimeChecker.Cron.ErrorCheckToPauseMonitors, :work, []},
       run_strategy: {Quantum.RunStrategy.Random, :cluster}
     ],
     sync_product: [
