@@ -101,6 +101,20 @@ defmodule UptimeChecker.Auth do
     end
   end
 
+  def get_latest_guest_user(email) do
+    query =
+      from g in GuestUser,
+        where: g.email == ^email,
+        order_by: [desc: g.id],
+        limit: 1
+
+    Repo.one(query)
+    |> case do
+      nil -> {:error, RepoError.guest_user_not_found() |> ErrorMessage.not_found(%{email: email})}
+      guest_user -> {:ok, guest_user}
+    end
+  end
+
   def list_guest_users do
     Repo.all(GuestUser)
   end

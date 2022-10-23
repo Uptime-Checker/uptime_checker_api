@@ -23,15 +23,18 @@ defmodule UptimeCheckerWeb.Api.V1.InvitationController do
   def create(conn, params) do
     now = Timex.now()
     user = current_user(conn)
+    rate_limit_in_minutes = 60
 
     case InvitationService.get_invitation_by_organization(user.organization, params["email"]) do
       {:ok, invitation} ->
         diff = Timex.diff(now, invitation.inserted_at, :minute)
 
-        if diff > 60 do
+        if diff > rate_limit_in_minutes do
           create_invitation(conn, params, user)
         else
-          {:error, ServiceError.invitation_sent_already() |> ErrorMessage.bad_request(%{remaining: diff})}
+          {:error,
+           ServiceError.invitation_sent_already()
+           |> ErrorMessage.bad_request(%{remaining: rate_limit_in_minutes - diff})}
         end
 
       {:error, %ErrorMessage{code: :not_found} = _e} ->

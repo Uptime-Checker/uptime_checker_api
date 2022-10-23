@@ -7,6 +7,7 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
   alias UptimeChecker.Helper.Strings
   alias UptimeChecker.TaskSupervisors
   alias UptimeChecker.Module.Firebase
+  alias UptimeChecker.Error.ServiceError
   alias UptimeChecker.Schema.Customer.{User, GuestUser}
 
   action_fallback UptimeCheckerWeb.FallbackController
@@ -70,6 +71,27 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
   end
 
   def guest_user(conn, params) do
+    now = Timex.now()
+    rate_limit_in_seconds = 120
+
+    case Auth.get_latest_guest_user(params["email"]) do
+      {:ok, guest_user} ->
+        diff = Timex.diff(now, guest_user.inserted_at, :second)
+
+        if diff > rate_limit_in_seconds do
+          create_guest_user(conn, params)
+        else
+          {:error,
+           ServiceError.guest_user_link_sent_already()
+           |> ErrorMessage.bad_request(%{remaining: rate_limit_in_seconds - diff})}
+        end
+
+      {:error, %ErrorMessage{code: :not_found} = _e} ->
+        create_guest_user(conn, params)
+    end
+  end
+
+  def create_guest_user(conn, params) do
     code = Strings.random_string(15)
 
     with {:ok, %GuestUser{} = guest_user} <- Auth.create_guest_user(params["email"], code) do
