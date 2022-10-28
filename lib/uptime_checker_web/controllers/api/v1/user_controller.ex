@@ -142,6 +142,14 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
     end
   end
 
+  def update(conn, params) do
+    user = current_user(conn)
+
+    with {:ok, updated_user} <- Customer.update(user, params) do
+      render(conn, "show.json", user: updated_user)
+    end
+  end
+
   defp after_email_link_login_successful(guest_user, user) do
     Task.Supervisor.start_child(
       {:via, PartitionSupervisor, {TaskSupervisors, self()}},
