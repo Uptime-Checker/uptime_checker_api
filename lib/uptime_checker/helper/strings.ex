@@ -9,7 +9,7 @@ defmodule UptimeChecker.Helper.Strings do
   end
 
   def random_string(length) do
-    :crypto.strong_rand_bytes(length) |> Base.encode64() |> binary_part(0, length)
+    :crypto.strong_rand_bytes(length) |> Base.url_encode64() |> binary_part(0, length)
   end
 
   def hash_string(value) do
