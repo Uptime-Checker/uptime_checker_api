@@ -74,10 +74,9 @@ defmodule UptimeChecker.Payment do
       from s in Subscription,
         left_join: plan in assoc(s, :plan),
         left_join: product in assoc(s, :product),
-        left_join: features in assoc(product, :features),
         where: s.organization_id == ^organization_id,
         where: s.expires_at > ^now,
-        preload: [plan: plan, product: {product, features: features}]
+        preload: [plan: plan, product: product]
 
     case Repo.one(query) do
       nil -> {:error, RepoError.subscription_not_found() |> ErrorMessage.not_found(%{organization_id: organization_id})}
