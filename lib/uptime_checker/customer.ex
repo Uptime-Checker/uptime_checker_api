@@ -121,7 +121,7 @@ defmodule UptimeChecker.Customer do
 
   def update(%User{} = user, attrs \\ %{}) do
     user
-    |> User.changeset(attrs)
+    |> User.update_user_changeset(attrs)
     |> Repo.update()
   end
 
