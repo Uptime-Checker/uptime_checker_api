@@ -16,7 +16,6 @@ defmodule UptimeChecker.Helper.Strings do
 
   def hash_string(value) do
     secret_key = @guardian_env[:secret_key]
-    dbg(secret_key)
 
     :crypto.mac(:hmac, :sha256, secret_key, value)
     |> Base.encode16()
