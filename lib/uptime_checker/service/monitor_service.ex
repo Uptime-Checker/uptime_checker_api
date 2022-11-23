@@ -64,7 +64,7 @@ defmodule UptimeChecker.Service.MonitorService do
 
     Ecto.Multi.new()
     |> Ecto.Multi.run(:current_m_prev_of, fn _repo, %{} ->
-      Monitor |> update_after_monitor_of_current()
+      current |> update_after_monitor_of_current()
     end)
     |> Ecto.Multi.update(:before_m, Monitor.update_order_changeset(before, %{prev_id: current.id}))
     |> Ecto.Multi.update(:current_m, Monitor.update_order_changeset(current, %{prev_id: before.prev_id}))
@@ -115,7 +115,7 @@ defmodule UptimeChecker.Service.MonitorService do
 
     Ecto.Multi.new()
     |> Ecto.Multi.run(:current_m_prev_of, fn _repo, %{} ->
-      Monitor |> update_after_monitor_of_current()
+      current |> update_after_monitor_of_current()
     end)
     |> Ecto.Multi.delete(:current_m, current)
     |> Repo.transaction()

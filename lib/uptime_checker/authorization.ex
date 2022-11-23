@@ -18,7 +18,7 @@ defmodule UptimeChecker.Authorization do
     |> Repo.insert()
   end
 
-  def create_role_claim(attrs \\ %{}) do
+  def create_role_claim(attrs) do
     %RoleClaim{}
     |> RoleClaim.changeset(attrs)
     |> Repo.insert()
