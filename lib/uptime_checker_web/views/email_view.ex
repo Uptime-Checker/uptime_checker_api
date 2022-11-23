@@ -13,7 +13,7 @@ defmodule UptimeCheckerWeb.EmailView do
     "#{System.get_env(Constant.Env.web_url())}#{Constant.Email.join_new_user_url()}/#{code}"
   end
 
-  def changse_role_url(organization) do
+  def change_role_url(organization) do
     "#{System.get_env(Constant.Env.web_url())}/organization/#{organization.id}/users"
   end
 
