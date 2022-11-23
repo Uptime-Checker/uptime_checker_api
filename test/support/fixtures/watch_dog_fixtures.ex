@@ -24,7 +24,7 @@ defmodule UptimeChecker.WatchDogFixtures do
         timeout: 42,
         url: "some url"
       })
-      |> UptimeChecker.WatchDog.create_monitor()
+      |> UptimeChecker.Service.MonitorService.create()
 
     monitor
   end
