@@ -7,6 +7,8 @@ defmodule UptimeChecker.Application do
 
   alias UptimeChecker.Constant.Env
 
+  @oban_env Application.compile_env(:uptime_checker, Oban)
+
   @impl true
   def start(_type, _args) do
     Logger.add_backend(Sentry.LoggerBackend)
@@ -50,8 +52,7 @@ defmodule UptimeChecker.Application do
 
   defp oban_opts do
     # add 1000 concurrency to the hit api job
-    :uptime_checker
-    |> Application.get_env(Oban)
+    @oban_env
     |> Keyword.update(:queues, [], fn existing ->
       existing |> Keyword.put(Env.current_region() |> System.get_env() |> String.to_atom(), 1000)
     end)
