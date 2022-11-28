@@ -7,18 +7,18 @@ defmodule UptimeChecker.Schema.Customer.User do
   @provider_types [email: 1, google: 2, apple: 3, github: 4]
 
   schema "users" do
-    field :email, :string
-    field :name, :string
-    field :password, :string
-    field :firebase_uid, :string
-    field :payment_customer_id, :string
-    field :picture_url, :string
-    field :last_login_at, :utc_datetime
-    field :provider, Ecto.Enum, values: @provider_types
+    field(:email, :string)
+    field(:name, :string)
+    field(:password, :string)
+    field(:firebase_uid, :string)
+    field(:payment_customer_id, :string)
+    field(:picture_url, :string)
+    field(:last_login_at, :utc_datetime)
+    field(:provider, Ecto.Enum, values: @provider_types)
 
-    has_many :user_contacts, UserContact
-    belongs_to :organization, Organization
-    belongs_to :role, Role
+    has_many(:user_contacts, UserContact)
+    belongs_to(:organization, Organization)
+    belongs_to(:role, Role)
 
     timestamps(type: :utc_datetime)
   end
@@ -55,7 +55,16 @@ defmodule UptimeChecker.Schema.Customer.User do
 
   def changeset(user, attrs) do
     user
-    |> cast(attrs, [:name, :email, :password, :firebase_uid, :provider, :organization_id, :role_id, :last_login_at])
+    |> cast(attrs, [
+      :name,
+      :email,
+      :password,
+      :firebase_uid,
+      :provider,
+      :organization_id,
+      :role_id,
+      :last_login_at
+    ])
     |> validate_required([:name, :email, :firebase_uid, :provider, :organization_id])
   end
 

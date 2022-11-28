@@ -14,8 +14,10 @@ defmodule UptimeCheckerWeb.Api.V1.OrganizationController do
     user = current_user(conn)
     now = Timex.now()
 
-    with {:ok, plan} <- ProductService.get_plan_with_product(params["plan_id"]),
-         {:ok, %Organization{} = organization} <- Customer.create_organization(params, user),
+    attrs = params |> Map.put("slug", params["slug"] |> String.downcase() |> String.replace(" ", "-"))
+
+    with {:ok, plan} <- ProductService.get_plan_with_product(attrs["plan_id"]),
+         {:ok, %Organization{} = organization} <- Customer.create_organization(attrs, user),
          {:ok, %Subscription{} = subscription} <-
            Payment.create_subscription(%{
              status: get_status(plan),
