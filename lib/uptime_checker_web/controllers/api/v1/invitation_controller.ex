@@ -6,6 +6,7 @@ defmodule UptimeCheckerWeb.Api.V1.InvitationController do
 
   alias UptimeChecker.Mail
   alias UptimeChecker.Auth
+  alias UptimeChecker.Cache
   alias UptimeChecker.Authorization
 
   alias UptimeChecker.Helper.Strings
@@ -73,6 +74,8 @@ defmodule UptimeCheckerWeb.Api.V1.InvitationController do
 
       case Auth.get_by_email_with_org_and_role(invitation.email) do
         {:ok, user} ->
+          Cache.User.bust(user.id)
+
           case Authorization.get_organization_user(organization, user) do
             {:ok, _organization_user} ->
               Logger.info("Invited user #{user.id} already exists in the org #{organization.id}")
