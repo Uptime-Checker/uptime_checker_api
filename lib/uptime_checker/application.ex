@@ -31,6 +31,7 @@ defmodule UptimeChecker.Application do
       # Start a worker on startup
       {Task, &UptimeChecker.Event.InitStart.run/0},
       # Caches
+      Supervisor.child_spec({Cachex, name: :cache_user}, id: :cache_user),
       Supervisor.child_spec({Cachex, name: :cache_payment}, id: :cache_payment),
       Supervisor.child_spec({Cachex, name: :cache_stripe_webhook}, id: :cache_stripe_webhook),
       Supervisor.child_spec({Cachex, name: :cache_monitor_region_check}, id: :cache_monitor_region_check)

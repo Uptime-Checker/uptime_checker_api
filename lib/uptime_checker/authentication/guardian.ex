@@ -1,6 +1,7 @@
 defmodule UptimeChecker.Guardian do
   use Guardian, otp_app: :uptime_checker
 
+  alias UptimeChecker.Cache
   alias UptimeChecker.Customer
 
   def subject_for_token(%{id: id}, _claims) do
@@ -12,7 +13,16 @@ defmodule UptimeChecker.Guardian do
   end
 
   def resource_from_claims(%{"sub" => id}) do
-    Customer.get_customer_by_id(id)
+    cached_user = Cache.User.get(id)
+
+    if is_nil(cached_user) do
+      with {:ok, user} <- Customer.get_customer_by_id(id) do
+        Cache.User.put(id, user)
+        {:ok, user}
+      end
+    else
+      {:ok, cached_user}
+    end
   end
 
   def resource_from_claims(_claims) do
