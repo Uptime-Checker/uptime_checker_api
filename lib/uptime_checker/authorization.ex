@@ -41,7 +41,12 @@ defmodule UptimeChecker.Authorization do
   end
 
   def list_roles do
-    Repo.all(Role)
+    query =
+      from role in Role,
+        left_join: claims in assoc(role, :claims),
+        preload: [claims: claims]
+
+    Repo.all(query)
   end
 
   def update_default_organization_role(user, organization, role) do

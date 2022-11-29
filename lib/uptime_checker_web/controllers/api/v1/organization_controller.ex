@@ -2,6 +2,7 @@ defmodule UptimeCheckerWeb.Api.V1.OrganizationController do
   use Timex
   use UptimeCheckerWeb, :controller
 
+  alias UptimeChecker.Cache
   alias UptimeChecker.Constant
   alias UptimeChecker.Authorization
   alias UptimeChecker.{Customer, Payment}
@@ -30,6 +31,8 @@ defmodule UptimeCheckerWeb.Api.V1.OrganizationController do
              product: plan.product,
              organization: organization
            }) do
+      Cache.User.bust(user.id)
+
       conn
       |> put_status(:created)
       |> render("show.json", %{organization: organization, subscription: subscription, plan: plan})

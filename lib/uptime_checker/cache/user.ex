@@ -16,7 +16,11 @@ defmodule UptimeChecker.Cache.User do
     Cachex.expire(@cache_user, key, :timer.hours(24))
   end
 
-  def clear(user_id) do
+  def bust(user_id) do
+    clear(user_id)
+  end
+
+  defp clear(user_id) do
     Cachex.clear!(@cache_user, get_user_key(user_id))
   end
 

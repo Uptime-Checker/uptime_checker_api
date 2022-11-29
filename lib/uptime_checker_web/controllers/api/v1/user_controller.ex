@@ -3,6 +3,7 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
   use UptimeCheckerWeb, :controller
 
   alias UptimeChecker.Auth
+  alias UptimeChecker.Cache
   alias UptimeChecker.Customer
   alias UptimeChecker.Helper.Strings
   alias UptimeChecker.TaskSupervisors
@@ -146,6 +147,7 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
     user = current_user(conn)
 
     with {:ok, updated_user} <- Customer.update(user, params) do
+      Cache.User.bust(user.id)
       render(conn, "show.json", user: updated_user)
     end
   end
