@@ -54,7 +54,7 @@ defmodule UptimeCheckerWeb.Router do
       get "/get_active_subscription", PaymentController, :get_active_subscription
 
       resources "/roles", RoleController, only: [:index]
-      resources "/organizations", OrganizationController, only: [:create]
+      resources "/organizations", OrganizationController, only: [:index, :create]
       resources "/monitors", MonitorController, only: [:index, :create, :delete]
       resources "/invitations", InvitationController, only: [:create]
 

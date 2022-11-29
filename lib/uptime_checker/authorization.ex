@@ -82,6 +82,17 @@ defmodule UptimeChecker.Authorization do
     end
   end
 
+  def list_organizations_of_user(user) do
+    query =
+      from ou in OrganizationUser,
+        left_join: r in assoc(ou, :role),
+        left_join: o in assoc(ou, :organization),
+        where: ou.user_id == ^user.id,
+        preload: [organization: o, role: r]
+
+    Repo.all(query)
+  end
+
   def count_users_in_organization(organization) do
     query =
       from organization_user in OrganizationUser,

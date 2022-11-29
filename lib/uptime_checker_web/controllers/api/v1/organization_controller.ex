@@ -3,6 +3,7 @@ defmodule UptimeCheckerWeb.Api.V1.OrganizationController do
   use UptimeCheckerWeb, :controller
 
   alias UptimeChecker.Constant
+  alias UptimeChecker.Authorization
   alias UptimeChecker.{Customer, Payment}
   alias UptimeChecker.Service.ProductService
   alias UptimeChecker.Schema.Payment.Subscription
@@ -33,6 +34,13 @@ defmodule UptimeCheckerWeb.Api.V1.OrganizationController do
       |> put_status(:created)
       |> render("show.json", %{organization: organization, subscription: subscription, plan: plan})
     end
+  end
+
+  def index(conn, _params) do
+    user = current_user(conn)
+
+    organization_users = Authorization.list_organizations_of_user(user)
+    render(conn, "index.json", organization_users: organization_users)
   end
 
   defp is_trial(plan) when plan.product.tier == :free, do: false
