@@ -42,8 +42,15 @@ defmodule UptimeCheckerWeb.Api.V1.OrganizationController do
   def index(conn, _params) do
     user = current_user(conn)
 
-    organization_users = Authorization.list_organizations_of_user(user)
-    render(conn, "index.json", organization_users: organization_users)
+    cached_organization_users = Cache.User.get_organizations(user.id)
+
+    if is_nil(cached_organization_users) do
+      organization_users = Authorization.list_organizations_of_user(user)
+      Cache.User.put_organizations(user.id, organization_users)
+      render(conn, "index.json", organization_users: organization_users)
+    else
+      render(conn, "index.json", organization_users: cached_organization_users)
+    end
   end
 
   defp is_trial(plan) when plan.product.tier == :free, do: false
