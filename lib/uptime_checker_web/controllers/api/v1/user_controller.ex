@@ -4,7 +4,9 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
 
   alias UptimeChecker.Auth
   alias UptimeChecker.Cache
+  alias UptimeChecker.Payment
   alias UptimeChecker.Customer
+  alias UptimeChecker.Authorization
   alias UptimeChecker.Helper.Strings
   alias UptimeChecker.TaskSupervisors
   alias UptimeChecker.Module.Firebase
@@ -69,6 +71,15 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
   def me(conn, _params) do
     user = current_user(conn)
     render(conn, "show.json", user: user)
+  end
+
+  def full_info(conn, _params) do
+    user = current_user(conn)
+
+    with {:ok, subscription} <- Payment.get_active_subscription_with_plan_features(user.organization_id),
+         organization_users <- Authorization.list_organizations_of_user(user) do
+      render(conn, "full_info.json", %{user: user, subscription: subscription, organization_users: organization_users})
+    end
   end
 
   def guest_user(conn, params) do
