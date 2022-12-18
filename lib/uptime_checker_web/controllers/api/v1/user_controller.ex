@@ -76,9 +76,21 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
   def full_info(conn, _params) do
     user = current_user(conn)
 
-    with {:ok, subscription} <- Payment.get_active_subscription_with_plan_features(user.organization_id),
-         organization_users <- Authorization.list_organizations_of_user(user) do
-      render(conn, "full_info.json", %{user: user, subscription: subscription, organization_users: organization_users})
+    cached_organization_users = Cache.User.get_full_info(user.id)
+
+    if is_nil(cached_organization_users) do
+      with {:ok, subscription} <- Payment.get_active_subscription_with_plan_features(user.organization_id),
+           organization_users <- Authorization.list_organizations_of_user(user) do
+        Cache.User.put_full_info(user.id, %{
+          user: user,
+          subscription: subscription,
+          organization_users: organization_users
+        })
+
+        render(conn, "full_info.json", %{user: user, subscription: subscription, organization_users: organization_users})
+      end
+    else
+      render(conn, "full_info.json", cached_organization_users)
     end
   end
 

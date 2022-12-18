@@ -13,8 +13,6 @@ defmodule UptimeCheckerWeb.Api.V1.UserView do
   end
 
   def render("full_info.json", %{user: user, subscription: subscription, organization_users: organization_users}) do
-    dbg(organization_users)
-
     %{
       data: %{
         user: render_one(user, UserView, "user.json"),

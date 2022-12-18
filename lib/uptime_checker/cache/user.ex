@@ -20,6 +20,7 @@ defmodule UptimeChecker.Cache.User do
   def bust(user_id) do
     clear(user_id)
     clear_organizations(user_id)
+    clear_full_info(user_id)
   end
 
   defp clear(user_id) do
@@ -53,4 +54,25 @@ defmodule UptimeChecker.Cache.User do
   end
 
   defp get_organizations_key(user_id), do: "user_#{user_id}_organizations"
+
+  # =============== Full Info
+  def get_full_info(user_id) do
+    Cachex.get!(@cache_user, get_full_info_key(user_id))
+  end
+
+  def put_full_info(user_id, %{user: user, subscription: subscription, organization_users: organization_users}) do
+    Cachex.put(@cache_user, get_full_info_key(user_id), %{
+      user: user,
+      subscription: subscription,
+      organization_users: organization_users
+    })
+
+    Cachex.expire(@cache_user, get_full_info_key(user_id), :timer.hours(30 * 24))
+  end
+
+  defp clear_full_info(user_id) do
+    Cachex.clear!(@cache_user, get_full_info_key(user_id))
+  end
+
+  defp get_full_info_key(user_id), do: "user_#{user_id}_full_info"
 end
