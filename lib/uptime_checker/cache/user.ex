@@ -18,13 +18,7 @@ defmodule UptimeChecker.Cache.User do
   end
 
   def bust(user_id) do
-    clear(user_id)
-    clear_organizations(user_id)
-    clear_full_info(user_id)
-  end
-
-  defp clear(user_id) do
-    Cachex.clear!(@cache_user, get_user_key(user_id))
+    Cachex.clear(user_id)
   end
 
   defp get_user_key(user_id), do: "user_#{user_id}"
@@ -49,10 +43,6 @@ defmodule UptimeChecker.Cache.User do
     Cachex.expire(@cache_user, get_organizations_key(user_id), :timer.hours(30 * 24))
   end
 
-  defp clear_organizations(user_id) do
-    Cachex.clear!(@cache_user, get_organizations_key(user_id))
-  end
-
   defp get_organizations_key(user_id), do: "user_#{user_id}_organizations"
 
   # =============== Full Info
@@ -68,10 +58,6 @@ defmodule UptimeChecker.Cache.User do
     })
 
     Cachex.expire(@cache_user, get_full_info_key(user_id), :timer.hours(30 * 24))
-  end
-
-  defp clear_full_info(user_id) do
-    Cachex.clear!(@cache_user, get_full_info_key(user_id))
   end
 
   defp get_full_info_key(user_id), do: "user_#{user_id}_full_info"
