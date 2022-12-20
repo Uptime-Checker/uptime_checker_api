@@ -17,7 +17,7 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
     field :method, Ecto.Enum, values: @methods
     field :interval, :integer
     field :timeout, :integer
-    field :type, Ecto.Enum, values: [api: 1, browser: 2]
+    field :type, Ecto.Enum, values: [api: 1, browser: 2, api_snapshot: 3]
 
     field :body, :string
     field :body_format, Ecto.Enum, values: @body_formats, default: :json
