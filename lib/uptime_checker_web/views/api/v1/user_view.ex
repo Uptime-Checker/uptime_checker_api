@@ -1,9 +1,8 @@
 defmodule UptimeCheckerWeb.Api.V1.UserView do
   use UptimeCheckerWeb, :view
 
-  alias UptimeCheckerWeb.Api.V1.RoleView
-  alias UptimeCheckerWeb.Api.V1.UserView
-  alias UptimeCheckerWeb.Api.V1.OrganizationView
+  alias UptimeCheckerWeb.Api.V1.{UserView, RoleView}
+  alias UptimeCheckerWeb.Api.V1.{OrganizationView, PaymentView}
 
   def render("index.json", %{users: users}) do
     %{data: render_many(users, UserView, "user.json")}
@@ -11,6 +10,19 @@ defmodule UptimeCheckerWeb.Api.V1.UserView do
 
   def render("show.json", %{user: user}) do
     %{data: render_one(user, UserView, "user.json")}
+  end
+
+  def render("full_info.json", %{user: user, subscription: subscription, organization_users: organization_users}) do
+    %{
+      data: %{
+        user: render_one(user, UserView, "user.json"),
+        subscription: render_one(subscription, PaymentView, "subscription.json"),
+        organization_users:
+          Enum.map(organization_users, fn organization_user ->
+            OrganizationView.render_organization_user(organization_user)
+          end)
+      }
+    }
   end
 
   def render("user.json", %{user: user}) do

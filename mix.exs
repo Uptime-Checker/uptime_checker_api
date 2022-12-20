@@ -65,7 +65,7 @@ defmodule UptimeChecker.MixProject do
       {:httpoison, "~> 1.8"},
       {:sentry, "~> 8.0"},
       {:joken, "~> 2.5"},
-      {:error_message, "~> 0.2.0"},
+      {:error_message, "~> 0.3"},
       {:tls_certificate_check, "~> 1.15"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
     ]
