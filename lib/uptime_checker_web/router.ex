@@ -49,7 +49,7 @@ defmodule UptimeCheckerWeb.Router do
       pipe_through :auth
 
       get "/me", UserController, :me
-      get "/full_info", UserController, :full_info
+      get "/full_user_info", UserController, :full_info
       patch "/users", UserController, :update
       get "/stripe_customer", UserController, :stripe_customer
       get "/get_active_subscription", PaymentController, :get_active_subscription
