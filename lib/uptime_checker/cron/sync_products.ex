@@ -5,8 +5,7 @@ defmodule UptimeChecker.Cron.SyncProducts do
   def work do
     Logger.info("running sync products cron")
 
-    with {:ok, products} <- Stripe.Product.list(),
-         {:ok, prices} <- Stripe.Price.list() do
+    with {:ok, products} <- Stripe.Product.list(), {:ok, prices} <- Stripe.Price.list() do
       Enum.each(products.data, fn product ->
         with {:ok, product} <-
                ProductService.create_product(%{
