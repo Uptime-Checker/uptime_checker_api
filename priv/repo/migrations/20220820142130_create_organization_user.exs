@@ -3,6 +3,8 @@ defmodule UptimeChecker.Repo.Migrations.CreateOrganizationUser do
 
   def change do
     create table(:organization_user_junction) do
+      add :status, :integer, default: 1
+
       add :role_id, references(:roles)
       add :user_id, references(:users, on_delete: :delete_all)
       add :organization_id, references(:organizations, on_delete: :delete_all)
