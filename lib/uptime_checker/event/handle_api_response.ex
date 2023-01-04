@@ -24,20 +24,10 @@ defmodule UptimeChecker.Event.HandleApiResponse do
     end
   end
 
-  def handle(%HTTPoison.Response{} = response, %Monitor{} = monitor) do
+  def handle(%HTTPoison.Response{} = response, %Monitor{} = _monitor) do
     if response.status_code >= code(:ok) && response.status_code < code(:bad_request) do
       # good status code
-      if is_nil(List.first(monitor.status_codes)) do
-        {:ok, true}
-      else
-        success_status_codes = Enum.map(monitor.status_codes, fn status_code -> status_code.code end)
-
-        if Enum.member?(success_status_codes, response.status_code) do
-          {:ok, true}
-        else
-          {:error, :status_code_mismatch}
-        end
-      end
+      {:ok, true}
     else
       # status code ranges from >= 400 to 500+
       {:error, :bad_status_code}
