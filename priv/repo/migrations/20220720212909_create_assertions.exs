@@ -1,8 +1,8 @@
-defmodule UptimeChecker.Repo.Migrations.CreateMonitorAssertion do
+defmodule UptimeChecker.Repo.Migrations.CreateAssertion do
   use Ecto.Migration
 
   def change do
-    create table(:assertion) do
+    create table(:assertions) do
       add :source, :integer, default: 1
       add :property, :string
       add :comparison, :integer, default: 1
@@ -13,7 +13,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateMonitorAssertion do
       timestamps()
     end
 
-    create index(:assertion, [:monitor_id])
-    create unique_index(:assertion, [:source, :value, :monitor_id])
+    create index(:assertions, [:monitor_id])
+    create unique_index(:assertions, [:source, :value, :monitor_id])
   end
 end
