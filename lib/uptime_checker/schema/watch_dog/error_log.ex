@@ -5,8 +5,8 @@ defmodule UptimeChecker.Schema.WatchDog.ErrorLog do
   alias UptimeChecker.Schema.WatchDog.Check
 
   @error_types [
-    status_code_mismatch: 1,
-    bad_status_code: 2,
+    bad_status_code: 1,
+    assertion_failure: 2,
     nxdomain: 50,
     etimedout: 51,
     etime: 52,
@@ -44,5 +44,6 @@ defmodule UptimeChecker.Schema.WatchDog.ErrorLog do
     |> cast(attrs, [:text, :status_code, :type, :screenshot_url])
     |> validate_required([:text, :status_code, :type])
     |> put_assoc(:check, attrs.check)
+    |> put_assoc(:check, attrs.monitor)
   end
 end

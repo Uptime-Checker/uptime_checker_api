@@ -9,10 +9,14 @@ defmodule UptimeChecker.Repo.Migrations.CreateErrorLog do
       add :screenshot_url, :string
 
       add :check_id, references(:checks, on_delete: :delete_all)
+      add :monitor_id, references(:monitors, on_delete: :delete_all)
+      add :assertion_id, references(:assertions)
 
       timestamps()
     end
 
     create index(:error_logs, [:check_id])
+    create index(:error_logs, [:monitor_id])
+    create index(:error_logs, [:assertion_id])
   end
 end

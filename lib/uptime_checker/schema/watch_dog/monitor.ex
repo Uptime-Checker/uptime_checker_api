@@ -8,7 +8,7 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
 
   @highest_acceptable_timeout 30
 
-  @body_formats [json: 1, xml: 2, text: 3, html: 4]
+  @body_formats [none: 1, json: 2, xml: 3, text: 4, html: 5, graphql: 6, form_param: 7]
   @methods [GET: 1, POST: 2, PUT: 3, PATCH: 4, DELETE: 5, HEAD: 6]
 
   schema "monitors" do

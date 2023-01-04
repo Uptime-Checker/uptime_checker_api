@@ -192,8 +192,8 @@ defmodule UptimeChecker.WatchDog do
     Repo.delete(check)
   end
 
-  def create_error_log(attrs \\ %{}, %Check{} = check) do
-    params = attrs |> Map.put(:check, check)
+  def create_error_log(attrs \\ %{}, %Check{} = check, %Monitor{} = monitor) do
+    params = attrs |> Map.put(:check, check) |> Map.put(:monitor, monitor)
 
     %ErrorLog{}
     |> ErrorLog.changeset(params)

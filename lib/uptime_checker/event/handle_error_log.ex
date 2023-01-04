@@ -70,7 +70,7 @@ defmodule UptimeChecker.Event.HandleErrorLog do
       type: type
     }
 
-    case WatchDog.create_error_log(attrs, check) do
+    case WatchDog.create_error_log(attrs, check, check.monitor) do
       {:ok, %ErrorLog{} = error_log} ->
         Logger.debug("#{tracing_id} 1 Created new error log #{error_log.id}")
 
