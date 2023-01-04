@@ -2,9 +2,9 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias UptimeChecker.Schema.Region
   alias UptimeChecker.Schema.Customer.{Organization, User}
-  alias UptimeChecker.Schema.WatchDog.{Check, MonitorRegion, Monitor}
-  alias UptimeChecker.Schema.{Region, StatusCode, MonitorStatusCode}
+  alias UptimeChecker.Schema.WatchDog.{Check, MonitorRegion, Monitor, Assertion}
 
   @highest_acceptable_timeout 30
 
@@ -21,8 +21,10 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
 
     field :body, :string
     field :body_format, Ecto.Enum, values: @body_formats, default: :json
-    field :contains, :string
     field :headers, :map, default: %{}
+    field :username, :string
+    field :password, :string
+
     field :on, :boolean
     field :down, :boolean
     field :check_ssl, :boolean
@@ -40,10 +42,10 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
     belongs_to :prev, Monitor, foreign_key: :prev_id
 
     has_many :checks, Check
+    has_many :assertions, Assertion
     has_many :monitor_regions, MonitorRegion
 
     many_to_many :regions, Region, join_through: MonitorRegion, on_replace: :delete
-    many_to_many :status_codes, StatusCode, join_through: MonitorStatusCode, on_replace: :delete
 
     timestamps(type: :utc_datetime)
   end
@@ -70,6 +72,8 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
       :body_format,
       :contains,
       :headers,
+      :username,
+      :password,
       :on,
       :down,
       :check_ssl,
