@@ -18,7 +18,9 @@ defmodule UptimeChecker.Cache.User do
   end
 
   def bust(user_id) do
-    Cachex.clear(user_id)
+    Cachex.del(@cache_user, get_user_key(user_id))
+    Cachex.del(@cache_user, get_full_info_key(user_id))
+    Cachex.del(@cache_user, get_organizations_key(user_id))
   end
 
   defp get_user_key(user_id), do: "user_#{user_id}"
