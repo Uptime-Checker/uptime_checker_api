@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 14.2 (Debian 14.2-1.pgdg110+1)
+-- Dumped from database version 15.1 (Debian 15.1-1.pgdg110+1)
 -- Dumped by pg_dump version 15.1
 
 SET statement_timeout = 0;
@@ -15,13 +15,6 @@ SET check_function_bodies = false;
 SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
-
---
--- Name: public; Type: SCHEMA; Schema: -; Owner: -
---
-
--- *not* creating schema, since initdb creates it
-
 
 --
 -- Name: oban_job_state; Type: TYPE; Schema: public; Owner: -
@@ -489,38 +482,6 @@ CREATE SEQUENCE public.monitor_status_changes_id_seq
 --
 
 ALTER SEQUENCE public.monitor_status_changes_id_seq OWNED BY public.monitor_status_changes.id;
-
-
---
--- Name: monitor_tags; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.monitor_tags (
-    id bigint NOT NULL,
-    name character varying(255) NOT NULL,
-    monitor_id bigint,
-    inserted_at timestamp(0) without time zone NOT NULL,
-    updated_at timestamp(0) without time zone NOT NULL
-);
-
-
---
--- Name: monitor_tags_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.monitor_tags_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: monitor_tags_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.monitor_tags_id_seq OWNED BY public.monitor_tags.id;
 
 
 --
@@ -1277,13 +1238,6 @@ ALTER TABLE ONLY public.monitor_status_changes ALTER COLUMN id SET DEFAULT nextv
 
 
 --
--- Name: monitor_tags id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.monitor_tags ALTER COLUMN id SET DEFAULT nextval('public.monitor_tags_id_seq'::regclass);
-
-
---
 -- Name: monitor_user_junction id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1496,14 +1450,6 @@ ALTER TABLE ONLY public.monitor_region_junction
 
 ALTER TABLE ONLY public.monitor_status_changes
     ADD CONSTRAINT monitor_status_changes_pkey PRIMARY KEY (id);
-
-
---
--- Name: monitor_tags monitor_tags_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.monitor_tags
-    ADD CONSTRAINT monitor_tags_pkey PRIMARY KEY (id);
 
 
 --
@@ -1895,20 +1841,6 @@ CREATE UNIQUE INDEX monitor_region_junction_region_id_monitor_id_index ON public
 --
 
 CREATE INDEX monitor_status_changes_monitor_id_index ON public.monitor_status_changes USING btree (monitor_id);
-
-
---
--- Name: monitor_tags_monitor_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX monitor_tags_monitor_id_index ON public.monitor_tags USING btree (monitor_id);
-
-
---
--- Name: monitor_tags_name_monitor_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX monitor_tags_name_monitor_id_index ON public.monitor_tags USING btree (name, monitor_id);
 
 
 --
@@ -2492,14 +2424,6 @@ ALTER TABLE ONLY public.monitor_status_changes
 
 
 --
--- Name: monitor_tags monitor_tags_monitor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.monitor_tags
-    ADD CONSTRAINT monitor_tags_monitor_id_fkey FOREIGN KEY (monitor_id) REFERENCES public.monitors(id) ON DELETE CASCADE;
-
-
---
 -- Name: monitor_user_junction monitor_user_junction_monitor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2754,5 +2678,4 @@ INSERT INTO public."schema_migrations" (version) VALUES (20220913212327);
 INSERT INTO public."schema_migrations" (version) VALUES (20220913212347);
 INSERT INTO public."schema_migrations" (version) VALUES (20220916212622);
 INSERT INTO public."schema_migrations" (version) VALUES (20220916213008);
-INSERT INTO public."schema_migrations" (version) VALUES (20220928045517);
 INSERT INTO public."schema_migrations" (version) VALUES (20220928051748);
