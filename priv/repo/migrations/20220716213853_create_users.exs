@@ -9,7 +9,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateUsers do
       add :password, :string
       add :payment_customer_id, :string
 
-      add :firebase_uid, :string
+      add :provider_uid, :string
       add :provider, :integer, default: 1
       add :last_login_at, :utc_datetime, default: fragment("NOW()")
 
@@ -20,7 +20,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateUsers do
     end
 
     create unique_index(:users, [:email])
-    create unique_index(:users, [:firebase_uid])
+    create unique_index(:users, [:provider_uid])
     create unique_index(:users, [:payment_customer_id])
 
     create index(:users, [:role_id])

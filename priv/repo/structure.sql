@@ -32,18 +32,6 @@ CREATE TYPE public.oban_job_state AS ENUM (
 
 
 --
--- Name: provider_name; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE public.provider_name AS ENUM (
-    'email',
-    'google',
-    'apple',
-    'github'
-);
-
-
---
 -- Name: oban_jobs_notify(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -571,44 +559,6 @@ ALTER SEQUENCE public.monitors_id_seq OWNED BY public.monitors.id;
 
 
 --
--- Name: nc_evolutions; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.nc_evolutions (
-    id integer NOT NULL,
-    title character varying(255) NOT NULL,
-    "titleDown" character varying(255),
-    description character varying(255),
-    batch integer,
-    checksum character varying(255),
-    status integer,
-    created timestamp with time zone,
-    created_at timestamp with time zone,
-    updated_at timestamp with time zone
-);
-
-
---
--- Name: nc_evolutions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.nc_evolutions_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: nc_evolutions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.nc_evolutions_id_seq OWNED BY public.nc_evolutions.id;
-
-
---
 -- Name: notifications; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1124,7 +1074,7 @@ CREATE TABLE public.users (
     picture_url character varying(255),
     password character varying(255),
     payment_customer_id character varying(255),
-    firebase_uid character varying(255),
+    provider_uid character varying(255),
     provider integer DEFAULT 1,
     last_login_at timestamp(0) without time zone DEFAULT now(),
     role_id bigint,
@@ -1249,13 +1199,6 @@ ALTER TABLE ONLY public.monitor_user_junction ALTER COLUMN id SET DEFAULT nextva
 --
 
 ALTER TABLE ONLY public.monitors ALTER COLUMN id SET DEFAULT nextval('public.monitors_id_seq'::regclass);
-
-
---
--- Name: nc_evolutions id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.nc_evolutions ALTER COLUMN id SET DEFAULT nextval('public.nc_evolutions_id_seq'::regclass);
 
 
 --
@@ -1474,14 +1417,6 @@ ALTER TABLE ONLY public.monitors
 
 ALTER TABLE ONLY public.monitors
     ADD CONSTRAINT monitors_unique_previous_id UNIQUE (prev_id, organization_id) DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: nc_evolutions nc_evolutions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.nc_evolutions
-    ADD CONSTRAINT nc_evolutions_pkey PRIMARY KEY (id);
 
 
 --
@@ -2222,13 +2157,6 @@ CREATE UNIQUE INDEX users_email_index ON public.users USING btree (email);
 
 
 --
--- Name: users_firebase_uid_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX users_firebase_uid_index ON public.users USING btree (firebase_uid);
-
-
---
 -- Name: users_last_login_at_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2247,6 +2175,13 @@ CREATE INDEX users_organization_id_index ON public.users USING btree (organizati
 --
 
 CREATE UNIQUE INDEX users_payment_customer_id_index ON public.users USING btree (payment_customer_id);
+
+
+--
+-- Name: users_provider_uid_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX users_provider_uid_index ON public.users USING btree (provider_uid);
 
 
 --
