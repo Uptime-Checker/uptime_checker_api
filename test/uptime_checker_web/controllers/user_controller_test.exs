@@ -7,19 +7,19 @@ defmodule UptimeCheckerWeb.UserControllerTest do
 
   @create_attrs %{
     email: "some email",
-    firebase_uid: "some firebase_uid",
+    provider_uid: "some provider_uid",
     name: "some name",
     password_hash: "some password_hash",
     provider: 42
   }
   @update_attrs %{
     email: "some updated email",
-    firebase_uid: "some updated firebase_uid",
+    provider_uid: "some updated provider_uid",
     name: "some updated name",
     password_hash: "some updated password_hash",
     provider: 43
   }
-  @invalid_attrs %{email: nil, firebase_uid: nil, name: nil, password_hash: nil, provider: nil}
+  @invalid_attrs %{email: nil, provider_uid: nil, name: nil, password_hash: nil, provider: nil}
 
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
@@ -42,7 +42,7 @@ defmodule UptimeCheckerWeb.UserControllerTest do
       assert %{
                "id" => ^id,
                "email" => "some email",
-               "firebase_uid" => "some firebase_uid",
+               "provider_uid" => "some provider_uid",
                "name" => "some name",
                "password_hash" => "some password_hash",
                "provider" => 42
@@ -67,7 +67,7 @@ defmodule UptimeCheckerWeb.UserControllerTest do
       assert %{
                "id" => ^id,
                "email" => "some updated email",
-               "firebase_uid" => "some updated firebase_uid",
+               "provider_uid" => "some updated provider_uid",
                "name" => "some updated name",
                "password_hash" => "some updated password_hash",
                "provider" => 43

@@ -12,7 +12,7 @@ defmodule UptimeChecker.CustomerFixtures do
       attrs
       |> Enum.into(%{
         email: "some email",
-        firebase_uid: "some firebase_uid",
+        provider_uid: "some provider_uid",
         name: "some name",
         password_hash: "some password_hash",
         provider: 42

@@ -35,7 +35,7 @@ defmodule UptimeChecker.Module.Firebase do
            name: fields["name"],
            email: fields["email"],
            picture_url: fields["picture"],
-           firebase_uid: fields["user_id"]
+           provider_uid: fields["user_id"]
          }}
     end
   end

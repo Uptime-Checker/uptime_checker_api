@@ -9,7 +9,6 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
   alias UptimeChecker.Authorization
   alias UptimeChecker.Helper.Strings
   alias UptimeChecker.TaskSupervisors
-  alias UptimeChecker.Module.Firebase
   alias UptimeChecker.Error.ServiceError
   alias UptimeChecker.Schema.Customer.{User, GuestUser}
 
@@ -38,14 +37,12 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
   end
 
   def provider_login(conn, params) do
-    {:ok, firebase_user} = Firebase.verify_id_token!(params["id_token"])
-
-    with {:ok, user} <- Auth.get_by_email(firebase_user.email),
+    with {:ok, user} <- Auth.get_by_email(params["email"]),
          {:ok, updated_user} <-
            Customer.update_user_provider(user, %{
-             name: firebase_user.name,
-             picture_url: firebase_user.picture_url,
-             firebase_uid: firebase_user.firebase_uid,
+             name: params["name"],
+             picture_url: params["picture_url"],
+             provider_uid: params["provider_uid"],
              provider: params["provider"],
              last_login_at: Timex.now()
            }) do
@@ -56,9 +53,7 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
       |> json(%{access_token: access_token})
     else
       {:error, %ErrorMessage{code: :not_found} = _e} ->
-        updated_params = firebase_user |> Map.put(:provider, params["provider"])
-
-        with {:ok, %User{} = user} <- Customer.create_user_for_provider(updated_params) do
+        with {:ok, %User{} = user} <- Customer.create_user_for_provider(params) do
           {:ok, access_token, _claims} = Auth.encode_and_sign(user)
 
           conn
@@ -136,7 +131,7 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
       with {:ok, user} <- Auth.get_by_email(guest_user.email),
            {:ok, updated_user} <-
              Customer.update_user_provider(user, %{
-               firebase_uid: params["firebase_uid"],
+               provider_uid: params["provider_uid"],
                provider: params["provider"],
                last_login_at: Timex.now()
              }) do

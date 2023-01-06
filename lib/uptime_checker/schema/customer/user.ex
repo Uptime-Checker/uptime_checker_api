@@ -10,7 +10,7 @@ defmodule UptimeChecker.Schema.Customer.User do
     field(:email, :string)
     field(:name, :string)
     field(:password, :string)
-    field(:firebase_uid, :string)
+    field(:provider_uid, :string)
     field(:payment_customer_id, :string)
     field(:picture_url, :string)
     field(:last_login_at, :utc_datetime)
@@ -30,8 +30,8 @@ defmodule UptimeChecker.Schema.Customer.User do
 
   def provider_registration_changeset(user, attrs) do
     join_user_changeset(user, attrs)
-    |> validate_required([:firebase_uid])
-    |> unique_constraint(:firebase_uid)
+    |> validate_required([:provider_uid])
+    |> unique_constraint(:provider_uid)
   end
 
   def join_user_changeset(user, attrs) do
@@ -40,7 +40,7 @@ defmodule UptimeChecker.Schema.Customer.User do
       :name,
       :email,
       :password,
-      :firebase_uid,
+      :provider_uid,
       :provider,
       :organization_id,
       :role_id,
@@ -59,24 +59,24 @@ defmodule UptimeChecker.Schema.Customer.User do
       :name,
       :email,
       :password,
-      :firebase_uid,
+      :provider_uid,
       :provider,
       :organization_id,
       :role_id,
       :last_login_at
     ])
-    |> validate_required([:name, :email, :firebase_uid, :provider, :organization_id])
+    |> validate_required([:name, :email, :provider_uid, :provider, :organization_id])
   end
 
   def update_provider_changeset(user, attrs) do
     user
-    |> cast(attrs, [:name, :firebase_uid, :provider, :picture_url, :last_login_at])
-    |> validate_required([:firebase_uid, :provider])
+    |> cast(attrs, [:name, :provider_uid, :provider, :picture_url, :last_login_at])
+    |> validate_required([:provider_uid, :provider])
   end
 
   def update_user_changeset(user, attrs) do
     user
-    |> cast(attrs, [:name, :firebase_uid, :provider, :picture_url, :last_login_at])
+    |> cast(attrs, [:name, :provider_uid, :provider, :picture_url, :last_login_at])
   end
 
   def update_payment_changeset(user, attrs) do
