@@ -37,15 +37,10 @@ defmodule UptimeCheckerWeb.Api.V1.UserController do
   end
 
   def provider_login(conn, params) do
+    updated_params = params |> Map.put(:last_login_at, Timex.now())
+
     with {:ok, user} <- Auth.get_by_email(params["email"]),
-         {:ok, updated_user} <-
-           Customer.update_user_provider(user, %{
-             name: params["name"],
-             picture_url: params["picture_url"],
-             provider_uid: params["provider_uid"],
-             provider: params["provider"],
-             last_login_at: Timex.now()
-           }) do
+         {:ok, updated_user} <- Customer.update_user_provider(user, updated_params) do
       {:ok, access_token, _claims} = Auth.encode_and_sign(updated_user)
 
       conn
