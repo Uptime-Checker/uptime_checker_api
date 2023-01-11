@@ -17,7 +17,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateMonitors do
       add :password, :text
 
       add :on, :boolean, default: true
-      add :down, :boolean, default: false
+      add :status, :integer, default: 1
       add :check_ssl, :boolean, default: false
       add :follow_redirects, :boolean, default: false
 
@@ -39,7 +39,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateMonitors do
     create unique_index(:monitors, [:url, :organization_id])
 
     create index(:monitors, [:on])
-    create index(:monitors, [:down])
+    create index(:monitors, [:status])
 
     create index(:monitors, [:user_id])
     create index(:monitors, [:organization_id])

@@ -522,7 +522,7 @@ CREATE TABLE public.monitors (
     username text,
     password text,
     "on" boolean DEFAULT true,
-    down boolean DEFAULT false,
+    status integer DEFAULT 1,
     check_ssl boolean DEFAULT false,
     follow_redirects boolean DEFAULT false,
     resolve_threshold integer DEFAULT 1,
@@ -1800,13 +1800,6 @@ CREATE UNIQUE INDEX monitor_user_junction_user_id_monitor_id_index ON public.mon
 
 
 --
--- Name: monitors_down_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX monitors_down_index ON public.monitors USING btree (down);
-
-
---
 -- Name: monitors_monitor_group_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1825,6 +1818,13 @@ CREATE INDEX monitors_on_index ON public.monitors USING btree ("on");
 --
 
 CREATE INDEX monitors_organization_id_index ON public.monitors USING btree (organization_id);
+
+
+--
+-- Name: monitors_status_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX monitors_status_index ON public.monitors USING btree (status);
 
 
 --

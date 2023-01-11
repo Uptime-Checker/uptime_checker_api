@@ -39,9 +39,9 @@ defmodule UptimeChecker.Cron.ErrorCheckToPauseMonitors do
   defp check_monitor(%Monitor{} = monitor) do
     now = Timex.now()
 
-    with %MonitorStatusChange{} = monitor_status <- WatchDog.get_latest_monitor_status_change(monitor.id) do
-      if monitor_status.status == :down do
-        if Timex.diff(now, monitor_status.changed_at, :hour) > 24 do
+    with %MonitorStatusChange{} = monitor_status_change <- WatchDog.get_latest_monitor_status_change(monitor.id) do
+      if monitor_status_change.status == :down do
+        if Timex.diff(now, monitor_status_change.changed_at, :hour) > 24 do
           MonitorService.pause_monitor(monitor, false)
         end
       end

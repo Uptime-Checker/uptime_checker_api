@@ -4,7 +4,7 @@
 
 <p>Outage started at: <%= format_time(@alarm.inserted_at) %> GMT (Coordinated Universal Time)</p>
 
-<%= if @monitor.down == false do %>
+<%= if @monitor.status == :passing do %>
     <p>Outage ended at: <%= format_time(@alarm.resolved_at) %> GMT (Coordinated Universal Time)</p>
     <p>Outage duration: <%= difference_between_two_times(@alarm.resolved_at, @alarm.inserted_at) %></p>
 <% end %>

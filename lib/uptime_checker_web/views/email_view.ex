@@ -6,7 +6,7 @@ defmodule UptimeCheckerWeb.EmailView do
   alias UptimeChecker.Constant
 
   def monitor_status(monitor) do
-    down(monitor.down)
+    down(monitor.status)
   end
 
   def invitation_url(code) do
@@ -25,6 +25,6 @@ defmodule UptimeCheckerWeb.EmailView do
     Times.human_readable_time_difference(from, to)
   end
 
-  defp down(is_down) when is_down == true, do: Constant.Text.down()
-  defp down(is_down) when is_down == false, do: Constant.Text.up()
+  defp down(monitor_status) when monitor_status == :failing, do: Constant.Text.down()
+  defp down(monitor_status) when monitor_status == :passing, do: Constant.Text.up()
 end

@@ -10,6 +10,7 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
 
   @body_formats [none: 1, json: 2, xml: 3, text: 4, html: 5, graphql: 6, form_param: 7]
   @methods [GET: 1, POST: 2, PUT: 3, PATCH: 4, DELETE: 5, HEAD: 6]
+  @status_types [passing: 1, degraded: 2, failing: 3]
 
   schema "monitors" do
     field :name, :string
@@ -26,7 +27,7 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
     field :password, :string
 
     field :on, :boolean
-    field :down, :boolean
+    field :status, Ecto.Enum, values: @status_types
     field :check_ssl, :boolean
     field :follow_redirects, :boolean
 
@@ -75,7 +76,7 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
       :username,
       :password,
       :on,
-      :down,
+      :status,
       :check_ssl,
       :follow_redirects,
       :region_threshold,
@@ -107,8 +108,8 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
 
   def update_alarm_changeset(monitor, attrs) do
     monitor
-    |> cast(attrs, [:down])
-    |> validate_required([:down])
+    |> cast(attrs, [:status])
+    |> validate_required([:status])
   end
 
   def pause_changeset(monitor, attrs) do
