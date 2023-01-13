@@ -18,7 +18,6 @@ defmodule UptimeChecker.WatchDogTest do
       name: nil,
       resolve_threshold: nil,
       state: nil,
-      status_codes: nil,
       timeout: nil,
       url: nil
     }
@@ -44,7 +43,6 @@ defmodule UptimeChecker.WatchDogTest do
         name: "some name",
         resolve_threshold: 42,
         state: 42,
-        status_codes: [],
         timeout: 42,
         url: "some url"
       }
@@ -59,7 +57,6 @@ defmodule UptimeChecker.WatchDogTest do
       assert monitor.name == "some name"
       assert monitor.resolve_threshold == 42
       assert monitor.state == 42
-      assert monitor.status_codes == []
       assert monitor.timeout == 42
       assert monitor.url == "some url"
     end
@@ -81,7 +78,6 @@ defmodule UptimeChecker.WatchDogTest do
         name: "some updated name",
         resolve_threshold: 43,
         state: 43,
-        status_codes: [],
         timeout: 43,
         url: "some updated url"
       }
@@ -96,7 +92,6 @@ defmodule UptimeChecker.WatchDogTest do
       assert monitor.name == "some updated name"
       assert monitor.resolve_threshold == 43
       assert monitor.state == 43
-      assert monitor.status_codes == []
       assert monitor.timeout == 43
       assert monitor.url == "some updated url"
     end

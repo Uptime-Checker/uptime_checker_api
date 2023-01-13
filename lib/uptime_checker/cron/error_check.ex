@@ -16,7 +16,7 @@ defmodule UptimeChecker.Cron.ErrorCheckToPauseMonitors do
   end
 
   def handle_error_check(after_cursor) do
-    %{entries: entries, metadata: metadata} = MonitorService.list_all(true, true, after_cursor)
+    %{entries: entries, metadata: metadata} = MonitorService.list_all(true, :failing, after_cursor)
 
     _ =
       Task.Supervisor.async_stream(
@@ -41,9 +41,14 @@ defmodule UptimeChecker.Cron.ErrorCheckToPauseMonitors do
 
     with %MonitorStatusChange{} = monitor_status_change <- WatchDog.get_latest_monitor_status_change(monitor.id) do
       if monitor_status_change.status == :down do
+        # Pause monitor if it is down for more than 24 hours
         if Timex.diff(now, monitor_status_change.changed_at, :hour) > 24 do
           MonitorService.pause_monitor(monitor, false)
         end
+      else
+        Logger.error(
+          "Monitor #{monitor.id} is down (#{monitor.status}) but last status (#{monitor_status_change.status})"
+        )
       end
     end
   end

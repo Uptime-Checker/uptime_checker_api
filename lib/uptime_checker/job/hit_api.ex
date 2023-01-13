@@ -13,7 +13,7 @@ defmodule UptimeChecker.Job.HitApi do
 
     Logger.info("#{tracing_id} running hit api, monitor region: #{monitor_region_id}")
 
-    with {:ok, %MonitorRegion{} = monitor_region} <- WatchDog.get_monitor_region_status_code(monitor_region_id),
+    with {:ok, %MonitorRegion{} = monitor_region} <- WatchDog.get_monitor_region_with_all_assoc(monitor_region_id),
          {:ok, check} <-
            create_check(
              tracing_id,

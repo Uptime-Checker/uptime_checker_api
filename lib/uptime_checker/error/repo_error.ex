@@ -12,7 +12,6 @@ defmodule UptimeChecker.Error.RepoError do
   const(:monitor_not_found, "monitor not found")
   const(:monitor_region_not_found, "monitor region not found")
   const(:monitor_user_not_found, "monitor user not found")
-  const(:monitor_status_code_not_found, "monitor status code not found")
 
   const(:region_not_found, "region not found")
 

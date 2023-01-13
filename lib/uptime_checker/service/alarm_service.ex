@@ -11,6 +11,7 @@ defmodule UptimeChecker.Service.AlarmService do
   alias UptimeChecker.Schema.Customer.Organization
   alias UptimeChecker.Schema.WatchDog.{Alarm, Check, Monitor, MonitorStatusChange}
 
+  # When a monitor region goes down, this is hit
   def handle_alarm(tracing_id, %Check{} = check, is_down) do
     cond do
       is_down == true ->
@@ -43,11 +44,21 @@ defmodule UptimeChecker.Service.AlarmService do
               Logger.error("#{tracing_id} 2 Failed to create alarm, error: #{inspect(changeset.errors)}")
           end
         else
-          Logger.info("#{tracing_id} 3 Region threshold did not raise alarm, down count: #{down_monitor_region_count}")
+          if check.monitor.status != :degraded do
+            case handle_degraded(check.monitor, true) do
+              {:ok, %Monitor{} = monitor} ->
+                Logger.info(
+                  "#{tracing_id} 3 Region threshold did not raise alarm, but degrading monitor: #{monitor.id}"
+                )
+
+              {:error, %Ecto.Changeset{} = changeset} ->
+                Logger.error("#{tracing_id} 4 Failed to degrade monitor, error: #{inspect(changeset.errors)}")
+            end
+          end
         end
 
       {:ok, %Alarm{} = alarm} ->
-        Logger.info("#{tracing_id} 4 Alarm already there, #{alarm.id} |> #{alarm.ongoing}")
+        Logger.info("#{tracing_id} 5 Alarm already there, #{alarm.id} |> #{alarm.ongoing}")
     end
   end
 
@@ -58,21 +69,33 @@ defmodule UptimeChecker.Service.AlarmService do
 
     case alarm do
       {:error, %ErrorMessage{code: :not_found} = _e} ->
-        Logger.debug("#{tracing_id}, No active alarm to resolve, check #{check.id}")
+        Logger.debug("#{tracing_id}, 1 No active alarm to resolve, check #{check.id}")
+        total_monitor_region_count = WatchDog.count_monitor_region(check.monitor_id)
+
+        if total_monitor_region_count == up_monitor_region_count && check.monitor.status != :passing do
+          # resolve degraded
+          case handle_degraded(check.monitor, false) do
+            {:ok, %Monitor{} = monitor} ->
+              Logger.info("#{tracing_id} 2 Degraded monitor resolved: #{monitor.id}")
+
+            {:error, %Ecto.Changeset{} = changeset} ->
+              Logger.error("#{tracing_id} 3 Failed to resolve degrade monitor, error: #{inspect(changeset.errors)}")
+          end
+        end
 
       {:ok, %Alarm{} = alarm} ->
         if up_monitor_region_count >= check.monitor.region_threshold do
           case clear_alarm(check.monitor, alarm, now, check) do
             {:ok, updated_alarm} ->
-              Logger.info("#{tracing_id} Alarm resolved #{alarm.id}, monitor: #{check.monitor.id}")
+              Logger.info("#{tracing_id} 4 Alarm resolved #{alarm.id}, monitor: #{check.monitor.id}")
               Worker.ScheduleNotificationAsync.enqueue(updated_alarm)
               update_duration_in_daily_report(check.organization, check.monitor, updated_alarm)
 
             {:error, %Ecto.Changeset{} = changeset} ->
-              Logger.error("#{tracing_id}, Failed to resolve alarm, error: #{inspect(changeset.errors)}")
+              Logger.error("#{tracing_id} 5 Failed to resolve alarm, error: #{inspect(changeset.errors)}")
           end
         else
-          Logger.debug("#{tracing_id}, Region threshold did not resolve alarm, up count: #{up_monitor_region_count}")
+          Logger.debug("#{tracing_id} 6 Region threshold did not resolve alarm, up count: #{up_monitor_region_count}")
         end
     end
   end
@@ -108,16 +131,42 @@ defmodule UptimeChecker.Service.AlarmService do
     Ecto.Multi.new()
     |> Ecto.Multi.insert(:alarm, Alarm.changeset(%Alarm{ongoing: true}, attrs))
     |> Ecto.Multi.run(:monitor, fn _repo, %{alarm: _alarm} ->
-      WatchDog.update_monitor_status(monitor, %{down: true})
+      WatchDog.update_monitor_status(monitor, %{status: :failing})
     end)
     |> Ecto.Multi.insert(
       :monitor_status_change,
-      MonitorStatusChange.changeset(%MonitorStatusChange{}, %{status: :down, changed_at: now, monitor: monitor})
+      MonitorStatusChange.changeset(%MonitorStatusChange{}, %{status: :failing, changed_at: now, monitor: monitor})
     )
     |> Repo.transaction()
     |> case do
       {:ok, %{alarm: alarm, monitor: _monitor, monitor_status_change: _monitor_status_change}} ->
         {:ok, alarm}
+
+      {:error, _name, changeset, _changes_so_far} ->
+        {:error, changeset}
+    end
+  end
+
+  defp handle_degraded(%Monitor{} = monitor, is_degraded) do
+    now = Timex.now()
+
+    status =
+      if is_degraded do
+        :degraded
+      else
+        :passing
+      end
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:monitor, WatchDog.update_monitor_status(monitor, %{status: status}))
+    |> Ecto.Multi.insert(
+      :monitor_status_change,
+      MonitorStatusChange.changeset(%MonitorStatusChange{}, %{status: status, changed_at: now, monitor: monitor})
+    )
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{monitor: monitor, monitor_status_change: _monitor_status_change}} ->
+        {:ok, monitor}
 
       {:error, _name, changeset, _changes_so_far} ->
         {:error, changeset}
@@ -132,11 +181,11 @@ defmodule UptimeChecker.Service.AlarmService do
       Alarm.resolve_changeset(alarm, %{ongoing: false, resolved_at: now, resolved_by_check_id: check.id})
     )
     |> Ecto.Multi.run(:monitor, fn _repo, %{alarm: _alarm} ->
-      WatchDog.update_monitor_status(monitor, %{down: false})
+      WatchDog.update_monitor_status(monitor, %{status: :passing})
     end)
     |> Ecto.Multi.insert(
       :monitor_status_change,
-      MonitorStatusChange.changeset(%MonitorStatusChange{}, %{status: :up, changed_at: now, monitor: monitor})
+      MonitorStatusChange.changeset(%MonitorStatusChange{}, %{status: :passing, changed_at: now, monitor: monitor})
     )
     |> Repo.transaction()
     |> case do

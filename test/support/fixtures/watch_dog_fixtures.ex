@@ -20,7 +20,6 @@ defmodule UptimeChecker.WatchDogFixtures do
         name: "some name",
         resolve_threshold: 42,
         state: 42,
-        status_codes: [],
         timeout: 42,
         url: "some url"
       })

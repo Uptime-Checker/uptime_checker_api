@@ -15,7 +15,6 @@ defmodule UptimeCheckerWeb.MonitorControllerTest do
     name: "some name",
     resolve_threshold: 42,
     state: 42,
-    status_codes: [],
     timeout: 42,
     url: "some url"
   }
@@ -29,7 +28,6 @@ defmodule UptimeCheckerWeb.MonitorControllerTest do
     name: "some updated name",
     resolve_threshold: 43,
     state: 43,
-    status_codes: [],
     timeout: 43,
     url: "some updated url"
   }
@@ -43,7 +41,6 @@ defmodule UptimeCheckerWeb.MonitorControllerTest do
     name: nil,
     resolve_threshold: nil,
     state: nil,
-    status_codes: nil,
     timeout: nil,
     url: nil
   }
@@ -77,7 +74,6 @@ defmodule UptimeCheckerWeb.MonitorControllerTest do
                "name" => "some name",
                "resolve_threshold" => 42,
                "state" => 42,
-               "status_codes" => [],
                "timeout" => 42,
                "url" => "some url"
              } = json_response(conn, 200)["data"]
@@ -109,7 +105,6 @@ defmodule UptimeCheckerWeb.MonitorControllerTest do
                "name" => "some updated name",
                "resolve_threshold" => 43,
                "state" => 43,
-               "status_codes" => [],
                "timeout" => 43,
                "url" => "some updated url"
              } = json_response(conn, 200)["data"]

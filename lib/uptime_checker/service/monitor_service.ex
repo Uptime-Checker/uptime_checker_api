@@ -8,11 +8,11 @@ defmodule UptimeChecker.Service.MonitorService do
   alias UptimeChecker.Schema.Customer.{Organization, User}
   alias UptimeChecker.Schema.WatchDog.{Monitor, MonitorStatusChange}
 
-  def list_all(on, down, cursor) do
+  def list_all(on, status, cursor) do
     query =
       from m in Monitor,
         where: m.on == ^on,
-        where: m.down == ^down
+        where: m.status == ^status
 
     query
     |> Repo.paginate(after: cursor)
@@ -29,8 +29,7 @@ defmodule UptimeChecker.Service.MonitorService do
       from m in Monitor,
         where: m.id == ^id,
         left_join: o in assoc(m, :organization),
-        left_join: status_codes in assoc(m, :status_codes),
-        preload: [organization: o, status_codes: status_codes]
+        preload: [organization: o]
 
     Repo.one(query)
     |> case do

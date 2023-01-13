@@ -13,15 +13,14 @@ defmodule UptimeChecker.WatchDog do
   alias UptimeChecker.Schema.{MonitorUser, Region}
   alias UptimeChecker.Schema.WatchDog.{Monitor, Check, MonitorRegion, ErrorLog, MonitorStatusChange}
 
-  def get_monitor_region_status_code(id) do
+  def get_monitor_region_with_all_assoc(id) do
     query =
       from mr in MonitorRegion,
         left_join: m in assoc(mr, :monitor),
         left_join: r in assoc(mr, :region),
         left_join: o in assoc(m, :organization),
-        left_join: status_codes in assoc(m, :status_codes),
         where: mr.id == ^id,
-        preload: [monitor: {m, organization: o, status_codes: status_codes}, region: r]
+        preload: [monitor: {m, organization: o}, region: r]
 
     Repo.one(query)
     |> case do
@@ -55,10 +54,11 @@ defmodule UptimeChecker.WatchDog do
 
     query =
       from mr in MonitorRegion,
+        left_join: m in assoc(mr, :monitor),
         left_join: region in assoc(mr, :region),
         where:
           (mr.next_check_at > ^prev and mr.next_check_at < ^later and
-             mr.last_checked_at < ^prev) or is_nil(mr.last_checked_at),
+             mr.last_checked_at < ^prev and m.on == true) or is_nil(mr.last_checked_at),
         where: region.key == ^region_key,
         preload: [region: region]
 
@@ -84,6 +84,15 @@ defmodule UptimeChecker.WatchDog do
     monitor_region
     |> MonitorRegion.changeset(attrs)
     |> Repo.update()
+  end
+
+  def count_monitor_region(monitor_id) do
+    query =
+      from mr in MonitorRegion,
+        where: mr.monitor_id == ^monitor_id,
+        select: count(mr.id)
+
+    Repo.one(query)
   end
 
   def count_monitor_region_by_status(monitor_id, is_down) do

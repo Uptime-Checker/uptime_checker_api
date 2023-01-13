@@ -25,6 +25,6 @@ defmodule UptimeCheckerWeb.EmailView do
     Times.human_readable_time_difference(from, to)
   end
 
-  defp down(monitor_status) when monitor_status == :failing, do: Constant.Text.down()
-  defp down(monitor_status) when monitor_status == :passing, do: Constant.Text.up()
+  defp down(status) when status == :failing, do: Constant.Text.down()
+  defp down(status) when status == :passing, do: Constant.Text.up()
 end

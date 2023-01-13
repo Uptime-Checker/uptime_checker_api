@@ -14,7 +14,7 @@ defmodule UptimeChecker.Job.SendNotification do
     {:ok, organization} = Customer.get_organization(alarm.organization_id)
 
     NotificationService.create_notification(
-      %{type: alarm_type(alarm.monitor.down)},
+      %{type: alarm_type(alarm.monitor.status)},
       organization,
       alarm,
       alarm.monitor,
@@ -34,6 +34,6 @@ defmodule UptimeChecker.Job.SendNotification do
     |> Mailer.deliver_now!()
   end
 
-  defp alarm_type(is_down) when is_down == true, do: :raise_alarm
-  defp alarm_type(is_down) when is_down == false, do: :resolve_alarm
+  defp alarm_type(status) when status == :failing, do: :raise_alarm
+  defp alarm_type(status) when status == :passing, do: :resolve_alarm
 end
