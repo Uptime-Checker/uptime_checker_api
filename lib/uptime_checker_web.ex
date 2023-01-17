@@ -23,6 +23,7 @@ defmodule UptimeCheckerWeb do
 
       import Plug.Conn
       import UptimeCheckerWeb.Gettext
+      import UptimeCheckerWeb.ControllerHelper
       alias UptimeCheckerWeb.Router.Helpers, as: Routes
     end
   end

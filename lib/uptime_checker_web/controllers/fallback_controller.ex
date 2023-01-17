@@ -6,6 +6,8 @@ defmodule UptimeCheckerWeb.FallbackController do
   """
   use UptimeCheckerWeb, :controller
 
+  alias UptimeChecker.Error.HttpError
+
   # This clause handles errors returned by Ecto's insert/update/delete.
   def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
     conn
@@ -14,11 +16,50 @@ defmodule UptimeCheckerWeb.FallbackController do
     |> render("error.json", changeset: changeset)
   end
 
-  # This clause is an example of how to handle resources that cannot be found.
-  def call(conn, {:error, :not_found}) do
+  # This clause handles errors returned by Ecto's multi.
+  def call(conn, {:error, name, %Ecto.Changeset{} = changeset}) do
     conn
-    |> put_status(:not_found)
-    |> put_view(UptimeCheckerWeb.ErrorView)
-    |> render(:"404")
+    |> put_status(:unprocessable_entity)
+    |> put_view(UptimeCheckerWeb.ChangesetView)
+    |> render("error.json", name: name, changeset: changeset)
+  end
+
+  # This clause handles errors returned by Ecto's multi.
+  def call(conn, {:error, name, %Ecto.Changeset{} = changeset, _changes_so_far}) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> put_view(UptimeCheckerWeb.ChangesetView)
+    |> render("error.json", name: name, changeset: changeset)
+  end
+
+  def call(conn, {:error, %ErrorMessage{code: code} = e}) do
+    conn
+    |> put_status(code)
+    |> json(ErrorMessage.to_jsonable_map(e))
+  end
+
+  def call(conn, {:error, error}) do
+    updated_conn =
+      conn
+      |> put_view(UptimeCheckerWeb.ErrorView)
+
+    error_string = to_string(error)
+
+    cond do
+      String.contains?(error_string, HttpError.not_found()) ->
+        updated_conn
+        |> put_status(:not_found)
+        |> render(:"404", message: error_string)
+
+      String.contains?(error_string, HttpError.unauthorized()) ->
+        updated_conn
+        |> put_status(:unauthorized)
+        |> render(:"401", message: error_string)
+
+      true ->
+        updated_conn
+        |> put_status(:bad_request)
+        |> render(:"400", message: error_string)
+    end
   end
 end

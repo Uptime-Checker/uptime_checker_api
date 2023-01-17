@@ -21,10 +21,13 @@ config :uptime_checker, UptimeCheckerWeb.Endpoint,
   server: false
 
 # In test we don't send emails.
-config :uptime_checker, UptimeChecker.Mailer, adapter: Swoosh.Adapters.Test
+config :uptime_checker, UptimeChecker.Module.Mailer, adapter: Swoosh.Adapters.Test
 
 # Print only warnings and errors during test
 config :logger, level: :warn
 
 # Initialize plugs at runtime for faster test compilation
 config :phoenix, :plug_init_mode, :runtime
+
+# Oban
+config :uptime_checker, Oban, testing: :inline

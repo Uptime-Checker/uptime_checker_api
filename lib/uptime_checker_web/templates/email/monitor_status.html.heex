@@ -1,0 +1,12 @@
+<h1>Monitor is <%= monitor_status(@monitor) %></h1>
+
+<h3>Monitor URL: <%= link(@monitor.url, to: @monitor.url) %></h3>
+
+<p>Outage started at: <%= format_time(@alarm.inserted_at) %> GMT (Coordinated Universal Time)</p>
+
+<%= if @monitor.status == :passing do %>
+    <p>Outage ended at: <%= format_time(@alarm.resolved_at) %> GMT (Coordinated Universal Time)</p>
+    <p>Outage duration: <%= difference_between_two_times(@alarm.resolved_at, @alarm.inserted_at) %></p>
+<% end %>
+
+<p>If you experience any issues, don't hesitate to contact us. We're here and happy to help.</p>

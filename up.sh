@@ -1,0 +1,1 @@
+FLY_REGION="fra" mix phx.server

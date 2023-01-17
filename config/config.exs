@@ -13,21 +13,14 @@ config :uptime_checker,
 # Configures the endpoint
 config :uptime_checker, UptimeCheckerWeb.Endpoint,
   url: [host: "localhost"],
-  render_errors: [view: UptimeCheckerWeb.ErrorView, accepts: ~w(html json), layout: false],
+  render_errors: [view: UptimeCheckerWeb.ErrorView, accepts: ~w(json), layout: false],
   pubsub_server: UptimeChecker.PubSub,
   live_view: [signing_salt: "kLGCLap0"]
 
-# Configures the mailer
-#
-# By default it uses the "Local" adapter which stores the emails
-# locally. You can see the emails in your browser, at "/dev/mailbox".
-#
-# For production it's recommended to configure a different adapter
-# at the `config/runtime.exs`.
-config :uptime_checker, UptimeChecker.Mailer, adapter: Swoosh.Adapters.Local
-
-# Swoosh API client is needed for adapters other than SMTP.
-config :swoosh, :api_client, false
+# Sentry
+config :sentry,
+  enable_source_code_context: true,
+  root_source_code_path: File.cwd!()
 
 # Configure esbuild (the version is required)
 config :esbuild,
@@ -41,11 +34,47 @@ config :esbuild,
 
 # Configures Elixir's Logger
 config :logger, :console,
-  format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id]
+  format: "$time [$level] $message [$metadata]\n",
+  metadata: [:module, :file, :function, :line, :request_id]
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
+
+# Guardian for auth
+config :uptime_checker, UptimeChecker.Guardian,
+  issuer: "uptime_checker",
+  secret_key: "J3sSZ0fy5ksV4pNvFD+E7RoLqcxiB3eJii7CwIkmr/BQf8vZGXYzm5pgPNrgZkar"
+
+# Quantum for cron
+config :uptime_checker, UptimeChecker.Module.Scheduler,
+  jobs: [
+    check_monitor: [
+      # Every every 10 seconds
+      schedule: {:extended, "*/10"},
+      task: {UptimeChecker.Cron.CheckMonitor, :work, []},
+      run_strategy: {Quantum.RunStrategy.All, :cluster}
+    ],
+    error_check: [
+      # Every every 1 hour
+      schedule: "0 * * * *",
+      task: {UptimeChecker.Cron.ErrorCheckToPauseMonitors, :work, []},
+      run_strategy: {Quantum.RunStrategy.Random, :cluster}
+    ],
+    sync_product: [
+      # Every every 1 hour
+      schedule: "0 * * * *",
+      task: {UptimeChecker.Cron.SyncProducts, :work, []},
+      run_strategy: {Quantum.RunStrategy.Random, :cluster}
+    ]
+  ]
+
+# Oban for tasks
+config :uptime_checker, Oban,
+  repo: UptimeChecker.Repo,
+  plugins: [
+    Oban.Plugins.Pruner
+  ],
+  queues: [default: 100, notification: 100]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

@@ -5,8 +5,14 @@ defmodule UptimeChecker.Application do
 
   use Application
 
+  alias UptimeChecker.Constant.Env
+
+  @oban_env Application.compile_env(:uptime_checker, Oban)
+
   @impl true
   def start(_type, _args) do
+    Logger.add_backend(Sentry.LoggerBackend)
+
     children = [
       # Start the Ecto repository
       UptimeChecker.Repo,
@@ -15,9 +21,20 @@ defmodule UptimeChecker.Application do
       # Start the PubSub system
       {Phoenix.PubSub, name: UptimeChecker.PubSub},
       # Start the Endpoint (http/https)
-      UptimeCheckerWeb.Endpoint
-      # Start a worker by calling: UptimeChecker.Worker.start_link(arg)
-      # {UptimeChecker.Worker, arg}
+      UptimeCheckerWeb.Endpoint,
+      # Scheduler
+      UptimeChecker.Module.Scheduler,
+      # Task Supervisor
+      {PartitionSupervisor, child_spec: Task.Supervisor, name: UptimeChecker.TaskSupervisors},
+      # Oban
+      {Oban, oban_opts()},
+      # Start a worker on startup
+      {Task, &UptimeChecker.Event.InitStart.run/0},
+      # Caches
+      Supervisor.child_spec({Cachex, name: :cache_user}, id: :cache_user),
+      Supervisor.child_spec({Cachex, name: :cache_payment}, id: :cache_payment),
+      Supervisor.child_spec({Cachex, name: :cache_stripe_webhook}, id: :cache_stripe_webhook),
+      Supervisor.child_spec({Cachex, name: :cache_monitor_region_check}, id: :cache_monitor_region_check)
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
@@ -32,5 +49,13 @@ defmodule UptimeChecker.Application do
   def config_change(changed, _new, removed) do
     UptimeCheckerWeb.Endpoint.config_change(changed, removed)
     :ok
+  end
+
+  defp oban_opts do
+    # add 1000 concurrency to the hit api job
+    @oban_env
+    |> Keyword.update(:queues, [], fn existing ->
+      existing |> Keyword.put(Env.current_region() |> System.get_env() |> String.to_atom(), 1000)
+    end)
   end
 end

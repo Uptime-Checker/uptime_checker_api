@@ -7,6 +7,8 @@ import Config
 # any compile-time configuration in here, as it won't be applied.
 # The block below contains prod specific runtime configuration.
 
+Vapor.load!([%Vapor.Provider.Dotenv{}])
+
 # ## Using releases
 #
 # If you use `mix release`, you need to explicitly enable the server
@@ -19,6 +21,14 @@ import Config
 if System.get_env("PHX_SERVER") do
   config :uptime_checker, UptimeCheckerWeb.Endpoint, server: true
 end
+
+# Configure sentry dsn
+config :sentry, dsn: System.get_env("SENTRY_DSN")
+
+# Configure Stripe SDK
+config :stripity_stripe,
+  api_key: System.get_env("STRIPE_API_KEY"),
+  signing_secret: System.get_env("STRIPE_WEBHOOK_SIGNING_SECRET")
 
 if config_env() == :prod do
   database_url =
@@ -63,21 +73,14 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base
 
-  # ## Configuring the mailer
-  #
-  # In production you need to configure the mailer to use a different adapter.
-  # Also, you may need to configure the Swoosh API client of your choice if you
-  # are not using SMTP. Here is an example of the configuration:
-  #
-  #     config :uptime_checker, UptimeChecker.Mailer,
-  #       adapter: Swoosh.Adapters.Mailgun,
-  #       api_key: System.get_env("MAILGUN_API_KEY"),
-  #       domain: System.get_env("MAILGUN_DOMAIN")
-  #
-  # For this example you need include a HTTP client required by Swoosh API client.
-  # Swoosh supports Hackney and Finch out of the box:
-  #
-  #     config :swoosh, :api_client, Swoosh.ApiClient.Hackney
-  #
-  # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
+  # Configuring the mailer
+  config :uptime_checker, UptimeChecker.Module.Mailer,
+    adapter: Bamboo.SMTPAdapter,
+    server: System.get_env("SMTP_HOST"),
+    port: System.get_env("SMTP_PORT"),
+    username: System.get_env("SMTP_USERNAME"),
+    password: System.get_env("SMTP_PASSWORD"),
+    auth: :always,
+    tls: :if_available,
+    tls_verify: :verify_none
 end

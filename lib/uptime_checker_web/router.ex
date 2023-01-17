@@ -10,8 +10,14 @@ defmodule UptimeCheckerWeb.Router do
     plug :put_secure_browser_headers
   end
 
+  pipeline :auth do
+    plug UptimeChecker.Guardian.AuthPipeline
+  end
+
   pipeline :api do
     plug :accepts, ["json"]
+    plug UptimeCheckerWeb.Plugs.Json
+    plug UptimeCheckerWeb.Plugs.HeaderAuth
   end
 
   scope "/", UptimeCheckerWeb do
@@ -20,10 +26,42 @@ defmodule UptimeCheckerWeb.Router do
     get "/", PageController, :index
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", UptimeCheckerWeb do
-  #   pipe_through :api
-  # end
+  scope "/api", UptimeCheckerWeb.Api, as: :api do
+    pipe_through :api
+
+    scope "/v1", V1, as: :v1_open do
+      get "/status", SettingsController, :status
+      get "/guest_user", UserController, :get_guest_user
+      get "/invitation", InvitationController, :get
+      get "/external_products", ProductController, :list_external_products
+      get "/products", ProductController, :list_products
+
+      post "/register", UserController, :register
+      post "/login", UserController, :login
+      post "/provider_login", UserController, :provider_login
+      post "/guest_user", UserController, :guest_user
+      post "/email_link_login", UserController, :email_link_login
+
+      post "/join_new_invitation", InvitationController, :join
+    end
+
+    scope "/v1", V1, as: :v1 do
+      pipe_through :auth
+
+      get "/me", UserController, :me
+      get "/full_user_info", UserController, :full_info
+      patch "/users", UserController, :update
+      get "/stripe_customer", UserController, :stripe_customer
+      get "/get_active_subscription", PaymentController, :get_active_subscription
+
+      resources "/roles", RoleController, only: [:index]
+      resources "/organizations", OrganizationController, only: [:index, :create]
+      resources "/monitors", MonitorController, only: [:index, :create, :delete]
+      resources "/invitations", InvitationController, only: [:create]
+
+      post "/monitors/update_order", MonitorController, :update_order
+    end
+  end
 
   # Enables LiveDashboard only for development
   #
@@ -50,7 +88,7 @@ defmodule UptimeCheckerWeb.Router do
     scope "/dev" do
       pipe_through :browser
 
-      forward "/mailbox", Plug.Swoosh.MailboxPreview
+      forward "/mailbox", Bamboo.SentEmailViewerPlug
     end
   end
 end

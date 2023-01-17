@@ -1,45 +1,69 @@
 defmodule UptimeCheckerWeb.Api.V1.OrganizationController do
+  use Timex
   use UptimeCheckerWeb, :controller
 
-  alias UptimeChecker.Customer
-  alias UptimeChecker.Customer.Organization
+  alias UptimeChecker.Cache
+  alias UptimeChecker.Constant
+  alias UptimeChecker.Authorization
+  alias UptimeChecker.{Customer, Payment}
+  alias UptimeChecker.Service.ProductService
+  alias UptimeChecker.Schema.Payment.Subscription
+  alias UptimeChecker.Schema.Customer.Organization
 
   action_fallback UptimeCheckerWeb.FallbackController
 
-  def index(conn, _params) do
-    organizations = Customer.list_organizations()
-    render(conn, "index.json", organizations: organizations)
-  end
+  def create(conn, params) do
+    user = current_user(conn)
+    now = Timex.now()
 
-  def create(conn, %{"organization" => organization_params}) do
-    with {:ok, %Organization{} = organization} <-
-           Customer.create_organization(organization_params) do
+    attrs = params |> Map.put("slug", params["slug"] |> String.downcase() |> String.replace(" ", "-"))
+
+    with {:ok, plan} <- ProductService.get_plan_with_product(attrs["plan_id"]),
+         {:ok, %Organization{} = organization} <- Customer.create_organization(attrs, user),
+         {:ok, %Subscription{} = subscription} <-
+           Payment.create_subscription(%{
+             status: get_status(plan),
+             starts_at: now,
+             expires_at: get_expired_at(now, plan),
+             canceled_at: nil,
+             is_trial: is_trial(plan),
+             plan: plan,
+             product: plan.product,
+             organization: organization
+           }) do
+      Cache.User.bust(user.id)
+
       conn
       |> put_status(:created)
-      |> put_resp_header("location", Routes.organization_path(conn, :show, organization))
-      |> render("show.json", organization: organization)
+      |> render("show.json", %{organization: organization, subscription: subscription, plan: plan})
     end
   end
 
-  def show(conn, %{"id" => id}) do
-    organization = Customer.get_organization!(id)
-    render(conn, "show.json", organization: organization)
-  end
+  def index(conn, _params) do
+    user = current_user(conn)
 
-  def update(conn, %{"id" => id, "organization" => organization_params}) do
-    organization = Customer.get_organization!(id)
+    cached_organization_users = Cache.User.get_organizations(user.id)
 
-    with {:ok, %Organization{} = organization} <-
-           Customer.update_organization(organization, organization_params) do
-      render(conn, "show.json", organization: organization)
+    if is_nil(cached_organization_users) do
+      organization_users = Authorization.list_organizations_of_user(user)
+      Cache.User.put_organizations(user.id, organization_users)
+      render(conn, "index.json", organization_users: organization_users)
+    else
+      render(conn, "index.json", organization_users: cached_organization_users)
     end
   end
 
-  def delete(conn, %{"id" => id}) do
-    organization = Customer.get_organization!(id)
+  defp is_trial(plan) when plan.product.tier == :free, do: false
+  defp is_trial(_plan), do: true
 
-    with {:ok, %Organization{}} <- Customer.delete_organization(organization) do
-      send_resp(conn, :no_content, "")
-    end
+  defp get_expired_at(now, plan) when plan.product.tier == :free do
+    Timex.shift(now, months: Constant.Default.free_duration_in_months())
   end
+
+  defp get_expired_at(now, _plan) do
+    Timex.shift(now, days: Constant.Default.trial_duration_in_days())
+  end
+
+  defp get_status(plan) when plan.product.tier == :free, do: :active
+  defp get_status(_plan), do: :trialing
 end

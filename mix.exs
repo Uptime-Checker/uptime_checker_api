@@ -7,7 +7,6 @@ defmodule UptimeChecker.MixProject do
       version: "0.1.0",
       elixir: "~> 1.12",
       elixirc_paths: elixirc_paths(Mix.env()),
-      compilers: [:gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps()
@@ -43,14 +42,32 @@ defmodule UptimeChecker.MixProject do
       {:floki, ">= 0.30.0", only: :test},
       {:phoenix_live_dashboard, "~> 0.6"},
       {:esbuild, "~> 0.4", runtime: Mix.env() == :dev},
-      {:swoosh, "~> 1.3"},
+      {:bamboo, "~> 2.2.0"},
+      {:bamboo_smtp, "~> 4.2.0"},
+      {:bamboo_phoenix, "~> 1.0.0"},
       {:telemetry_metrics, "~> 0.6"},
       {:telemetry_poller, "~> 1.0"},
       {:gettext, "~> 0.18"},
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
+      {:cors_plug, "~> 3.0"},
+      {:quarto, "~> 1.1.6"},
       {:bcrypt_elixir, "~> 3.0"},
-      {:guardian, "~> 2.0"}
+      {:stripity_stripe, "~> 2.0"},
+      {:guardian, "~> 2.0"},
+      {:vapor, "~> 0.10"},
+      {:useful, "~> 1.0"},
+      {:timex, "~> 3.7"},
+      {:quantum, "~> 3.0"},
+      {:oban, "~> 2.13"},
+      {:x509, "~> 0.8"},
+      {:cachex, "~> 3.4"},
+      {:httpoison, "~> 1.8"},
+      {:sentry, "~> 8.0"},
+      {:joken, "~> 2.5"},
+      {:error_message, "~> 0.3"},
+      {:tls_certificate_check, "~> 1.15"},
+      {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
     ]
   end
 
@@ -63,10 +80,14 @@ defmodule UptimeChecker.MixProject do
   defp aliases do
     [
       setup: ["deps.get", "ecto.setup"],
-      "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
+      "ecto.set": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
+      "ecto.setup": ["ecto.create", "ecto.load --skip-if-loaded", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
+      "ecto.migrate": ["ecto.migrate", "ecto.dump"],
+      "ecto.rollback": ["ecto.rollback", "ecto.dump"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
-      "assets.deploy": ["esbuild default --minify", "phx.digest"]
+      "assets.deploy": ["esbuild default --minify", "phx.digest"],
+      sentry_recompile: ["compile", "deps.compile sentry --force"]
     ]
   end
 end
