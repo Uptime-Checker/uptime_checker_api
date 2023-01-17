@@ -15,17 +15,7 @@ defmodule Cachex.Policy do
   @doc """
   Returns any hook definitions required for this policy.
   """
-  @callback hooks(Spec.limit) :: [ Spec.hook ]
-
-  @doc """
-  Returns an optional child spec to start for this policy.
-  """
-  @callback child_spec(Spec.limit) :: Supervisor.Spec.spec
-
-  @doc """
-  Returns the Supervisor strategy for this policy.
-  """
-  @callback strategy :: Supervisor.Spec.strategy
+  @callback hooks(Spec.limit()) :: [Spec.hook()]
 
   ##################
   # Implementation #
@@ -38,23 +28,11 @@ defmodule Cachex.Policy do
       @behaviour Cachex.Policy
 
       @doc false
-      def child_spec(_limit),
-        do: []
-
-      @doc false
       def hooks(_limit),
         do: []
 
-      @doc false
-      def strategy,
-        do: :one_for_one
-
       # all can be overridden
-      defoverridable [
-        hooks: 1,
-        strategy: 0,
-        child_spec: 1
-      ]
+      defoverridable hooks: 1
     end
   end
 end

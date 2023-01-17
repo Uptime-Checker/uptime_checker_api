@@ -47,9 +47,11 @@ defmodule Cachex.Warmer do
   The argument provided here is the one provided as state to the warmer records
   at cache configuration time; it will be `nil` if none was provided.
   """
-  @callback execute(state :: any) :: :ignore
-    | { :ok, pairs :: [ { key :: any, value :: any } ] }
-    | { :ok, pairs :: [ { key :: any, value :: any } ], options :: Keyword.t }
+  @callback execute(state :: any) ::
+              :ignore
+              | {:ok, pairs :: [{key :: any, value :: any}]}
+              | {:ok, pairs :: [{key :: any, value :: any}],
+                 options :: Keyword.t()}
 
   ##################
   # Implementation #
@@ -60,6 +62,8 @@ defmodule Cachex.Warmer do
     quote location: :keep, generated: true do
       use GenServer
 
+      import Cachex.Spec
+
       # enforce the behaviour
       @behaviour Cachex.Warmer
 
@@ -68,8 +72,15 @@ defmodule Cachex.Warmer do
       #
       # Initialization will trigger an initial cache warming, and store
       # the provided state for later to provide during further warming.
-      def init(state),
-        do: { handle_info(:cachex_warmer, state) && :ok, state }
+      def init({cache, warmer(async: async, state: state)}) do
+        if async do
+          send(self(), :cachex_warmer)
+        else
+          handle_info(:cachex_warmer, {cache, state})
+        end
+
+        {:ok, {cache, state}}
+      end
 
       @doc false
       # Warms a number of keys in a cache.
@@ -79,7 +90,7 @@ defmodule Cachex.Warmer do
       # cache via `Cachex.put_many/3` if returns in a Tuple tagged with the
       # `:ok` atom. If `:ignore` is returned, nothing happens aside from
       # scheduling the next execution of the warming to occur on interval.
-      def handle_info(:cachex_warmer, { cache, state } = process_state) do
+      def handle_info(:cachex_warmer, {cache, state} = process_state) do
         # execute, passing state
         case execute(state) do
           # no changes
@@ -87,19 +98,19 @@ defmodule Cachex.Warmer do
             :ignore
 
           # set pairs without options
-          { :ok, pairs } ->
+          {:ok, pairs} ->
             Cachex.put_many(cache, pairs)
 
           # set pairs with options
-          { :ok, pairs, options } ->
+          {:ok, pairs, options} ->
             Cachex.put_many(cache, pairs, options)
         end
 
         # trigger the warming to happen again after the interval
         :erlang.send_after(interval(), self(), :cachex_warmer)
 
-        # no reply, and the state persist
-        { :noreply, process_state }
+        # repeat with the state
+        {:noreply, process_state}
       end
     end
   end

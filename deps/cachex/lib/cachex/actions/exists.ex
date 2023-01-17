@@ -2,7 +2,7 @@ defmodule Cachex.Actions.Exists do
   @moduledoc false
   # Command module to allow checking for entry existence.
   #
-  # This is very straightfoward, but is a little more than an `:ets.member/2`
+  # This is very straightforward, but is a little more than an `:ets.member/2`
   # call as we also need to validate expiration time to stay consistent.
   alias Cachex.Actions
 
@@ -21,5 +21,5 @@ defmodule Cachex.Actions.Exists do
   `Cachex.Actions` module and just cast the result to a boolean.
   """
   def execute(cache() = cache, key, _options),
-    do: { :ok, !!Actions.read(cache, key) }
+    do: {:ok, !!Actions.read(cache, key)}
 end

@@ -1,25 +1,42 @@
 defmodule Cachex.Policy.LRW do
   @moduledoc """
-  Least recently written eviction policy for Cachex.
+  Least recently written eviction policies for Cachex.
 
-  This module provides an eviction policy for Cachex, evicting the least-recently
-  written entries from the cache. This is determined by the touched time inside
-  each cache record, which means that this eviction is almost zero cost, consuming
-  no additional memory beyond that of the running GenServer.
+  This module provides general utilities for implementing an eviction policy for
+  Cachex which will evict the least-recently written entries from the cache. This
+  is determined by the touched time inside each cache record, which means that we
+  don't have to store any additional tables to keep track of access time.
 
-  This policy accepts a reclaim space to determine how much of the cache to evict,
-  allowing the user to determine exactly how much they'd like to trim in the event
-  they've gone over the limit.
+  There are several options recognised by this policy which can be passed inside the
+  limit structure when configuring your cache at startup:
 
-  The `:batch_size` option can be set in the limit options to dictate how many
-  entries should be removed at once by this policy. This will default to a batch
-  size of 100 entries at a time.
+    * `:batch_size`
 
-  This eviction is relatively fast, and should keep the cache below bounds at most
-  times. Note that many writes in a very short amount of time can flood the cache,
-  but it should recover given a few seconds.
+      The batch size to use when paginating the cache to evict records. This defaults
+      to 100, which is typically going to be fine for most cases, but this option is
+      exposed in case there is need to customize it.
+
+    * `:frequency`
+
+      When this policy operates in scheduled mode, this option controls the frequency
+      with which bounds will be checked. This is specified in milliseconds, and will
+      default to once per second (1000). Feel free to tune this based on how strictly
+      you wish to enforce your cache limits.
+
+    * `:immediate`
+
+      Sets this policy to enforce bounds reactively. If this option is set to `true`,
+      bounds will be checked immediately when a write is made to the cache rather than
+      on a timed schedule. This has the result of being much more accurate with the
+      size of a cache, but has higher overhead due to listening on cache writes.
+
+      Setting this to `true` will disable the scheduled checks and thus the `:frequency`
+      option is ignored in this case.
+
+  While the overall behaviour of this policy should always result in the same outcome,
+  the way it operates internally may change. As such, the internals of this module
+  should not be relied upon and should not be considered part of the public API.
   """
-  use Cachex.Hook
   use Cachex.Policy
 
   # import macros
@@ -29,64 +46,43 @@ defmodule Cachex.Policy.LRW do
   alias Cachex.Query
   alias Cachex.Services.Informant
 
-  # actions which didn't trigger a write
-  @ignored [ :error, :ignored ]
-
   # compile our QLC match at runtime to avoid recalculating
-  @qlc_match Query.raw(true, { :key, :touched })
+  @qlc_match Query.raw(true, {:key, :touched})
 
   ####################
   # Policy Behaviour #
   ####################
 
   @doc """
-  Retrieves a list of hooks required to run against this policy.
+  Configures hooks required to back this policy.
   """
-  @spec hooks(Spec.limit) :: [ Spec.hook ]
-  def hooks(limit),
-    do: [ hook(module: __MODULE__, state: limit) ]
-
-  ######################
-  # Hook Configuration #
-  ######################
-
-  @doc """
-  Returns the actions this policy should listen on.
-
-  This returns as a `MapSet` to optimize the lookups
-  on actions to O(n) in the broadcasting algorithm.
-  """
-  @spec actions :: [ atom ]
-  def actions,
+  def hooks(limit(options: options) = limit),
     do: [
-      :put,
-      :decr,
-      :incr,
-      :fetch,
-      :update,
-      :put_many,
-      :get_and_update
+      hook(
+        state: limit,
+        module:
+          case Keyword.get(options, :immediate) do
+            true -> __MODULE__.Evented
+            _not -> __MODULE__.Scheduled
+          end
+      )
     ]
 
-  @doc """
-  Returns the provisions this policy requires.
-  """
-  @spec provisions :: [ atom ]
-  def provisions,
-    do: [ :cache ]
-
-  ####################
-  # Server Callbacks #
-  ####################
+  #############
+  # Algorithm #
+  #############
 
   @doc false
-  # Initializes this policy using the limit being enforced.
+  # Enforces cache bounds based on the provided limit.
   #
-  # The maximum size is stored in the state, alongside the pre-calculated
-  # number to trim down to. The batch size to use when removing records is
-  # also configurable via the provided options.
-  def init(limit(size: max_size, reclaim: reclaim, options: options)) do
-    trim_bound = round(max_size * reclaim)
+  # This function will enforce cache bounds using a least recently written (LRW)
+  # eviction policy. It will trigger a Janitor purge to clear expired records
+  # before attempting to trim older cache entries.
+  #
+  # Please see module documentation for options available inside the limits.
+  @spec apply_limit(Spec.cache(), Spec.limit()) :: :ok
+  def apply_limit(cache() = cache, limit() = limit) do
+    limit(size: max_size, reclaim: reclaim, options: options) = limit
 
     batch_size =
       case Keyword.get(options, :batch_size, 100) do
@@ -94,66 +90,17 @@ defmodule Cachex.Policy.LRW do
         val -> val
       end
 
-    { :ok, { max_size, trim_bound, batch_size, nil } }
-  end
+    reclaim_bound = round(max_size * reclaim)
 
-  @doc false
-  # Handles notification of a cache action.
-  #
-  # This will check if the action can modify the size of the cache, and if so will
-  # execute the boundary enforcement to trim the size as needed.
-  #
-  # Note that this will ignore error results and only operates on actions which are
-  # able to cause a net gain in cache size (so removals are also ignored).
-  def handle_notify(_message, { status, _value }, opts) when not(status in @ignored),
-    do: enforce_bounds(opts) && { :ok, opts }
-  def handle_notify(_message, _result, opts),
-    do: { :ok, opts }
-
-  @doc false
-  # Receives a provisioned cache instance.
-  #
-  # The provided cache is then stored in the cache and used for cache calls going
-  # forwards, in order to skip the lookups inside the cache overseer for performance.
-  def handle_provision({ :cache, cache }, { max_size, reclaim, batch, _cache }),
-    do: { :ok, { max_size, reclaim, batch, cache } }
-
-  #############
-  # Algorithm #
-  #############
-
-  # Enforces the bounds of a cache based on the provided state.
-  #
-  # Suggest stepping through this pipeline a function at a time and reading the
-  # associated comments. This pipeline controls the trimming of the cache to fit
-  # the appropriate size.
-  #
-  # We start with the current size of the cache and pass it through to a function
-  # which will calculate the a number of slots to reclaim in the cache. If the
-  # number is positive, we carry out a Janitor purge and see if that brings us
-  # back under the maximum size. If so, we're done and stop. If not, we then trim
-  # the cache using a QLC cursor through the cache, deleting entries in batches.
-  # Note that these deletions are sorted by the touch time to ensure we delete
-  # the oldest first.
-  #
-  # Upon completion, we notify the worker itself to broadcast a message to all
-  # hooks to ensure that hooks are notified of the evictions. This is only done
-  # in the case that something has actually been removed, in order to avoid edge
-  # cases and potentially breaking existing hook implementations.
-  #
-  # It's safe to always run through the pipeline here, but we check the cache
-  # size as an optimization to speed up message processing when no evictions need
-  # to happen. This is a slight speed boost, but it's noticeable - tests will fail
-  # intermittently if this is not checked in this way.
-  defp enforce_bounds({ max_size, reclaim, batch, cache }) do
     case Cachex.size!(cache, const(:notify_false)) do
       cache_size when cache_size <= max_size ->
         notify_worker(0, cache)
+
       cache_size ->
         cache_size
-        |> calculate_reclaim(max_size, reclaim)
+        |> calculate_reclaim(max_size, reclaim_bound)
         |> calculate_poffset(cache)
-        |> erase_lower_bound(cache, batch)
+        |> erase_lower_bound(cache, batch_size)
         |> notify_worker(cache)
     end
   end
@@ -189,15 +136,17 @@ defmodule Cachex.Policy.LRW do
   # naturally required when it comes to removing the document, and the touch time is
   # used to determine the sort order required for LRW. We transform this sort using
   # a QLC cursor and pass it through to `erase_cursor/3` to delete.
-  defp erase_lower_bound(offset, cache(name: name), batch_size) when offset > 0 do
+  defp erase_lower_bound(offset, cache(name: name), batch_size)
+       when offset > 0 do
     name
-    |> :ets.table([ traverse: { :select, @qlc_match } ])
-    |> :qlc.sort([ order: fn({ _k1, t1 }, { _k2, t2  }) -> t1 < t2 end ])
-    |> :qlc.cursor
+    |> :ets.table(traverse: {:select, @qlc_match})
+    |> :qlc.sort(order: fn {_k1, t1}, {_k2, t2} -> t1 < t2 end)
+    |> :qlc.cursor()
     |> erase_cursor(name, offset, batch_size)
 
     offset
   end
+
   defp erase_lower_bound(offset, _state, _batch_size),
     do: offset
 
@@ -210,10 +159,12 @@ defmodule Cachex.Policy.LRW do
   # This is a recursive function as we have to keep track of the number to remove,
   # as the removal is done by calling `erase_batch/3`. At the end of the recursion,
   # we make sure to delete the trailing QLC cursor to avoid it lying around still.
-  defp erase_cursor(cursor, table, remainder, batch_size) when remainder > batch_size do
+  defp erase_cursor(cursor, table, remainder, batch_size)
+       when remainder > batch_size do
     erase_batch(cursor, table, batch_size)
     erase_cursor(cursor, table, remainder - batch_size, batch_size)
   end
+
   defp erase_cursor(cursor, table, remainder, _batch_size) do
     erase_batch(cursor, table, remainder)
     :qlc.delete_cursor(cursor)
@@ -227,7 +178,7 @@ defmodule Cachex.Policy.LRW do
   # performant as `:ets.select_delete/2` but appears to be required because
   # of the need to sort the QLC cursor by the touch time.
   defp erase_batch(cursor, table, batch_size) do
-    for { key, _touched } <- :qlc.next_answers(cursor, batch_size) do
+    for {key, _touched} <- :qlc.next_answers(cursor, batch_size) do
       :ets.delete(table, key)
     end
   end
@@ -235,7 +186,7 @@ defmodule Cachex.Policy.LRW do
   # Broadcasts the number of removed entries to the cache hooks.
   #
   # If the offset is not positive we didn't have to remove anything and so we
-  # don't broadcast any results. An 0 Tuple is returned just to keep compability
+  # don't broadcast any results. An 0 Tuple is returned just to keep compatibility
   # with the response type from `Informant.broadcast/3`.
   #
   # It should be noted that we use a `:clear` action here as these evictions are
@@ -245,7 +196,8 @@ defmodule Cachex.Policy.LRW do
   # results of `clear()` and `purge()` calls in this hook, otherwise we would end
   # up in a recursive loop due to the hook system.
   defp notify_worker(offset, state) when offset > 0,
-    do: Informant.broadcast(state, { :clear, [[]] }, { :ok, offset })
+    do: Informant.broadcast(state, {:clear, [[]]}, {:ok, offset})
+
   defp notify_worker(_offset, _state),
-    do: { :ok, 0 }
+    do: :ok
 end
