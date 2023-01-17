@@ -71,7 +71,6 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
       :timeout,
       :body,
       :body_format,
-      :contains,
       :headers,
       :username,
       :password,

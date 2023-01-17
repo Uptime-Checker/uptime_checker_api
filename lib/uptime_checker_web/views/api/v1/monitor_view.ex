@@ -17,6 +17,8 @@ defmodule UptimeCheckerWeb.Api.V1.MonitorView do
   end
 
   def render("monitor.json", %{monitor: monitor}) do
+    dbg(monitor)
+
     %{
       id: monitor.id,
       name: monitor.name,
@@ -25,9 +27,9 @@ defmodule UptimeCheckerWeb.Api.V1.MonitorView do
       interval: monitor.interval,
       timeout: monitor.timeout,
       body: monitor.body,
-      contains: monitor.contains,
       headers: monitor.headers,
       on: monitor.on,
+      status: monitor.status,
       check_ssl: monitor.check_ssl,
       follow_redirects: monitor.follow_redirects,
       resolve_threshold: monitor.resolve_threshold,
