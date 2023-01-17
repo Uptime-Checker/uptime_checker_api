@@ -47,7 +47,6 @@ defmodule UptimeChecker.MixProject do
       {:bamboo_phoenix, "~> 1.0.0"},
       {:telemetry_metrics, "~> 0.6"},
       {:telemetry_poller, "~> 1.0"},
-      {:gettext, "~> 0.18"},
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
       {:cors_plug, "~> 3.0"},
