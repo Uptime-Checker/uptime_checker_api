@@ -1,4 +1,4 @@
-defmodule UptimeChecker.Repo.Migrations.CreateErrorLog do
+defmodule UptimeChecker.Repo.Migrations.CreateErrorLogs do
   use Ecto.Migration
 
   def change do

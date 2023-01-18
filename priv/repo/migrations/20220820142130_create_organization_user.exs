@@ -1,4 +1,4 @@
-defmodule UptimeChecker.Repo.Migrations.CreateOrganizationUser do
+defmodule UptimeChecker.Repo.Migrations.CreateOrganizationUsers do
   use Ecto.Migration
 
   def change do

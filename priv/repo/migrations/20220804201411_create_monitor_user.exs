@@ -1,4 +1,4 @@
-defmodule UptimeChecker.Repo.Migrations.CreateMonitorUser do
+defmodule UptimeChecker.Repo.Migrations.CreateMonitorUsers do
   use Ecto.Migration
 
   def change do

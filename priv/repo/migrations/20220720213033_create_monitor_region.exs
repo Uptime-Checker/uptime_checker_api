@@ -1,4 +1,4 @@
-defmodule UptimeChecker.Repo.Migrations.CreateMonitorRegion do
+defmodule UptimeChecker.Repo.Migrations.CreateMonitorRegions do
   use Ecto.Migration
 
   def change do
