@@ -1,4 +1,4 @@
-defmodule UptimeChecker.Repo.Migrations.CreateAssertion do
+defmodule UptimeChecker.Repo.Migrations.CreateAssertions do
   use Ecto.Migration
 
   def change do
