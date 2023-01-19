@@ -1,4 +1,4 @@
-%% Copyright (c) 2021-2022 Guilherme Andrade
+%% Copyright (c) 2021-2023 Guilherme Andrade
 %%
 %% Permission is hereby granted, free of charge, to any person obtaining a
 %% copy  of this software and associated documentation files (the "Software"),
@@ -22,62 +22,58 @@
 -module(tls_certificate_check_shared_state).
 -behaviour(gen_server).
 
+-include_lib("kernel/include/logger.hrl").
 -include_lib("public_key/include/OTP-PUB-KEY.hrl").
--include_lib("stdlib/include/assert.hrl").
+-include_lib("public_key/include/public_key.hrl").
+-include_lib("stdlib/include/ms_transform.hrl").
 
 %% ------------------------------------------------------------------
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export(
-   [child_spec/0,
-    start_link/0,
-    authoritative_certificate_values/0,
-    find_trusted_authority/1,
-    maybe_update_shared_state/1
-   ]).
+-export([child_spec/0,
+         start_link/0,
+         authoritative_certificate_values/0,
+         find_trusted_authority/1,
+         maybe_update_shared_state/2]).
 
 -ignore_xref(
-   [start_link/0
-   ]).
+        [start_link/0]).
+
+%% Hacks
+-export([maybe_update_shared_state/1]).
+
+-ignore_xref(
+        [maybe_update_shared_state/1]).
 
 %%-------------------------------------------------------------------
 %% OTP Process Function Exports
 %%-------------------------------------------------------------------
 
--export(
-   [proc_lib_init/0
-   ]).
+-export([proc_lib_init/0]).
 
 -ignore_xref(
-   [proc_lib_init/0
-   ]).
+        [proc_lib_init/0]).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Exports
 %% ------------------------------------------------------------------
 
--export(
-   [init/1,
-    handle_call/3,
-    handle_cast/2,
-    handle_info/2,
-    terminate/2,
-    code_change/3
-   ]).
+-export([init/1,
+         handle_call/3,
+         handle_cast/2,
+         terminate/2,
+         code_change/3]).
 
 %% ------------------------------------------------------------------
 %% Internal Function Exports
 %% ------------------------------------------------------------------
 
 -ifdef(TEST).
--export(
-   [latest_shared_state_key/0
-   ]).
+-export([latest_shared_state_key/0]).
 
 -ignore_xref(
-   [latest_shared_state_key/0
-   ]).
+        [latest_shared_state_key/0]).
 -endif.
 
 %% ------------------------------------------------------------------
@@ -88,21 +84,34 @@
 -define(INFO_TABLE, ?SERVER).
 -define(HIBERNATE_AFTER, (timer:seconds(10))).
 
+-ifdef(NO_PUBLIC_KEY_CACERTS_GET).
+-define(DEFAULT_USE_OTP_TRUSTED_CAs, (false)).
+-else.
+-define(DEFAULT_USE_OTP_TRUSTED_CAs, (true)).
+-endif.
+
 -define(SHARED_STATE_KEY_PREFIX, "__$tls_certificate_check.shared_state.").
 
 %% ------------------------------------------------------------------
-%% Record and Type Definitions
+%% API Type Definitions
+%% ------------------------------------------------------------------
+
+-type authorities_source() :: hardcoded | otp | {override, term()}.
+-export_type([authorities_source/0]).
+
+%% ------------------------------------------------------------------
+%% Internal Type Definitions
 %% ------------------------------------------------------------------
 
 -record(state, {
-          shared_state_initialized :: boolean()
-         }).
+    shared_state_initialized :: boolean()
+}).
 -type state() :: #state{}.
 
 -record(shared_state, {
-          authoritative_certificate_values :: [public_key:der_encoded(), ...],
-          trusted_public_keys :: #{public_key_info() := []}
-         }).
+    authoritative_certificate_values :: [public_key:der_encoded(), ...],
+    trusted_public_keys :: #{public_key_info() := []}
+}).
 
 -type public_key_info() :: #'OTPSubjectPublicKeyInfo'{}.
 
@@ -136,13 +145,30 @@ find_trusted_authority(EncodedCertificates) ->
     Now = universal_time_in_certificate_format(),
     find_trusted_authority_recur(EncodedCertificates, Now, TrustedPublicKeys).
 
--spec maybe_update_shared_state(binary()) -> ok | {error, term()}.
-maybe_update_shared_state(EncodedAuthorities) ->
+-spec maybe_update_shared_state(authorities_source(),
+                                binary() | [public_key:der_encoded()])
+    -> ok | {error, term()} | noproc.
+maybe_update_shared_state(Source, UnprocessedAuthorities) ->
     try
-        gen_server:call(?SERVER, {update_shared_state, EncodedAuthorities}, infinity)
+        gen_server:call(?SERVER,
+                        _Req = {update_shared_state, Source, UnprocessedAuthorities},
+                        _Timeout = infinity)
     catch
         exit:{noproc, {gen_server, call, [?SERVER | _]}} ->
-            ok
+            noproc
+    end.
+
+%%
+%% Hack for hot swap
+%%
+-spec maybe_update_shared_state(binary() | [public_key:der_encoded()])
+    -> ok | {error, term()}.
+maybe_update_shared_state(UnprocessedAuthorities) ->
+    case maybe_update_shared_state(_Source = hardcoded, UnprocessedAuthorities) of
+        noproc ->
+            ok;
+        Result ->
+            Result
     end.
 
 %% ------------------------------------------------------------------
@@ -152,8 +178,8 @@ maybe_update_shared_state(EncodedAuthorities) ->
 -spec proc_lib_init() -> no_return().
 proc_lib_init() ->
     % do this before registering to ensure initialization is triggered before any update
-    EncodedAuthorities = tls_certificate_check_hardcoded_authorities:encoded_list(),
-    gen_server:cast(self(), {initialize_shared_state, EncodedAuthorities}),
+    EncodedHardcodedAuthorities = tls_certificate_check_hardcoded_authorities:encoded_list(),
+    gen_server:cast(self(), {initialize_shared_state, EncodedHardcodedAuthorities}),
 
     try register(?SERVER, self()) of
         true ->
@@ -180,9 +206,9 @@ init(_) ->
         -> {reply, ok, state()} |
            {reply, {error, term()}, state()} |
            {stop, {unexpected_call, #{request := _, from := {pid(), reference()}}}, state()}.
-handle_call({update_shared_state, EncodedAuthorities}, _From, State)
+handle_call({update_shared_state, Source, UnprocessedAuthorities}, _From, State)
   when State#state.shared_state_initialized ->
-    handle_shared_state_update(EncodedAuthorities, State);
+    handle_shared_state_update(Source, UnprocessedAuthorities, State);
 handle_call(Request, From, State) ->
     ErrorDetails = #{request => Request, from => From},
     {stop, {unexpected_call, ErrorDetails}, State}.
@@ -191,27 +217,35 @@ handle_call(Request, From, State) ->
         -> {noreply, state()} |
            {stop, normal, state()} |
            {stop, {unexpected_cast, term()}, state()}.
-handle_cast({initialize_shared_state, EncodedAuthorities}, State)
+handle_cast({initialize_shared_state, EncodedHardcodedAuthorities}, State)
   when not State#state.shared_state_initialized ->
-    handle_shared_state_initialization(EncodedAuthorities, State);
+    handle_shared_state_initialization(EncodedHardcodedAuthorities, State);
 handle_cast(Request, State) ->
     {stop, {unexpected_cast, Request}, State}.
 
--spec handle_info(term(), state())
-        -> {stop, {unexpected_info, term()}, state()}.
-handle_info(Info, State) ->
-    {stop, {unexpected_info, Info}, State}.
-
 -spec terminate(term(), state()) -> ok.
-terminate(_Reason, _State) ->
+terminate(Reason, _State) ->
     ets:delete_all_objects(?INFO_TABLE),
     erlang:yield(),
-    _ = destroy_all_shared_states(),
+    _ = tls_certificate_check_util:is_termination_reason_wholesome(Reason)
+        andalso destroy_all_shared_states(),
     ok.
 
 -spec code_change(term(), state() | term(), term())
         -> {ok, state()} | {error, {cannot_convert_state, term()}}.
 code_change(_OldVsn, #state{} = State, _Extra) ->
+    HardcodedStorePriority = source_priority(hardcoded),
+    PrevPointer = latest_shared_state,
+    NewPointer = {latest_shared_state, HardcodedStorePriority},
+
+    _ = case [ets:lookup(?INFO_TABLE, K) || K <- [PrevPointer, NewPointer]] of
+            [[{_, KeyForHardcodedStore}], []] ->
+                ?LOG_NOTICE("Migrating existing hardcoded store to new key"),
+                ets:insert(?INFO_TABLE, {NewPointer, KeyForHardcodedStore});
+            [_, _] ->
+                ok
+        end,
+
     {ok, State};
 code_change(_OldVsn, State, _Extra) ->
     {error, {cannot_convert_state, State}}.
@@ -224,10 +258,15 @@ new_info_table() ->
     Opts = [named_table, protected, {read_concurrency, true}],
     ets:new(?INFO_TABLE, Opts).
 
-handle_shared_state_initialization(EncodedAuthorities, State) ->
-    case new_shared_state(EncodedAuthorities) of
-        {ok, Key} ->
-            ?assert( ets:insert_new(?INFO_TABLE, [{latest_shared_state_key, Key}]) ),
+handle_shared_state_initialization(EncodedHardcodedAuthorities, State) ->
+    case new_shared_state(_EncodedAuthoritiesSource = hardcoded, EncodedHardcodedAuthorities) of
+        {ok, Key, SharedState, FinalSource} ->
+            Priority = source_priority(FinalSource),
+            ?LOG_INFO("Loading ~b CA(s) from ~p store",
+                      [length(SharedState#shared_state.authoritative_certificate_values),
+                       FinalSource]),
+
+            ets:insert(?INFO_TABLE, {{latest_shared_state_key, Priority}, Key}),
             proc_lib:init_ack({ok, self()}),
             UpdatedState = State#state{shared_state_initialized = true},
             {noreply, UpdatedState};
@@ -236,26 +275,118 @@ handle_shared_state_initialization(EncodedAuthorities, State) ->
             {stop, normal, State}
     end.
 
-handle_shared_state_update(EncodedAuthorities, State) ->
-    case new_shared_state(EncodedAuthorities) of
-        {ok, Key} ->
-            ets:insert(?INFO_TABLE, [{latest_shared_state_key, Key}]),
-            {reply, ok, State};
+handle_shared_state_update(Source, UnprocessedAuthorities, State) ->
+    case new_shared_state(_UnprocessedAuthoritiesSource = Source, UnprocessedAuthorities) of
+        {ok, Key, SharedState, FinalSource} ->
+            handle_shared_state_update_(Key, SharedState, FinalSource, State);
         {error, _Reason} = Error ->
             {reply, Error, State}
     end.
 
-new_shared_state(EncodedAuthorities) ->
-    case tls_certificate_check_util:parse_encoded_authorities(EncodedAuthorities) of
-        {ok, AuthoritativeCertificateValues} ->
+handle_shared_state_update_(Key, SharedState, FinalSource, State) ->
+    Priority = source_priority(FinalSource),
+    NrOfCAs = length(SharedState#shared_state.authoritative_certificate_values),
+    maybe_log_update(Priority, Key, NrOfCAs, FinalSource),
+    ets:insert(?INFO_TABLE, {{latest_shared_state_key, Priority}, Key}),
+    {reply, ok, State}.
+
+source_priority({override, _}) ->
+    1000;
+source_priority(otp) ->
+    100;
+source_priority(hardcoded) ->
+    10.
+
+maybe_log_update(Priority, Key, NrOfCAs, FinalSource) ->
+    case is_there_a_higher_priority_store(Priority)
+         orelse {are_there_changes, is_key_different_from_stored(Priority, Key)}
+    of
+        true ->
+            ?LOG_INFO("Update with ~b CA(s) from ~p store"
+                      " is bypassed by a higher priority store",
+                      [NrOfCAs, FinalSource]);
+
+        {are_there_changes, true} ->
+            ?LOG_NOTICE("Updating with ~b CA(s) from ~p store",
+                        [NrOfCAs, FinalSource]);
+
+        {are_there_changes, false} ->
+            ok
+    end.
+
+is_there_a_higher_priority_store(Priority) ->
+    MatchSpec = ets:fun2ms(fun ({{latest_shared_state_key, P}, _}) -> P > Priority end),
+    ets:select_count(?INFO_TABLE, MatchSpec) > 0.
+
+is_key_different_from_stored(Priority, Key) ->
+    case ets:lookup(?INFO_TABLE, {latest_shared_state_key, Priority}) of
+        [{_, StoredKey}] ->
+            StoredKey =/= Key;
+        [] ->
+            true
+    end.
+
+new_shared_state(UnprocessedAuthoritiesSource, UnprocessedAuthorities) ->
+    UseOtpTrustedCAs
+        = application:get_env(tls_certificate_check, use_otp_trusted_CAs,
+                              ?DEFAULT_USE_OTP_TRUSTED_CAs)
+          andalso (UnprocessedAuthoritiesSource =:= hardcoded),
+
+    case maybe_load_authorities_trusted_by_otp(UseOtpTrustedCAs,
+                                               UnprocessedAuthorities,
+                                               UnprocessedAuthoritiesSource)
+    of
+        {ok, AuthoritativeCertificateValues, Source} ->
             NewSharedState
                 = #shared_state{
                      authoritative_certificate_values = AuthoritativeCertificateValues,
                      trusted_public_keys = trusted_public_keys(AuthoritativeCertificateValues)
                     },
-            save_shared_state(NewSharedState);
+            save_shared_state(NewSharedState, Source);
+        {error, _Reason} = Error ->
+            Error
+    end.
+
+-ifdef(NO_PUBLIC_KEY_CACERTS_GET).
+
+maybe_load_authorities_trusted_by_otp(_UseOtpTrustedCAs,
+                                      UnprocessedAuthorities,
+                                      UnprocessedAuthoritiesSource) ->
+    process_authorities(UnprocessedAuthorities, UnprocessedAuthoritiesSource).
+
+-else. % -ifdef(NO_PUBLIC_KEY_CACERTS_GET)
+
+maybe_load_authorities_trusted_by_otp(true = _UseOtpTrustedCAs,
+                                      UnprocessedAuthorities,
+                                      UnprocessedAuthoritiesSource) ->
+    try public_key:cacerts_get() of
+        [] ->
+            ?LOG_WARNING("OTP trusts no CAs, falling back to hardcoded authorities"),
+            process_authorities(UnprocessedAuthorities, UnprocessedAuthoritiesSource);
+        CombinedAuthoritativeCertificateValues when is_list(CombinedAuthoritativeCertificateValues) ->
+            AuthoritativeCertificateValues
+                = [CombinedCert#cert.der || CombinedCert
+                                            <- CombinedAuthoritativeCertificateValues],
+            {ok, AuthoritativeCertificateValues, _Source = otp}
+    catch
+        Class:Reason when Class =/= error, Reason =/= undef ->
+            ?LOG_WARNING("Failed to load OTP-trusted CAs: ~p:~p"
+                         ", falling back to hardcoded authorities", [Class, Reason]),
+            process_authorities(UnprocessedAuthorities, UnprocessedAuthoritiesSource)
+    end;
+maybe_load_authorities_trusted_by_otp(false = _UseOtpTrustedCAs,
+                                      UnprocessedAuthorities,
+                                      UnprocessedAuthoritiesSource) ->
+    process_authorities(UnprocessedAuthorities, UnprocessedAuthoritiesSource).
+
+-endif. % -ifdef(NO_PUBLIC_KEY_CACERTS_GET)
+
+process_authorities(UnprocessedAuthorities, Source) ->
+    case tls_certificate_check_util:process_authorities(UnprocessedAuthorities) of
+        {ok, AuthoritativeCertificateValues} ->
+            {ok, AuthoritativeCertificateValues, Source};
         {error, Reason} ->
-            {error, {failed_to_decode_authorities, Reason}}
+            {error, {failed_to_process_authorities, Reason}}
     end.
 
 trusted_public_keys(AuthoritativeCertificateValues) ->
@@ -268,10 +399,10 @@ trusted_public_keys(AuthoritativeCertificateValues) ->
       end,
       #{}, AuthoritativeCertificateValues).
 
-save_shared_state(SharedState) ->
+save_shared_state(SharedState, Source) ->
     Key = shared_state_key(SharedState),
     persistent_term:put(Key, SharedState),
-    {ok, Key}.
+    {ok, Key, SharedState, Source}.
 
 shared_state_key(SharedState) ->
     CanonicalSharedStateRepresentation = canonical_shared_state_representation(SharedState),
@@ -328,11 +459,17 @@ get_latest_shared_state() ->
     end.
 
 latest_shared_state_key() ->
-    try ets:lookup(?INFO_TABLE, latest_shared_state_key) of
-        [{latest_shared_state_key, Key}] ->
-            Key;
+    MatchSpec = ets:fun2ms(
+        fun ({{latest_shared_state_key, Priority}, Key}) ->
+                {-Priority, Key}
+        end),
+
+    try ets:select(?INFO_TABLE, MatchSpec) of
         [] ->
-            throw({application_not_ready, tls_certificate_check})
+            throw({application_not_ready, tls_certificate_check});
+        PrioritizedKeys ->
+            [{_, HighestPriorityKey} | _] = lists:sort(PrioritizedKeys),
+            HighestPriorityKey
     catch
         error:badarg when is_atom(?INFO_TABLE) ->
             throw({application_either_not_started_or_not_ready, tls_certificate_check})

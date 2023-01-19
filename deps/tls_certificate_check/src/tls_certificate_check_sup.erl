@@ -1,4 +1,4 @@
-%% Copyright (c) 2021-2022 Guilherme Andrade
+%% Copyright (c) 2021-2023 Guilherme Andrade
 %%
 %% Permission is hereby granted, free of charge, to any person obtaining a
 %% copy  of this software and associated documentation files (the "Software"),
@@ -26,17 +26,13 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export(
-   [start_link/0
-   ]).
+-export([start_link/0]).
 
 %% ------------------------------------------------------------------
 %% supervisor Function Exports
 %% ------------------------------------------------------------------
 
--export(
-   [init/1
-   ]).
+-export([init/1]).
 
 %% ------------------------------------------------------------------
 %% Macro Definitions

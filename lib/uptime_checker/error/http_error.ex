@@ -4,4 +4,5 @@ defmodule UptimeChecker.Error.HttpError do
   const(:unauthorized, "unauthorized")
   const(:not_found, "not found")
   const(:forbidden, "forbidden")
+  const(:too_many_requests, "too many requests")
 end

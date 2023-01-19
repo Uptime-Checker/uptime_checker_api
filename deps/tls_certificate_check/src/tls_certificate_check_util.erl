@@ -1,4 +1,4 @@
-%% Copyright (c) 2021-2022 Guilherme Andrade
+%% Copyright (c) 2021-2023 Guilherme Andrade
 %%
 %% Permission is hereby granted, free of charge, to any person obtaining a
 %% copy  of this software and associated documentation files (the "Software"),
@@ -25,30 +25,41 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export(
-    [parse_encoded_authorities/1
-     ]).
+-export([process_authorities/1,
+         is_termination_reason_wholesome/1]).
 
 %% ------------------------------------------------------------------
 %% API Function Definitions
 %% ------------------------------------------------------------------
 
--spec parse_encoded_authorities(binary())
+-spec process_authorities(binary() | [public_key:der_encoded()])
         -> {ok, [public_key:der_encoded(), ...]}
            | {error, no_authoritative_certificates_found}
            | {error, {failed_to_decode, {atom(), term(), list()}}}
            | {error, {certificate_encrypted, public_key:der_encoded()}}
            | {error, {unexpected_certificate_format, tuple()}}.
-parse_encoded_authorities(EncodedAuthorities) ->
+process_authorities(<<EncodedAuthorities/bytes>>) ->
     try public_key:pem_decode(EncodedAuthorities) of
-        [_|_] = AuthoritativeCertificates ->
-            authoritative_certificate_values(AuthoritativeCertificates);
-        [] ->
-            {error, no_authoritative_certificates_found}
+        List when is_list(List) ->
+            process_authorities(List)
     catch
         Class:Reason:Stacktrace ->
             {error, {failed_to_decode, {Class, Reason, Stacktrace}}}
-    end.
+    end;
+process_authorities([_|_] = AuthoritativeCertificateValues) ->
+    authoritative_certificate_values(AuthoritativeCertificateValues);
+process_authorities([]) ->
+    {error, no_authoritative_certificates_found}.
+
+-spec is_termination_reason_wholesome(term()) -> boolean().
+is_termination_reason_wholesome(normal) ->
+    true;
+is_termination_reason_wholesome(shutdown) ->
+    true;
+is_termination_reason_wholesome({shutdown, _}) ->
+    true;
+is_termination_reason_wholesome(_) ->
+    false.
 
 %% ------------------------------------------------------------------
 %% API Function Definitions
@@ -64,6 +75,9 @@ authoritative_certificate_values_recur([Head | Next], ValuesAcc) ->
             authoritative_certificate_values_recur(Next, UpdatedValuesAcc);
         {'Certificate', _, _} ->
             {error, {certificate_encrypted, Head}};
+        <<DerEncoded/bytes>> ->
+            UpdatedValuesAcc = [DerEncoded | ValuesAcc],
+            authoritative_certificate_values_recur(Next, UpdatedValuesAcc);
         Other ->
             {error, {unexpected_certificate_format, Other}}
     end;

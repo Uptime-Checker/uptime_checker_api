@@ -1,27 +1,33 @@
 # tls\_certificate\_check
 
 [![](https://img.shields.io/hexpm/v/tls_certificate_check.svg?style=flat)](https://hex.pm/packages/tls_certificate_check)
-[![](https://github.com/g-andrade/tls_certificate_check/workflows/build/badge.svg)](https://github.com/g-andrade/tls_certificate_check/actions?query=workflow%3Abuild)
+[![](https://github.com/g-andrade/tls_certificate_check/actions/workflows/ci.yml/badge.svg)](https://github.com/g-andrade/tls_certificate_check/actions/workflows/ci.yml)
 [![Erlang Versions](https://img.shields.io/badge/Supported%20Erlang%2FOTP-22%20to%2025-blue)](https://www.erlang.org)
 
-`tls_certificate_check` is a library for Erlang/OTP and Elixir intended
-on easing the establishement of [more
-secure](https://wiki.mozilla.org/index.php?title=CA/IncludedCertificates&redirect=no)
-HTTPS connections in ordinary setups.
+`tls_certificate_check` is a library for Erlang/OTP and Elixir that
+tries to make it easier to establish [more secure HTTPS
+connections](https://wiki.mozilla.org/index.php?title=CA/IncludedCertificates&redirect=no)
+in ordinary setups.
 
 Other kinds of TLS/SSL connections may also benefit from it.
 
-It wraps [Mozilla's CA certificate
-store](https://curl.se/docs/caextract.html), as extracted by `curl`,
-together with
+It blends a CA trust store with
 [ssl\_verify\_fun](https://github.com/deadtrickster/ssl_verify_fun.erl)
-plus all the the boilerplate code required for validating [misordered
+to verify remote hostnames,
+as well as the boilerplate to validate [misordered
 certificate chains](https://github.com/elixir-mint/mint/issues/95).
 
-The trusted authorities' certificates are hardcoded in PEM format,
-decoded when the application starts and made available to the API
-through
-[`persistent_term`](https://erlang.org/doc/man/persistent_term.html).
+The
+[OTP-trusted CAs](https://www.erlang.org/doc/man/public_key.html#cacerts_get-0)
+(typically provided by the OS) are used on OTP 25+ unless unavailable or opted-out[^1],
+in which case `tls_certificate_check` falls back to a hardcoded [Mozilla's CA certificate
+store](https://curl.se/docs/caextract.html), as extracted by `curl`.
+When on OTP 24 or older, the lib will initialize using only the latter.
+
+The trusted authorities' certificates are loaded when the application
+starts and made available to the API through
+[`persistent_term`](https://erlang.org/doc/man/persistent_term.html)[^2]. After that, they can
+be explicitly overridden through the API.
 
 ### Usage - Erlang
 
@@ -30,21 +36,21 @@ through
 rebar.config
 
 ``` erlang
-{deps,
- [% [...]
-  {tls_certificate_check, "~> 1.16"}
-  ]}.
+{deps, [
+    % [...]
+    {tls_certificate_check, "~> 1.17"}
+]}.
 ```
 
 your\_application.app.src
 
 ``` erlang
-  {applications,
-   [kernel,
+{applications, [
+    kernel,
     stdlib,
     % [...]
     tls_certificate_check
-   ]}
+]}
 ```
 
 ##### 2\. Make your connections safer
@@ -65,7 +71,7 @@ mix.exs
   defp deps do
     [
       # [...]
-      {:tls_certificate_check, "~> 1.16"}
+      {:tls_certificate_check, "~> 1.17"}
     ]
   end
 ```
@@ -76,6 +82,24 @@ mix.exs
 host = "example.com"
 options = :tls_certificate_check.options(host)
 :ssl.connect(host, 443, options, 5000)
+```
+
+### Advanced Usage
+
+#### Overriding Trusted CAs
+
+##### Erlang
+
+```erlang
+Path = certifi:cacertfile(),
+tls_certificate_check:override_trusted_authorities({file, Path})
+```
+
+##### Elixir
+
+```elixir
+path = CAStore.file_path()
+:tls_certificate_check.override_trusted_authorities({:file, path})
 ```
 
 ### API Reference
@@ -92,7 +116,7 @@ The API reference can be found on
 
 MIT License
 
-Copyright (c) 2020-2022 Guilherme Andrade
+Copyright (c) 2020-2023 Guilherme Andrade
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the
@@ -112,3 +136,12 @@ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
 CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+---
+
+[^1]: the use of OTP-trusted CAs can be controlled through the `use_otp_trusted_CAs` boolean
+option within application env config.
+
+[^2]: the persistent term key is derived from the CA store's own contents and existing keys
+are not erased until the app terminates gracefully - this minimizes the risk of an impactful
+global garbage collection.

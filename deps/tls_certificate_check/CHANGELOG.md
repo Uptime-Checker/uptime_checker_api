@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- (rare?) crash after reading OS-trusted CAs
+
+## [1.17.2] - 2023-01-12
+
+### Fixed
+
+- listing of private modules and functions in generated reference
+
+## [1.17.1] - 2023-01-12
+
+### Fixed
+
+- unreleased version in change log
+
+## [1.17.0] - 2023-01-11
+
+### Added
+
+- ability to override trusted CAs
+- Windows to CI
+- OTP 25.2 to CI
+
+### Changed
+
+- default CAs to the ones trusted by OTP (typically provided by the OS), when available, on OTP 25+
+- shared state owner to not erase its `persistent_term`s when crashing
+- module with bundled CAs to latest as of 2023/01/10, 04:12 UTC
+(source: https://curl.se/ca/cacert.pem)
+
+### Removed
+
+- [certificate authority] network solutions certificate authority
+- [certificate authority] TrustCor ECA-1
+- [certificate authority] TrustCor RootCert CA-1
+- [certificate authority] Staat der Nederlanden EV Root CA
+- [certificate authority] TrustCor RootCert CA-2
+
 ## [1.16.0] - 2022-10-11
 
 ### Added
