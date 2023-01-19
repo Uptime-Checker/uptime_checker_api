@@ -7,7 +7,6 @@ defmodule UptimeCheckerWeb.Plugs.Hammer do
 
   def call(conn, _opts) do
     ip = to_string(:inet_parse.ntoa(conn.remote_ip))
-    dbg(ip)
 
     case Hammer.check_rate("session:#{ip}", 60_000, 10) do
       {:allow, _count} ->

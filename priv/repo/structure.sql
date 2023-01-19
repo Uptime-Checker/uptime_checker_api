@@ -371,6 +371,41 @@ ALTER SEQUENCE public.invitations_id_seq OWNED BY public.invitations.id;
 
 
 --
+-- Name: monitor_alerts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.monitor_alerts (
+    id bigint NOT NULL,
+    "default" boolean DEFAULT true,
+    user_id bigint,
+    monitor_id bigint,
+    organization_id bigint,
+    integration_id bigint,
+    inserted_at timestamp(0) without time zone NOT NULL,
+    updated_at timestamp(0) without time zone NOT NULL
+);
+
+
+--
+-- Name: monitor_alerts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.monitor_alerts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: monitor_alerts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.monitor_alerts_id_seq OWNED BY public.monitor_alerts.id;
+
+
+--
 -- Name: monitor_groups; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -400,6 +435,40 @@ CREATE SEQUENCE public.monitor_groups_id_seq
 --
 
 ALTER SEQUENCE public.monitor_groups_id_seq OWNED BY public.monitor_groups.id;
+
+
+--
+-- Name: monitor_integrations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.monitor_integrations (
+    id bigint NOT NULL,
+    name character varying(255),
+    type integer,
+    config jsonb,
+    organization_id bigint,
+    inserted_at timestamp(0) without time zone NOT NULL,
+    updated_at timestamp(0) without time zone NOT NULL
+);
+
+
+--
+-- Name: monitor_integrations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.monitor_integrations_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: monitor_integrations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.monitor_integrations_id_seq OWNED BY public.monitor_integrations.id;
 
 
 --
@@ -470,38 +539,6 @@ CREATE SEQUENCE public.monitor_status_changes_id_seq
 --
 
 ALTER SEQUENCE public.monitor_status_changes_id_seq OWNED BY public.monitor_status_changes.id;
-
-
---
--- Name: monitor_user_junction; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.monitor_user_junction (
-    id bigint NOT NULL,
-    monitor_id bigint,
-    user_id bigint,
-    inserted_at timestamp(0) without time zone NOT NULL,
-    updated_at timestamp(0) without time zone NOT NULL
-);
-
-
---
--- Name: monitor_user_junction_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.monitor_user_junction_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: monitor_user_junction_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.monitor_user_junction_id_seq OWNED BY public.monitor_user_junction.id;
 
 
 --
@@ -1167,10 +1204,24 @@ ALTER TABLE ONLY public.invitations ALTER COLUMN id SET DEFAULT nextval('public.
 
 
 --
+-- Name: monitor_alerts id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.monitor_alerts ALTER COLUMN id SET DEFAULT nextval('public.monitor_alerts_id_seq'::regclass);
+
+
+--
 -- Name: monitor_groups id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.monitor_groups ALTER COLUMN id SET DEFAULT nextval('public.monitor_groups_id_seq'::regclass);
+
+
+--
+-- Name: monitor_integrations id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.monitor_integrations ALTER COLUMN id SET DEFAULT nextval('public.monitor_integrations_id_seq'::regclass);
 
 
 --
@@ -1185,13 +1236,6 @@ ALTER TABLE ONLY public.monitor_region_junction ALTER COLUMN id SET DEFAULT next
 --
 
 ALTER TABLE ONLY public.monitor_status_changes ALTER COLUMN id SET DEFAULT nextval('public.monitor_status_changes_id_seq'::regclass);
-
-
---
--- Name: monitor_user_junction id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.monitor_user_junction ALTER COLUMN id SET DEFAULT nextval('public.monitor_user_junction_id_seq'::regclass);
 
 
 --
@@ -1372,11 +1416,27 @@ ALTER TABLE ONLY public.invitations
 
 
 --
+-- Name: monitor_alerts monitor_alerts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.monitor_alerts
+    ADD CONSTRAINT monitor_alerts_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: monitor_groups monitor_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.monitor_groups
     ADD CONSTRAINT monitor_groups_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: monitor_integrations monitor_integrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.monitor_integrations
+    ADD CONSTRAINT monitor_integrations_pkey PRIMARY KEY (id);
 
 
 --
@@ -1393,14 +1453,6 @@ ALTER TABLE ONLY public.monitor_region_junction
 
 ALTER TABLE ONLY public.monitor_status_changes
     ADD CONSTRAINT monitor_status_changes_pkey PRIMARY KEY (id);
-
-
---
--- Name: monitor_user_junction monitor_user_junction_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.monitor_user_junction
-    ADD CONSTRAINT monitor_user_junction_pkey PRIMARY KEY (id);
 
 
 --
@@ -1723,6 +1775,34 @@ CREATE INDEX invitations_role_id_index ON public.invitations USING btree (role_i
 
 
 --
+-- Name: monitor_alerts_integration_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX monitor_alerts_integration_id_index ON public.monitor_alerts USING btree (integration_id);
+
+
+--
+-- Name: monitor_alerts_monitor_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX monitor_alerts_monitor_id_index ON public.monitor_alerts USING btree (monitor_id);
+
+
+--
+-- Name: monitor_alerts_organization_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX monitor_alerts_organization_id_index ON public.monitor_alerts USING btree (organization_id);
+
+
+--
+-- Name: monitor_alerts_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX monitor_alerts_user_id_index ON public.monitor_alerts USING btree (user_id);
+
+
+--
 -- Name: monitor_groups_name_organization_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1734,6 +1814,20 @@ CREATE UNIQUE INDEX monitor_groups_name_organization_id_index ON public.monitor_
 --
 
 CREATE INDEX monitor_groups_organization_id_index ON public.monitor_groups USING btree (organization_id);
+
+
+--
+-- Name: monitor_integrations_organization_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX monitor_integrations_organization_id_index ON public.monitor_integrations USING btree (organization_id);
+
+
+--
+-- Name: monitor_integrations_type_organization_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX monitor_integrations_type_organization_id_index ON public.monitor_integrations USING btree (type, organization_id);
 
 
 --
@@ -1776,27 +1870,6 @@ CREATE UNIQUE INDEX monitor_region_junction_region_id_monitor_id_index ON public
 --
 
 CREATE INDEX monitor_status_changes_monitor_id_index ON public.monitor_status_changes USING btree (monitor_id);
-
-
---
--- Name: monitor_user_junction_monitor_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX monitor_user_junction_monitor_id_index ON public.monitor_user_junction USING btree (monitor_id);
-
-
---
--- Name: monitor_user_junction_user_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX monitor_user_junction_user_id_index ON public.monitor_user_junction USING btree (user_id);
-
-
---
--- Name: monitor_user_junction_user_id_monitor_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX monitor_user_junction_user_id_monitor_id_index ON public.monitor_user_junction USING btree (user_id, monitor_id);
 
 
 --
@@ -2327,11 +2400,51 @@ ALTER TABLE ONLY public.invitations
 
 
 --
+-- Name: monitor_alerts monitor_alerts_integration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.monitor_alerts
+    ADD CONSTRAINT monitor_alerts_integration_id_fkey FOREIGN KEY (integration_id) REFERENCES public.monitor_integrations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: monitor_alerts monitor_alerts_monitor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.monitor_alerts
+    ADD CONSTRAINT monitor_alerts_monitor_id_fkey FOREIGN KEY (monitor_id) REFERENCES public.monitors(id) ON DELETE CASCADE;
+
+
+--
+-- Name: monitor_alerts monitor_alerts_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.monitor_alerts
+    ADD CONSTRAINT monitor_alerts_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: monitor_alerts monitor_alerts_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.monitor_alerts
+    ADD CONSTRAINT monitor_alerts_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: monitor_groups monitor_groups_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.monitor_groups
     ADD CONSTRAINT monitor_groups_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: monitor_integrations monitor_integrations_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.monitor_integrations
+    ADD CONSTRAINT monitor_integrations_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
 
 
 --
@@ -2356,22 +2469,6 @@ ALTER TABLE ONLY public.monitor_region_junction
 
 ALTER TABLE ONLY public.monitor_status_changes
     ADD CONSTRAINT monitor_status_changes_monitor_id_fkey FOREIGN KEY (monitor_id) REFERENCES public.monitors(id) ON DELETE CASCADE;
-
-
---
--- Name: monitor_user_junction monitor_user_junction_monitor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.monitor_user_junction
-    ADD CONSTRAINT monitor_user_junction_monitor_id_fkey FOREIGN KEY (monitor_id) REFERENCES public.monitors(id) ON DELETE CASCADE;
-
-
---
--- Name: monitor_user_junction monitor_user_junction_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.monitor_user_junction
-    ADD CONSTRAINT monitor_user_junction_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
 
 --
@@ -2595,12 +2692,13 @@ INSERT INTO public."schema_migrations" (version) VALUES (20220720211432);
 INSERT INTO public."schema_migrations" (version) VALUES (20220720212909);
 INSERT INTO public."schema_migrations" (version) VALUES (20220720213033);
 INSERT INTO public."schema_migrations" (version) VALUES (20220720223753);
+INSERT INTO public."schema_migrations" (version) VALUES (20220720224930);
 INSERT INTO public."schema_migrations" (version) VALUES (20220720224940);
+INSERT INTO public."schema_migrations" (version) VALUES (20220720224942);
 INSERT INTO public."schema_migrations" (version) VALUES (20220720225105);
 INSERT INTO public."schema_migrations" (version) VALUES (20220720225122);
 INSERT INTO public."schema_migrations" (version) VALUES (20220725212517);
 INSERT INTO public."schema_migrations" (version) VALUES (20220804153037);
-INSERT INTO public."schema_migrations" (version) VALUES (20220804201411);
 INSERT INTO public."schema_migrations" (version) VALUES (20220804201541);
 INSERT INTO public."schema_migrations" (version) VALUES (20220820122318);
 INSERT INTO public."schema_migrations" (version) VALUES (20220820142008);

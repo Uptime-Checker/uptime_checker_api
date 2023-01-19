@@ -17,6 +17,7 @@ defmodule UptimeCheckerWeb.Router do
   pipeline :api do
     plug :accepts, ["json"]
     plug UptimeCheckerWeb.Plugs.Json
+    plug UptimeCheckerWeb.Plugs.Hammer
     plug UptimeCheckerWeb.Plugs.HeaderAuth
   end
 
