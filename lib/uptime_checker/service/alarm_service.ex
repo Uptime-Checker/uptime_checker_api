@@ -30,7 +30,7 @@ defmodule UptimeChecker.Service.AlarmService do
     case alarm do
       {:error, %ErrorMessage{code: :not_found} = _e} ->
         if down_monitor_region_count >= monitor.region_threshold &&
-             is_monitor_potentially_down(monitor.consequtive_failure, monitor.consequtive_recovery, monitor) do
+             is_monitor_potentially_down(monitor.consecutive_failure, monitor.consecutive_recovery, monitor) do
           params =
             %{}
             |> Map.put(:check, check)
@@ -89,7 +89,7 @@ defmodule UptimeChecker.Service.AlarmService do
 
       {:ok, %Alarm{} = alarm} ->
         if up_monitor_region_count >= monitor.region_threshold &&
-             !is_monitor_potentially_down(monitor.consequtive_failure, monitor.consequtive_recovery, monitor) do
+             !is_monitor_potentially_down(monitor.consecutive_failure, monitor.consecutive_recovery, monitor) do
           case clear_alarm(monitor, alarm, now, check) do
             {:ok, updated_alarm} ->
               Logger.info("#{tracing_id} 4 Alarm resolved #{alarm.id}, monitor: #{monitor.id}")
@@ -210,15 +210,15 @@ defmodule UptimeChecker.Service.AlarmService do
     )
   end
 
-  defp is_monitor_potentially_down(consequtive_failure, _consequtive_recovery, monitor)
-       when consequtive_failure >= monitor.error_threshold,
+  defp is_monitor_potentially_down(consecutive_failure, _consecutive_recovery, monitor)
+       when consecutive_failure >= monitor.error_threshold,
        do: true
 
-  defp is_monitor_potentially_down(_consequtive_failure, consequtive_recovery, monitor)
-       when consequtive_recovery >= monitor.resolve_threshold,
+  defp is_monitor_potentially_down(_consecutive_failure, consecutive_recovery, monitor)
+       when consecutive_recovery >= monitor.resolve_threshold,
        do: false
 
-  defp is_monitor_potentially_down(consequtive_failure, _consequtive_recovery, monitor)
-       when consequtive_failure < monitor.error_threshold,
+  defp is_monitor_potentially_down(consecutive_failure, _consecutive_recovery, monitor)
+       when consecutive_failure < monitor.error_threshold,
        do: false
 end

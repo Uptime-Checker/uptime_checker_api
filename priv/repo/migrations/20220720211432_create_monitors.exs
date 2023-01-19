@@ -28,8 +28,8 @@ defmodule UptimeChecker.Repo.Migrations.CreateMonitors do
       add :next_check_at, :utc_datetime
       add :last_checked_at, :utc_datetime
       add :last_failed_at, :utc_datetime
-      add :consequtive_failure, :integer, default: 0
-      add :consequtive_recovery, :integer, default: 0
+      add :consecutive_failure, :integer, default: 0
+      add :consecutive_recovery, :integer, default: 0
 
       add :user_id, references(:users)
       add :monitor_group_id, references(:monitor_groups)

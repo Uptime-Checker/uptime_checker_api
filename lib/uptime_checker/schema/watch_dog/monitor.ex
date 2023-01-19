@@ -84,8 +84,8 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
       :next_check_at,
       :last_checked_at,
       :last_failed_at,
-      :consequtive_failure,
-      :consequtive_recovery,
+      :consecutive_failure,
+      :consecutive_recovery,
       :prev_id
     ])
     |> validate_required([:name, :url])

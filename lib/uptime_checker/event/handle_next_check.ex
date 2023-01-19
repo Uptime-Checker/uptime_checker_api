@@ -55,39 +55,39 @@ defmodule UptimeChecker.Event.HandleNextCheck do
   end
 
   defp monitor_params(monitor, success, now) when success == true do
-    consequtive_recovery = consequtive_recovery_count(monitor.consequtive_recovery, monitor)
-    consequtive_failure = consequtive_failure_count(monitor.consequtive_failure, consequtive_recovery, monitor)
+    consecutive_recovery = consecutive_recovery_count(monitor.consecutive_recovery, monitor)
+    consecutive_failure = consecutive_failure_count(monitor.consecutive_failure, consecutive_recovery, monitor)
 
     %{
       last_checked_at: now,
       next_check_at: Timex.shift(now, seconds: +monitor.interval),
-      consequtive_failure: consequtive_failure,
-      consequtive_recovery: consequtive_recovery
+      consecutive_failure: consecutive_failure,
+      consecutive_recovery: consecutive_recovery
     }
   end
 
   defp monitor_params(monitor, success, now) when success == false do
-    consequtive_failure = monitor.consequtive_failure + 1
+    consecutive_failure = monitor.consecutive_failure + 1
 
     %{
       last_checked_at: now,
       next_check_at: Timex.shift(now, seconds: +monitor.interval),
-      consequtive_failure: consequtive_failure,
-      consequtive_recovery: 0
+      consecutive_failure: consecutive_failure,
+      consecutive_recovery: 0
     }
   end
 
-  defp consequtive_failure_count(_consequtive_failure, consequtive_recovery, monitor)
-       when consequtive_recovery >= monitor.resolve_threshold,
+  defp consecutive_failure_count(_consecutive_failure, consecutive_recovery, monitor)
+       when consecutive_recovery >= monitor.resolve_threshold,
        do: 0
 
-  defp consequtive_failure_count(consequtive_failure, _consequtive_recovery, _monitor),
-    do: consequtive_failure
+  defp consecutive_failure_count(consecutive_failure, _consecutive_recovery, _monitor),
+    do: consecutive_failure
 
-  defp consequtive_recovery_count(consequtive_recovery, monitor)
-       when consequtive_recovery >= monitor.resolve_threshold,
+  defp consecutive_recovery_count(consecutive_recovery, monitor)
+       when consecutive_recovery >= monitor.resolve_threshold,
        do: 0
 
-  defp consequtive_recovery_count(_consequtive_recovery, monitor),
-    do: monitor.consequtive_recovery + 1
+  defp consecutive_recovery_count(_consecutive_recovery, monitor),
+    do: monitor.consecutive_recovery + 1
 end
