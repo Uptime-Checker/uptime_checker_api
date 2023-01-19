@@ -23,9 +23,9 @@ defmodule UptimeChecker.Event.HandleNextCheck do
     if can_schedule(tracing_id, monitor, check) do
       case WatchDog.handle_next_check(
              monitor,
-             monitor_params(success, now),
+             monitor_params(monitor, success, now),
              monitor_region,
-             monitor_region_params(success, now, monitor_region),
+             %{last_checked_at: now, down: !success},
              check,
              %{success: success, duration: duration}
            ) do
@@ -54,59 +54,40 @@ defmodule UptimeChecker.Event.HandleNextCheck do
     end
   end
 
-  defp monitor_params(success, now) when success == true, do: %{last_checked_at: now}
-  defp monitor_params(success, now) when success == false, do: %{last_checked_at: now, last_failed_at: now}
-
-  defp monitor_region_params(success, now, monitor_region) when success == true do
-    consequtive_recovery = consequtive_recovery_count(monitor_region.consequtive_recovery, monitor_region)
-
-    consequtive_failure =
-      consequtive_failure_count(monitor_region.consequtive_failure, consequtive_recovery, monitor_region)
+  defp monitor_params(monitor, success, now) when success == true do
+    consequtive_recovery = consequtive_recovery_count(monitor.consequtive_recovery, monitor)
+    consequtive_failure = consequtive_failure_count(monitor.consequtive_failure, consequtive_recovery, monitor)
 
     %{
       last_checked_at: now,
-      next_check_at: Timex.shift(now, seconds: +monitor_region.monitor.interval),
+      next_check_at: Timex.shift(now, seconds: +monitor.interval),
       consequtive_failure: consequtive_failure,
-      consequtive_recovery: consequtive_recovery_count(monitor_region.consequtive_recovery, monitor_region),
-      down: is_monitor_region_down(consequtive_failure, consequtive_recovery, monitor_region.monitor)
+      consequtive_recovery: consequtive_recovery
     }
   end
 
-  defp monitor_region_params(success, now, monitor_region) when success == false do
-    consequtive_failure = monitor_region.consequtive_failure + 1
+  defp monitor_params(monitor, success, now) when success == false do
+    consequtive_failure = monitor.consequtive_failure + 1
 
     %{
       last_checked_at: now,
-      next_check_at: Timex.shift(now, seconds: +monitor_region.monitor.interval),
+      next_check_at: Timex.shift(now, seconds: +monitor.interval),
       consequtive_failure: consequtive_failure,
-      consequtive_recovery: 0,
-      down: is_monitor_region_down(consequtive_failure, 0, monitor_region.monitor)
+      consequtive_recovery: 0
     }
   end
 
-  defp consequtive_failure_count(_consequtive_failure, consequtive_recovery, monitor_region)
-       when consequtive_recovery >= monitor_region.monitor.resolve_threshold,
+  defp consequtive_failure_count(_consequtive_failure, consequtive_recovery, monitor)
+       when consequtive_recovery >= monitor.resolve_threshold,
        do: 0
 
-  defp consequtive_failure_count(consequtive_failure, _consequtive_recovery, _monitor_region),
+  defp consequtive_failure_count(consequtive_failure, _consequtive_recovery, _monitor),
     do: consequtive_failure
 
-  defp consequtive_recovery_count(consequtive_recovery, monitor_region)
-       when consequtive_recovery >= monitor_region.monitor.resolve_threshold,
+  defp consequtive_recovery_count(consequtive_recovery, monitor)
+       when consequtive_recovery >= monitor.resolve_threshold,
        do: 0
 
-  defp consequtive_recovery_count(_consequtive_recovery, monitor_region),
-    do: monitor_region.consequtive_recovery + 1
-
-  defp is_monitor_region_down(consequtive_failure, _consequtive_recovery, monitor)
-       when consequtive_failure >= monitor.error_threshold,
-       do: true
-
-  defp is_monitor_region_down(_consequtive_failure, consequtive_recovery, monitor)
-       when consequtive_recovery >= monitor.resolve_threshold,
-       do: false
-
-  defp is_monitor_region_down(consequtive_failure, _consequtive_recovery, monitor)
-       when consequtive_failure < monitor.error_threshold,
-       do: false
+  defp consequtive_recovery_count(_consequtive_recovery, monitor),
+    do: monitor.consequtive_recovery + 1
 end

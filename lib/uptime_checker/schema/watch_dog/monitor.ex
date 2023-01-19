@@ -108,12 +108,6 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
     |> cast(attrs, @allowed_updates)
   end
 
-  def update_check_changeset(monitor, attrs) do
-    monitor
-    |> cast(attrs, [:last_checked_at, :last_failed_at])
-    |> validate_required([:last_checked_at])
-  end
-
   def update_alarm_changeset(monitor, attrs) do
     monitor
     |> cast(attrs, [:status])
