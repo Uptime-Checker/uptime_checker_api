@@ -477,11 +477,8 @@ ALTER SEQUENCE public.monitor_integrations_id_seq OWNED BY public.monitor_integr
 
 CREATE TABLE public.monitor_region_junction (
     id bigint NOT NULL,
-    last_checked_at timestamp(0) without time zone,
-    next_check_at timestamp(0) without time zone,
-    consequtive_failure integer DEFAULT 0,
-    consequtive_recovery integer DEFAULT 0,
     down boolean DEFAULT false,
+    last_checked_at timestamp(0) without time zone,
     monitor_id bigint,
     region_id bigint,
     inserted_at timestamp(0) without time zone NOT NULL,
@@ -565,8 +562,11 @@ CREATE TABLE public.monitors (
     resolve_threshold integer DEFAULT 1,
     error_threshold integer DEFAULT 1,
     region_threshold integer DEFAULT 1,
+    next_check_at timestamp(0) without time zone,
     last_checked_at timestamp(0) without time zone,
     last_failed_at timestamp(0) without time zone,
+    consequtive_failure integer DEFAULT 0,
+    consequtive_recovery integer DEFAULT 0,
     user_id bigint,
     monitor_group_id bigint,
     prev_id bigint,
@@ -1831,10 +1831,10 @@ CREATE UNIQUE INDEX monitor_integrations_type_organization_id_index ON public.mo
 
 
 --
--- Name: monitor_region_junction_last_checked_at_next_check_at_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_region_junction_last_checked_at_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX monitor_region_junction_last_checked_at_next_check_at_index ON public.monitor_region_junction USING btree (last_checked_at, next_check_at);
+CREATE INDEX monitor_region_junction_last_checked_at_index ON public.monitor_region_junction USING btree (last_checked_at);
 
 
 --
@@ -1842,13 +1842,6 @@ CREATE INDEX monitor_region_junction_last_checked_at_next_check_at_index ON publ
 --
 
 CREATE INDEX monitor_region_junction_monitor_id_index ON public.monitor_region_junction USING btree (monitor_id);
-
-
---
--- Name: monitor_region_junction_next_check_at_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX monitor_region_junction_next_check_at_index ON public.monitor_region_junction USING btree (next_check_at);
 
 
 --
@@ -1873,10 +1866,24 @@ CREATE INDEX monitor_status_changes_monitor_id_index ON public.monitor_status_ch
 
 
 --
+-- Name: monitors_last_checked_at_next_check_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX monitors_last_checked_at_next_check_at_index ON public.monitors USING btree (last_checked_at, next_check_at);
+
+
+--
 -- Name: monitors_monitor_group_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX monitors_monitor_group_id_index ON public.monitors USING btree (monitor_group_id);
+
+
+--
+-- Name: monitors_next_check_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX monitors_next_check_at_index ON public.monitors USING btree (next_check_at);
 
 
 --

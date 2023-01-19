@@ -80,7 +80,7 @@ defmodule UptimeChecker.MixProject do
   defp aliases do
     [
       setup: ["deps.get", "ecto.setup"],
-      "ecto.set": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
+      "ecto.set": ["ecto.create", "ecto.migrate"],
       "ecto.setup": ["ecto.create", "ecto.load --skip-if-loaded", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       "ecto.migrate": ["ecto.migrate", "ecto.dump"],
