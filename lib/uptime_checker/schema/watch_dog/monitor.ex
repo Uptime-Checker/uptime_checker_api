@@ -81,8 +81,11 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
       :region_threshold,
       :resolve_threshold,
       :error_threshold,
+      :next_check_at,
       :last_checked_at,
       :last_failed_at,
+      :consequtive_failure,
+      :consequtive_recovery,
       :prev_id
     ])
     |> validate_required([:name, :url])

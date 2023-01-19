@@ -47,25 +47,33 @@ defmodule UptimeChecker.WatchDog do
     end)
   end
 
-  def list_monitor_region(from, to, region_key) do
+  def list_monitors_to_run(from, to) do
     now = Timex.now()
     prev = Timex.shift(now, seconds: from)
     later = Timex.shift(now, seconds: to)
 
     query =
-      from mr in MonitorRegion,
-        left_join: m in assoc(mr, :monitor),
-        left_join: region in assoc(mr, :region),
+      from m in Monitor,
         where:
-          (mr.next_check_at > ^prev and mr.next_check_at < ^later and
-             mr.last_checked_at < ^prev and m.on == true) or is_nil(mr.last_checked_at),
-        where: region.key == ^region_key,
-        preload: [region: region]
+          (m.next_check_at > ^prev and m.next_check_at < ^later and
+             m.last_checked_at < ^prev and m.on == true) or is_nil(m.last_checked_at)
 
     Repo.all(query)
   end
 
-  def list_monitor_region_for_active_monitors(cursor, region_key) do
+  def list_oldest_checked_monitor_region(monitor_id) do
+    query =
+      from m in MonitorRegion,
+        left_join: region in assoc(m, :region),
+        where: m.monitor_id == ^monitor_id,
+        preload: [region: region],
+        order_by: [desc: m.last_checked_at],
+        limit: 1
+
+    Repo.one(query)
+  end
+
+  def list_active_monitors(cursor, region_key) do
     now = Timex.now()
     later = Timex.shift(now, seconds: 2)
 

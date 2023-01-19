@@ -6,11 +6,8 @@ defmodule UptimeChecker.Schema.WatchDog.MonitorRegion do
   alias UptimeChecker.Schema.WatchDog.Monitor
 
   schema "monitor_region_junction" do
-    field :last_checked_at, :utc_datetime
-    field :next_check_at, :utc_datetime
-    field :consequtive_failure, :integer
-    field :consequtive_recovery, :integer
     field :down, :boolean
+    field :last_checked_at, :utc_datetime
 
     belongs_to(:monitor, Monitor)
     belongs_to(:region, Region)
@@ -25,15 +22,12 @@ defmodule UptimeChecker.Schema.WatchDog.MonitorRegion do
       :monitor_id,
       :region_id,
       :last_checked_at,
-      :next_check_at,
-      :consequtive_failure,
-      :consequtive_recovery,
       :down
     ])
     |> unique_constraint([:region_id, :monitor_id])
   end
 
-  @allowed_updates [:last_checked_at, :next_check_at, :consequtive_failure, :consequtive_recovery, :down]
+  @allowed_updates [:last_checked_at, :down]
   def update_changeset(monitor_region, attrs) do
     monitor_region
     |> cast(attrs, @allowed_updates)
