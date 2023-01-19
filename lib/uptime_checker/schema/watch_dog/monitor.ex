@@ -12,6 +12,32 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
   @methods [GET: 1, POST: 2, PUT: 3, PATCH: 4, DELETE: 5, HEAD: 6]
   @body_formats [none: 1, json: 2, xml: 3, text: 4, html: 5, graphql: 6, form_param: 7]
 
+  @allowed_params [
+    :name,
+    :url,
+    :method,
+    :interval,
+    :timeout,
+    :body,
+    :body_format,
+    :headers,
+    :username,
+    :password,
+    :on,
+    :status,
+    :check_ssl,
+    :follow_redirects,
+    :region_threshold,
+    :resolve_threshold,
+    :error_threshold,
+    :next_check_at,
+    :last_checked_at,
+    :last_failed_at,
+    :consecutive_failure,
+    :consecutive_recovery,
+    :prev_id
+  ]
+
   schema "monitors" do
     field :name, :string
     field :url, :string
@@ -63,31 +89,7 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
       end
 
     monitor
-    |> cast(attrs, [
-      :name,
-      :url,
-      :method,
-      :interval,
-      :timeout,
-      :body,
-      :body_format,
-      :headers,
-      :username,
-      :password,
-      :on,
-      :status,
-      :check_ssl,
-      :follow_redirects,
-      :region_threshold,
-      :resolve_threshold,
-      :error_threshold,
-      :next_check_at,
-      :last_checked_at,
-      :last_failed_at,
-      :consecutive_failure,
-      :consecutive_recovery,
-      :prev_id
-    ])
+    |> cast(attrs, @allowed_params)
     |> validate_required([:name, :url])
     |> validate_url(:url)
     |> validate_body([:body, :body_format])
@@ -102,10 +104,9 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
     |> put_assoc(:organization, attrs.user.organization)
   end
 
-  @allowed_updates [:on, :status, :next_check_at, :last_checked_at, :last_failed_at]
   def update_changeset(monitor, attrs) do
     monitor
-    |> cast(attrs, @allowed_updates)
+    |> cast(attrs, @allowed_params)
   end
 
   def update_alarm_changeset(monitor, attrs) do
