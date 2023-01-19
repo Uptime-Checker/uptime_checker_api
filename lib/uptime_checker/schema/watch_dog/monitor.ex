@@ -61,8 +61,11 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
     field :resolve_threshold, :integer
     field :error_threshold, :integer
 
+    field :next_check_at, :utc_datetime
     field :last_checked_at, :utc_datetime
     field :last_failed_at, :utc_datetime
+    field :consecutive_failure, :integer
+    field :consecutive_recovery, :integer
 
     belongs_to :user, User
     belongs_to :organization, Organization
