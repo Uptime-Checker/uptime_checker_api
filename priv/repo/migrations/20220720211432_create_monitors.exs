@@ -25,8 +25,11 @@ defmodule UptimeChecker.Repo.Migrations.CreateMonitors do
       add :error_threshold, :integer, default: 1
       add :region_threshold, :integer, default: 1
 
+      add :next_check_at, :utc_datetime
       add :last_checked_at, :utc_datetime
       add :last_failed_at, :utc_datetime
+      add :consequtive_failure, :integer, default: 0
+      add :consequtive_recovery, :integer, default: 0
 
       add :user_id, references(:users)
       add :monitor_group_id, references(:monitor_groups)
@@ -44,6 +47,9 @@ defmodule UptimeChecker.Repo.Migrations.CreateMonitors do
     create index(:monitors, [:user_id])
     create index(:monitors, [:organization_id])
     create index(:monitors, [:monitor_group_id])
+
+    create index(:monitors, [:next_check_at])
+    create index(:monitors, [:last_checked_at, :next_check_at])
 
     create_prev_id_index =
       "ALTER TABLE monitors ADD CONSTRAINT monitors_unique_previous_id unique (prev_id, organization_id)
