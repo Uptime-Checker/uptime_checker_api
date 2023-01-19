@@ -73,18 +73,16 @@ defmodule UptimeChecker.WatchDog do
     Repo.one(query)
   end
 
-  def list_active_monitors(cursor, region_key) do
+  def list_active_monitors(cursor) do
     now = Timex.now()
     later = Timex.shift(now, seconds: 2)
 
-    MonitorRegion
-    |> join(:left, [mr], m in assoc(mr, :monitor), as: :monitor)
-    |> join(:left, [mr], r in assoc(mr, :region), as: :region)
-    |> where([mr, m], m.on == true)
-    |> where([mr, m, r], r.key == ^region_key)
-    |> where([mr], mr.next_check_at < ^later)
-    |> preload([mr, m, r], monitor: m, region: r)
-    |> order_by([mr], asc: mr.next_check_at)
+    query =
+      from m in Monitor,
+        where: m.next_check_at < ^later and m.on == true,
+        order_by: [desc: m.next_check_at]
+
+    query
     |> Repo.paginate(after: cursor)
   end
 
@@ -141,21 +139,9 @@ defmodule UptimeChecker.WatchDog do
     |> Repo.update()
   end
 
-  @doc """
-  Updates a monitor.
-
-  ## Examples
-
-      iex> update_monitor(monitor, %{field: new_value})
-      {:ok, %Monitor{}}
-
-      iex> update_monitor(monitor, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
   def update_monitor(%Monitor{} = monitor, attrs) do
     monitor
-    |> Monitor.changeset(attrs)
+    |> Monitor.update_changeset(attrs)
     |> Repo.update()
   end
 

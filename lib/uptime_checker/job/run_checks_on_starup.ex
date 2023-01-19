@@ -3,9 +3,9 @@ defmodule UptimeChecker.Job.RunChecksOnStartup do
   require Logger
 
   alias UptimeChecker.WatchDog
-  alias UptimeChecker.Constant.Env
   alias UptimeChecker.Helper.Strings
   alias UptimeChecker.TaskSupervisors
+  alias UptimeChecker.Schema.WatchDog.Monitor
 
   def work() do
     Logger.info("running active monitor check on startup")
@@ -15,8 +15,7 @@ defmodule UptimeChecker.Job.RunChecksOnStartup do
   end
 
   defp handle_active_monitors(after_cursor) do
-    %{entries: entries, metadata: metadata} =
-      WatchDog.list_monitor_region_for_active_monitors(after_cursor, Env.current_region() |> System.get_env())
+    %{entries: entries, metadata: metadata} = WatchDog.list_active_monitors(after_cursor)
 
     now = Timex.now()
 
@@ -24,7 +23,7 @@ defmodule UptimeChecker.Job.RunChecksOnStartup do
       Task.Supervisor.async_stream(
         {:via, PartitionSupervisor, {TaskSupervisors, self()}},
         entries,
-        fn entry -> update_monitor_region(entry, now) end,
+        fn entry -> update_monitor(entry, now) end,
         max_concurrency: 5
       )
       |> Enum.to_list()
@@ -38,8 +37,8 @@ defmodule UptimeChecker.Job.RunChecksOnStartup do
     :ok
   end
 
-  defp update_monitor_region(monitor_region, now) do
-    later = Timex.shift(now, seconds: monitor_region.monitor.interval + :rand.uniform(60))
-    WatchDog.update_monitor_region(monitor_region, %{next_check_at: later})
+  defp update_monitor(%Monitor{} = monitor, now) do
+    later = Timex.shift(now, seconds: monitor.interval + :rand.uniform(60))
+    WatchDog.update_monitor(monitor, %{next_check_at: later})
   end
 end

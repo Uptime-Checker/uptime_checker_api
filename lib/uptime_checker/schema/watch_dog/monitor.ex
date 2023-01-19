@@ -102,6 +102,12 @@ defmodule UptimeChecker.Schema.WatchDog.Monitor do
     |> put_assoc(:organization, attrs.user.organization)
   end
 
+  @allowed_updates [:on, :status, :next_check_at, :last_checked_at, :last_failed_at]
+  def update_changeset(monitor, attrs) do
+    monitor
+    |> cast(attrs, @allowed_updates)
+  end
+
   def update_check_changeset(monitor, attrs) do
     monitor
     |> cast(attrs, [:last_checked_at, :last_failed_at])
