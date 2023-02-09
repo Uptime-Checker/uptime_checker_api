@@ -38,3 +38,4 @@ npm-debug.log
 
 .DS_Store
 
+deps/tzdata/priv/latest_remote_poll.txt
