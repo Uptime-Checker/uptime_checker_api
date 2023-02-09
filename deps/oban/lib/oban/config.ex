@@ -20,14 +20,14 @@ defmodule Oban.Config do
           notifier: module(),
           peer: false | module(),
           plugins: false | [module() | {module() | Keyword.t()}],
-          prefix: String.t(),
+          prefix: false | String.t(),
           queues: false | [{atom() | binary(), pos_integer() | Keyword.t()}],
           repo: module(),
           shutdown_grace_period: timeout(),
+          stage_interval: timeout(),
           testing: :disabled | :inline | :manual
         }
 
-  @enforce_keys [:node, :repo]
   defstruct dispatch_cooldown: 5,
             engine: Oban.Engines.Basic,
             get_dynamic_repo: nil,
@@ -41,11 +41,13 @@ defmodule Oban.Config do
             queues: [],
             repo: nil,
             shutdown_grace_period: :timer.seconds(15),
+            stage_interval: :timer.seconds(1),
             testing: :disabled
 
   @cron_keys ~w(crontab timezone)a
   @log_levels ~w(false emergency alert critical error warning warn notice info debug)a
   @testing_modes ~w(manual inline disabled)a
+  @renamed [{:engine, Oban.Queue.BasicEngine}, {:notifier, Oban.PostgresNotifier}]
 
   @doc """
   Generate a Config struct after normalizing and verifying Oban options.
@@ -63,15 +65,24 @@ defmodule Oban.Config do
     opts = normalize(opts)
 
     opts =
+      if opts[:engine] == Oban.Engines.Lite do
+        opts
+        |> Keyword.put(:prefix, false)
+        |> Keyword.put_new(:notifier, Oban.Notifiers.PG)
+        |> Keyword.put_new(:peer, Oban.Peers.Isolated)
+      else
+        opts
+      end
+
+    opts =
       if opts[:testing] in [:manual, :inline] do
         opts
         |> Keyword.put(:queues, [])
-        |> Keyword.put(:peer, false)
+        |> Keyword.put(:peer, Oban.Peers.Disabled)
         |> Keyword.put(:plugins, [])
+        |> Keyword.put(:stage_interval, :infinity)
       else
         opts
-        |> Keyword.update!(:queues, &normalize_queues/1)
-        |> Keyword.update!(:plugins, &normalize_plugins/1)
       end
 
     Validation.validate!(opts, &validate/1)
@@ -210,10 +221,10 @@ defmodule Oban.Config do
   end
 
   defp validate_opt(_opts, {:prefix, prefix}) do
-    if is_binary(prefix) and Regex.match?(~r/^[a-z0-9_]+$/i, prefix) do
+    if prefix == false or (is_binary(prefix) and Regex.match?(~r/^[a-z0-9_]+$/i, prefix)) do
       :ok
     else
-      {:error, "expected :prefix to be an alphanumeric string, got: #{inspect(prefix)}"}
+      {:error, "expected :prefix to be false or an alphanumeric string, got: #{inspect(prefix)}"}
     end
   end
 
@@ -247,6 +258,10 @@ defmodule Oban.Config do
     Validation.validate_integer(:shutdown_grace_period, period, min: 0)
   end
 
+  defp validate_opt(_opts, {:stage_interval, interval}) do
+    Validation.validate_timeout(:stage_interval, interval)
+  end
+
   defp validate_opt(_opts, {:testing, testing}) do
     if testing in @testing_modes do
       :ok
@@ -264,7 +279,7 @@ defmodule Oban.Config do
   end
 
   defp validate_opt(_opts, option) do
-    {:error, "unknown option provided #{inspect(option)}"}
+    {:unknown, option, __MODULE__}
   end
 
   defp validate_plugin(plugin) when not is_tuple(plugin), do: validate_plugin({plugin, []})
@@ -324,14 +339,13 @@ defmodule Oban.Config do
   defp normalize(opts) do
     opts
     |> crontab_to_plugin()
-    |> poll_interval_to_plugin()
+    |> peer_to_disabled()
     |> Keyword.put_new(:node, node_name())
-    |> Keyword.update(:plugins, [], &(&1 || []))
-    |> Keyword.update(:queues, [], &(&1 || []))
+    |> Keyword.update(:queues, [], &normalize_queues/1)
+    |> Keyword.update(:plugins, [], &normalize_plugins/1)
     |> Keyword.delete(:circuit_backoff)
-    |> Enum.reject(
-      &(&1 in [{:engine, Oban.Queue.BasicEngine}, {:notifier, Oban.PostgresNotifier}])
-    )
+    |> stager_to_interval()
+    |> Enum.reject(&(&1 in @renamed))
   end
 
   defp crontab_to_plugin(opts) do
@@ -348,26 +362,36 @@ defmodule Oban.Config do
     end
   end
 
-  defp poll_interval_to_plugin(opts) do
-    case {opts[:plugins], opts[:poll_interval]} do
-      {plugins, interval} when (is_list(plugins) or is_nil(plugins)) and is_integer(interval) ->
-        plugin = {Oban.Plugins.Stager, interval: interval}
-
+  defp stager_to_interval(opts) do
+    cond do
+      Keyword.has_key?(opts, :poll_interval) ->
         opts
+        |> Keyword.put_new(:stage_interval, opts[:poll_interval])
         |> Keyword.delete(:poll_interval)
-        |> Keyword.update(:plugins, [plugin], &[plugin | &1])
 
-      {plugins, nil} when is_list(plugins) or is_nil(plugins) ->
-        plugin = Oban.Plugins.Stager
+      Keyword.keyword?(opts[:plugins]) ->
+        {stager_opts, opts} = pop_in(opts, [:plugins, Oban.Plugins.Stager])
 
-        Keyword.update(opts, :plugins, [plugin], &[plugin | &1])
+        if is_list(stager_opts) and Keyword.has_key?(stager_opts, :interval) do
+          Keyword.put_new(opts, :stage_interval, stager_opts[:interval])
+        else
+          opts
+        end
 
-      _ ->
-        Keyword.drop(opts, [:poll_interval])
+      true ->
+        opts
     end
   end
 
-  defp normalize_queues(queues) do
+  defp peer_to_disabled(opts) do
+    if opts[:peer] == false or (is_nil(opts[:peer]) and opts[:plugins] == false) do
+      Keyword.put(opts, :peer, Oban.Peers.Disabled)
+    else
+      opts
+    end
+  end
+
+  defp normalize_queues(queues) when is_list(queues) do
     for {name, value} <- queues do
       opts = if is_integer(value), do: [limit: value], else: value
 
@@ -375,14 +399,16 @@ defmodule Oban.Config do
     end
   end
 
+  defp normalize_queues(queues), do: queues || []
+
   # Manually specified plugins will be overwritten by auto-specified plugins unless we reverse the
   # plugin list. The order doesn't matter as they are supervised one-for-one.
-  defp normalize_plugins(plugins) do
+  defp normalize_plugins(plugins) when is_list(plugins) do
     plugins
+    |> Enum.map(&if is_atom(&1), do: {&1, []}, else: &1)
     |> Enum.reverse()
-    |> Enum.uniq_by(fn
-      {module, _opts} -> module
-      module -> module
-    end)
+    |> Enum.uniq()
   end
+
+  defp normalize_plugins(plugins), do: plugins || []
 end

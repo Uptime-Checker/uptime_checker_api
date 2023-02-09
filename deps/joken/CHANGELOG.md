@@ -1,5 +1,17 @@
 ## [Unreleased]
 
+## [2.6.0] - 2023-01-29
+
+### Changed
+
+- Allow EdDSA keys (thanks @Tarang)
+- Bump JOSE to 1.11.5
+- Fix `after_sign` spec
+- handle non binary hmac sha key error (thanks @alecostard)
+- Fixes `typ` header claim not being over writable
+- doc fixes all over
+- **raised Elixir version to 1.13** (JOSE raised it too so we follow)
+
 ## [2.5.0] - 2022-06-18
 
 ### Changed
@@ -127,4 +139,4 @@ For changes on versions 1.x look on the v1.5 branch.
 ### Backwards incompatible changes
 
 - There is no `Joken.Plug` module anymore. Depending on requests we can bring that back, but we believe it is better to be on a different library;
-- The API surface changed a lot but you can still use Joken with the same [token pattern as versions 1.x](http://trivelop.de/2018/05/14/flow-elixir-designing-apis/). Please see our [migrating guide](https://github.com/joken-elixir/joken/blob/master/guides/migration_from_1.md).
+- The API surface changed a lot but you can still use Joken with the same [token pattern as versions 1.x](http://trivelop.de/2018/05/14/flow-elixir-designing-apis/). Please see our [migrating guide](https://github.com/joken-elixir/joken/blob/main/guides/migration_from_1.md).

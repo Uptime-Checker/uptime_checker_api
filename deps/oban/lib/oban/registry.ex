@@ -29,15 +29,35 @@ defmodule Oban.Registry do
   """
   @spec config(Oban.name()) :: Oban.Config.t()
   def config(oban_name) do
-    case Registry.lookup(__MODULE__, oban_name) do
-      [{_pid, config}] ->
+    case lookup(oban_name) do
+      {_pid, config} ->
         config
 
       _ ->
-        raise RuntimeError,
-              "no config registered for #{inspect(oban_name)} instance, " <>
-                "is the supervisor running?"
+        raise RuntimeError, """
+        No Oban instance named `#{inspect(oban_name)}` is running and config isn't available.
+        """
     end
+  end
+
+  @doc """
+  Find the `{pid, value}` pair for a registered Oban process.
+
+  ## Example
+
+  Get the default instance config:
+
+      Oban.Registry.lookup(Oban)
+
+  Get a supervised module's pid:
+
+      Oban.Registry.lookup(Oban, Oban.Notifier)
+  """
+  @spec lookup(Oban.name(), role()) :: nil | {pid(), value()}
+  def lookup(oban_name, role \\ nil) do
+    __MODULE__
+    |> Registry.lookup(key(oban_name, role))
+    |> List.first()
   end
 
   @doc """

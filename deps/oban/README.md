@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  Robust job processing in Elixir, backed by modern PostgreSQL.
+  Robust job processing in Elixir, backed by modern PostgreSQL or SQLite3.
   Reliable, <br /> observable and loaded with <a href="#Features">enterprise grade features</a>.
 </p>
 
@@ -33,18 +33,18 @@
 - [Usage](#usage)
   - [Installation](#installation)
   - [Requirements](#requirements)
+  - [Configuring Queues](#configuring-queues)
+  - [Running With SQLite3](#running-with-sqlite3)
   - [Defining Workers](#defining-workers)
   - [Enqueueing Jobs](#enqueueing-jobs)
-  - [Configuring Queues](#configuring-queues)
-  - [Pruning Historic Jobs](#pruning-historic-jobs)
-  - [Unique Jobs](#unique-jobs)
-  - [Periodic Jobs](#periodic-jobs)
+  - [Scheduling Jobs](#scheduling-jobs)
   - [Prioritizing Jobs](#prioritizing-jobs)
-  - [Umbrella Apps](#umbrella-apps)
-- [Testing](#testing)
-- [Error Handling](#error-handling)
-- [Instrumentation and Logging](#instrumentation-and-logging)
-- [Isolation](#isolation)
+  - [Unique Jobs](#unique-jobs)
+  - [Pruning Historic Jobs](#pruning-historic-jobs)
+  - [Periodic Jobs](#periodic-jobs)
+  - [Error Handling](#error-handling)
+  - [Instrumentation and Logging](#instrumentation-error-reporting-and-logging)
+  - [Instance and Database Isolation](#instance-and-database-isolation)
 - [Community](#community)
 - [Contributing](#contributing)
 
@@ -61,7 +61,12 @@ _Note: This README is for the unreleased main branch, please reference the
 
 Oban's primary goals are **reliability**, **consistency** and **observability**.
 
-It is fundamentally different from other background job processing tools because
+Oban is a powerful and flexible library that can handle a wide range of
+background job use cases, and it is well-suited for systems of any size. It
+provides a simple and consistent API for scheduling and performing jobs, and it
+is built to be fault-tolerant and easy to monitor.
+
+Oban is fundamentally different from other background job processing tools because
 _it retains job data for historic metrics and inspection_. You can leave your
 application running indefinitely without worrying about jobs being lost or
 orphaned due to crashes.
@@ -70,7 +75,7 @@ orphaned due to crashes.
 
 - **Fewer Dependencies** — If you are running a web app there is a _very good_
   chance that you're running on top of a [RDBMS][rdbms]. Running your job queue
-  within PostgreSQL minimizes system dependencies and simplifies data backups.
+  within a SQL database minimizes system dependencies and simplifies data backups.
 
 - **Transactional Control** — Enqueue a job along with other database changes,
   ensuring that everything is committed or rolled back atomically.
@@ -131,23 +136,12 @@ orphaned due to crashes.
 [rdbms]: https://en.wikipedia.org/wiki/Relational_database#RDBMS
 [tele]: https://github.com/beam-telemetry/telemetry
 
-## Oban Web+Pro
-
-A web dashboard for managing Oban, along with an official set of extensions,
-plugins, and workers are available as licensed packages:
-
-* [🧭 Web Overview](https://getoban.pro#oban-web)
-* [🌟 Pro Overview](https://getoban.pro#oban-pro)
-
-Learn more about prices and licensing Oban Web+Pro at
-[getoban.pro](https://getoban.pro).
-
 ## Usage
 
 <!-- MDOC -->
 
-Oban is a robust job processing library which uses PostgreSQL for storage and
-coordination.
+Oban is a robust job processing library which uses PostgreSQL or SQLite3 for
+storage and coordination.
 
 ### Installation
 
@@ -156,17 +150,98 @@ details on installing and configuring Oban in your application.
 
 ### Requirements
 
-Oban requires Elixir 1.11+, Erlang 21+, and PostgreSQL 10.0+.
+Oban requires Elixir 1.12+, Erlang 22+, and PostgreSQL 12.0+ or SQLite3 3.37.0+.
 
-### Defining Workers
+### Testing
+
+Find testing setup, helpers, and strategies in the [testing guide](https://hexdocs.pm/oban/testing.html).
+
+## Oban Web+Pro
+
+A web dashboard for managing Oban, along with an official set of extensions,
+plugins, and workers are available as licensed packages:
+
+* [🧭 Web Overview](https://getoban.pro#oban-web)
+* [🌟 Pro Overview](https://getoban.pro#oban-pro)
+
+Learn more about prices and licensing Oban Web+Pro at [getoban.pro][pro].
+
+[pro]: https://getoban.pro
+
+## Running with SQLite3
+
+Oban ships with engines for PostgreSQL and SQLite3. Both engines support the
+same core functionality for a single node, while the Postgres engine is more
+advanced and designed to run in a distributed environment.
+
+Running with SQLite3 requires adding `ecto_sqlite3` to your app's dependencies
+and setting the `Oban.Engines.Lite` engine:
+
+```elixir
+config :my_app, Oban,
+  engine: Oban.Engines.Lite,
+  queues: [default: 10],
+  repo: MyApp.Repo
+```
+
+_Please note that SQLite3 may not be suitable for high-concurrency systems or for systems that need
+to handle large amounts of data. If you expect your background jobs to generate high loads, it
+would be better to use a more robust database solution that supports horizontal scalability, like
+Postgres._
+
+## Configuring Queues
+
+Queues are specified as a keyword list where the key is the name of the queue
+and the value is the maximum number of concurrent jobs. The following
+configuration would start four queues with concurrency ranging from 5 to 50:
+
+```elixir
+config :my_app, Oban,
+  queues: [default: 10, mailers: 20, events: 50, media: 5],
+  repo: MyApp.Repo
+```
+
+You may also use an expanded form to configure queues with individual overrides:
+
+```elixir
+queues: [
+  default: 10,
+  events: [limit: 50, paused: true]
+]
+```
+
+The `events` queue will now start in a paused state, which means it won't
+process anything until `Oban.resume_queue/2` is called to start it.
+
+There isn't a limit to the number of queues or how many jobs may execute
+concurrently in each queue. Some additional guidelines:
+
+#### Caveats & Guidelines
+
+* Each queue will run as many jobs as possible concurrently, up to the
+  configured limit. Make sure your system has enough resources (i.e. database
+  connections) to handle the concurrent load.
+
+* Queue limits are local (per-node), not global (per-cluster). For example,
+  running a queue with a local limit of one on three separate nodes is
+  effectively a global limit of three. If you require a global limit you must
+  restrict the number of nodes running a particular queue.
+
+* Only jobs in the configured queues will execute. Jobs in any other queue will
+  stay in the database untouched.
+
+* Be careful how many concurrent jobs make expensive system calls (i.e. FFMpeg,
+  ImageMagick). The BEAM ensures that the system stays responsive under load,
+  but those guarantees don't apply when using ports or shelling out commands.
+
+## Defining Workers
 
 Worker modules do the work of processing a job. At a minimum they must define a
 `perform/1` function, which is called with an `%Oban.Job{}` struct.
 
 Note that the `args` field of the job struct will _always_ have string keys,
 regardless of the key type when the job was enqueued. The `args` are stored as
-`jsonb` in PostgreSQL and the serialization process automatically stringifies
-all keys.
+`json` and the serialization process automatically stringifies all keys.
 
 Define a worker to process jobs in the `events` queue:
 
@@ -222,7 +297,7 @@ success, a failure, cancelled or deferred for retrying later.
 See the `Oban.Worker` docs for more details on failure conditions and
 `Oban.Telemetry` for details on job reporting.
 
-### Enqueueing Jobs
+## Enqueueing Jobs
 
 Jobs are simply Ecto structs and are enqueued by inserting them into the
 database. For convenience and consistency all workers provide a `new/2`
@@ -239,22 +314,6 @@ The worker's defaults may be overridden by passing options:
 ```elixir
 %{id: 1, vote_for: "none of the above"}
 |> MyApp.Business.new(queue: :special, max_attempts: 5)
-|> Oban.insert()
-```
-
-Jobs may be scheduled at a specific datetime in the future:
-
-```elixir
-%{id: 1}
-|> MyApp.Business.new(scheduled_at: ~U[2020-12-25 19:00:56.0Z])
-|> Oban.insert()
-```
-
-Jobs may also be scheduled down to the second any time in the future:
-
-```elixir
-%{id: 1}
-|> MyApp.Business.new(schedule_in: 5)
 |> Oban.insert()
 ```
 
@@ -311,79 +370,67 @@ application's `Repo.insert/2` function if necessary.
 
 See `Oban.Job.new/2` for a full list of job options.
 
-### Configuring Queues
+## Scheduling Jobs
 
-Queues are specified as a keyword list where the key is the name of the queue
-and the value is the maximum number of concurrent jobs. The following
-configuration would start four queues with concurrency ranging from 5 to 50:
+Jobs may be scheduled down to the second any time in the future:
 
 ```elixir
-queues: [default: 10, mailers: 20, events: 50, media: 5]
+%{id: 1}
+|> MyApp.Business.new(schedule_in: 5)
+|> Oban.insert()
 ```
 
-You may also use an expanded form to configure queues with individual overrides:
+Jobs may also be scheduled at a specific datetime in the future:
 
 ```elixir
-queues: [
-  default: 10,
-  events: [limit: 50, paused: true]
-]
+%{id: 1}
+|> MyApp.Business.new(scheduled_at: ~U[2020-12-25 19:00:56.0Z])
+|> Oban.insert()
 ```
 
-The `events` queue will now start in a paused state, which means it won't
-process anything until `Oban.resume_queue/2` is called to start it.
-
-There isn't a limit to the number of queues or how many jobs may execute
-concurrently in each queue. Some additional guidelines:
-
-#### Caveats & Guidelines
-
-* Each queue will run as many jobs as possible concurrently, up to the
-  configured limit. Make sure your system has enough resources (i.e. database
-  connections) to handle the concurrent load.
-
-* Queue limits are local (per-node), not global (per-cluster). For example,
-  running a queue with a local limit of one on three separate nodes is
-  effectively a global limit of three. If you require a global limit you must
-  restrict the number of nodes running a particular queue.
-
-* Only jobs in the configured queues will execute. Jobs in any other queue will
-  stay in the database untouched.
-
-* Be careful how many concurrent jobs make expensive system calls (i.e. FFMpeg,
-  ImageMagick). The BEAM ensures that the system stays responsive under load,
-  but those guarantees don't apply when using ports or shelling out commands.
-
-### Pruning Historic Jobs
-
-Job stats and queue introspection are built on keeping job rows in the database
-after they have completed. This allows administrators to review completed jobs
-and build informative aggregates, at the expense of storage and an unbounded
-table size. To prevent the `oban_jobs` table from growing indefinitely, Oban
-provides active pruning of `completed`, `cancelled` and `discarded` jobs.
-
-By default, the `Pruner` plugin retains jobs for 60 seconds. You can configure a
-longer retention period by providing a `max_age` in seconds to the `Pruner`
-plugin.
+Scheduling is _always_ in UTC. You'll have to shift timestamps in other zones to
+UTC before scheduling:
 
 ```elixir
-# Set the max_age for 5 minutes
-config :my_app, Oban,
-  plugins: [{Oban.Plugins.Pruner, max_age: 300}]
-  ...
+%{id: 1}
+|> MyApp.Business.new(scheduled_at: DateTime.shift_zone!(datetime, "Etc/UTC"))
+|> Oban.insert()
 ```
 
 #### Caveats & Guidelines
 
-* Pruning is best-effort and performed out-of-band. This means that all limits
-  are soft; jobs beyond a specified age may not be pruned immediately after jobs
-  complete.
+Usually, scheduled job management operates in `global` mode and notifies queues
+of available jobs via PubSub to minimize database load. However, when PubSub
+isn't available, staging switches to a `local` mode where each queue polls
+independently.
 
-* Pruning is only applied to jobs that are `completed`, `cancelled` or
-  `discarded`. It'll never delete a new job, a scheduled job or a job that
-  failed and will be retried.
+Local mode is less efficient and will only happen if you're running in an
+environment where neither `Postgres` nor `PG` notifications work. That situation
+should be rare and limited to the following conditions:
 
-### Unique Jobs
+1. Running with a connection pooler, i.e., `pg_bouncer`, in transaction mode.
+2. Running without clustering, i.e., without Distributed Erlang
+
+If **both** of those criteria apply and PubSub notifications won't work, then
+staging will switch to polling in `local` mode.
+
+## Prioritizing Jobs
+
+Normally, all available jobs within a queue are executed in the order they were
+scheduled. You can override the normal behavior and prioritize or de-prioritize
+a job by assigning a numerical `priority`.
+
+* Priorities from 0-3 are allowed, where 0 is the highest priority and 3 is the
+  lowest.
+
+* The default priority is 0, unless specified all jobs have an equally high
+  priority.
+
+* All jobs with a higher priority will execute before any jobs with a lower
+  priority. Within a particular priority jobs are executed in their scheduled
+  order.
+
+## Unique Jobs
 
 The unique jobs feature lets you specify constraints to prevent enqueueing
 duplicate jobs.  Uniqueness is based on a combination of `args`, `queue`,
@@ -463,18 +510,18 @@ configuration.
 
 In addition to detecting unique conflicts, passing options to `replace` can
 update any job field when there is a conflict. Any of the following fields can
-be replaced:  `args`, `max_attempts`, `meta`, `priority`, `queue`,
+be replaced per _state_:  `args`, `max_attempts`, `meta`, `priority`, `queue`,
 `scheduled_at`, `tags`, `worker`.
 
 For example, to change the `priority` and increase `max_attempts` when there is
-a conflict:
+a conflict with a job in a `scheduled` state:
 
 ```elixir
 BusinessWorker.new(
   args,
   max_attempts: 5,
   priority: 0,
-  replace: [:max_attempts, :priority]
+  replace: [scheduled: [:max_attempts, :priority]]
 )
 ```
 
@@ -483,8 +530,13 @@ or `schedule_in` values will work, but the replace option is always
 `scheduled_at`.
 
 ```elixir
-UrgentWorker.new(args, schedule_in: 1, replace: [:scheduled_at])
+UrgentWorker.new(args, schedule_in: 1, replace: [scheduled: [:scheduled_at]])
 ```
+
+NOTE: If you use this feature to replace a field (e.g. `args`) in the
+`executing` state by doing something like: `UniqueWorker.new(new_args, replace:
+[executing: [:args]])` Oban will update the `args`, but the job will continue
+executing with the original value.
 
 #### Strong Guarantees
 
@@ -493,7 +545,36 @@ they _do not_ rely on unique constraints in the database. This makes uniqueness
 entirely configurable by application code, without the need for database
 migrations.
 
-### Periodic Jobs
+## Pruning Historic Jobs
+
+Job stats and queue introspection are built on keeping job rows in the database
+after they have completed. This allows administrators to review completed jobs
+and build informative aggregates, at the expense of storage and an unbounded
+table size. To prevent the `oban_jobs` table from growing indefinitely, Oban
+provides active pruning of `completed`, `cancelled` and `discarded` jobs.
+
+By default, the `Pruner` plugin retains jobs for 60 seconds. You can configure a
+longer retention period by providing a `max_age` in seconds to the `Pruner`
+plugin.
+
+```elixir
+# Set the max_age for 5 minutes
+config :my_app, Oban,
+  plugins: [{Oban.Plugins.Pruner, max_age: 300}]
+  ...
+```
+
+#### Caveats & Guidelines
+
+* Pruning is best-effort and performed out-of-band. This means that all limits
+  are soft; jobs beyond a specified age may not be pruned immediately after jobs
+  complete.
+
+* Pruning is only applied to jobs that are `completed`, `cancelled` or
+  `discarded`. It'll never delete a new job, a scheduled job or a job that
+  failed and will be retried.
+
+## Periodic Jobs
 
 Oban's `Cron` plugin registers workers a cron-like schedule and enqueues jobs
 automatically. Periodic jobs are declared as a list of `{cron, worker}` or
@@ -529,7 +610,7 @@ duplicate jobs with multiple nodes and across node restarts.
 Like other jobs, recurring jobs will use the `:queue` specified by the worker
 module (or `:default` if one is not specified).
 
-#### Cron Expressions
+### Cron Expressions
 
 Standard Cron expressions are composed of rules specifying the minutes, hours,
 days, months and weekdays. Rules for each field are comprised of literal values,
@@ -607,62 +688,6 @@ online at [Crontab Guru][guru].
 [cron]: https://en.wikipedia.org/wiki/Cron#Overview
 [guru]: https://crontab.guru
 
-### Prioritizing Jobs
-
-Normally, all available jobs within a queue are executed in the order they were
-scheduled. You can override the normal behavior and prioritize or de-prioritize
-a job by assigning a numerical `priority`.
-
-* Priorities from 0-3 are allowed, where 0 is the highest priority and 3 is the
-  lowest.
-
-* The default priority is 0, unless specified all jobs have an equally high
-  priority.
-
-* All jobs with a higher priority will execute before any jobs with a lower
-  priority. Within a particular priority jobs are executed in their scheduled
-  order.
-
-### Umbrella Apps
-
-If you need to run Oban from an umbrella application where more than one of
-the child apps need to interact with Oban, you may need to set the `:name` for
-each child application that configures Oban.
-
-For example, your umbrella contains two apps: `MyAppA` and `MyAppB`. `MyAppA` is
-responsible for inserting jobs, while only `MyAppB` actually runs any queues.
-
-Configure Oban with a custom name for `MyAppA`:
-
-```elixir
-config :my_app_a, Oban,
-  name: MyAppA.Oban,
-  repo: MyApp.Repo
-```
-
-Then configure Oban for `MyAppB` with a different name:
-
-```elixir
-config :my_app_b, Oban,
-  name: MyAppB.Oban,
-  repo: MyApp.Repo,
-  queues: [default: 10]
-```
-
-Now, use the configured name when calling functions like `Oban.insert/2`,
-`Oban.insert_all/2`, `Oban.drain_queue/2`, etc., to reference the correct Oban
-process for the current application.
-
-```elixir
-Oban.insert(MyAppA.Oban, MyWorker.new(%{}))
-Oban.insert_all(MyAppB.Oban, multi, :multiname, [MyWorker.new(%{})])
-Oban.drain_queue(MyAppB.Oban, queue: :default)
-```
-
-## Testing
-
-Find testing setup, helpers, and strategies in the [testing guide](https://hexdocs.pm/oban/testing.html).
-
 ## Error Handling
 
 When a job returns an error value, raises an error, or exits during execution the
@@ -738,7 +763,7 @@ Define the `timeout` based on the number of attempts:
 def timeout(%_{attempt: attempt}), do: attempt * :timer.seconds(5)
 ```
 
-## Instrumentation and Logging
+## Instrumentation, Error Reporting, and Logging
 
 Oban provides integration with [Telemetry][tele], a dispatching library for
 metrics. It is easy to report Oban metrics to any backend by attaching to
@@ -810,7 +835,66 @@ AppSignal or any other application monitoring platform.
 [tele]: https://hexdocs.pm/telemetry
 [sentry]: https://sentry.io
 
-## Isolation
+## Instance and Database Isolation
+
+You can run multiple Oban instances with different prefixes on the same system
+and have them entirely isolated, provided you give each supervisor a distinct
+id.
+
+Here we configure our application to start three Oban supervisors using the
+"public", "special" and "private" prefixes, respectively:
+
+```elixir
+def start(_type, _args) do
+  children = [
+    Repo,
+    Endpoint,
+    {Oban, name: ObanA, repo: Repo},
+    {Oban, name: ObanB, repo: Repo, prefix: "special"},
+    {Oban, name: ObanC, repo: Repo, prefix: "private"}
+  ]
+
+  Supervisor.start_link(children, strategy: :one_for_one, name: MyApp.Supervisor)
+end
+```
+
+### Umbrella Apps
+
+If you need to run Oban from an umbrella application where more than one of
+the child apps need to interact with Oban, you may need to set the `:name` for
+each child application that configures Oban.
+
+For example, your umbrella contains two apps: `MyAppA` and `MyAppB`. `MyAppA` is
+responsible for inserting jobs, while only `MyAppB` actually runs any queues.
+
+Configure Oban with a custom name for `MyAppA`:
+
+```elixir
+config :my_app_a, Oban,
+  name: MyAppA.Oban,
+  repo: MyApp.Repo
+```
+
+Then configure Oban for `MyAppB` with a different name:
+
+```elixir
+config :my_app_b, Oban,
+  name: MyAppB.Oban,
+  repo: MyApp.Repo,
+  queues: [default: 10]
+```
+
+Now, use the configured name when calling functions like `Oban.insert/2`,
+`Oban.insert_all/2`, `Oban.drain_queue/2`, etc., to reference the correct Oban
+process for the current application.
+
+```elixir
+Oban.insert(MyAppA.Oban, MyWorker.new(%{}))
+Oban.insert_all(MyAppB.Oban, multi, :multiname, [MyWorker.new(%{})])
+Oban.drain_queue(MyAppB.Oban, queue: :default)
+```
+
+### Database Prefixes
 
 Oban supports namespacing through PostgreSQL schemas, also called "prefixes" in
 Ecto. With prefixes your jobs table can reside outside of your primary schema
@@ -847,30 +931,9 @@ Now all jobs are inserted and executed using the `private.oban_jobs` table. Note
 that `Oban.insert/2,4` will write jobs in the `private.oban_jobs` table, you'll
 need to specify a prefix manually if you insert jobs directly through a repo.
 
-### Supervisor Isolation
-
 Not only is the `oban_jobs` table isolated within the schema, but all
 notification events are also isolated. That means that insert/update events will
-only dispatch new jobs for their prefix. You can run multiple Oban instances
-with different prefixes on the same system and have them entirely isolated,
-provided you give each supervisor a distinct id.
-
-Here we configure our application to start three Oban supervisors using the
-"public", "special" and "private" prefixes, respectively:
-
-```elixir
-def start(_type, _args) do
-  children = [
-    Repo,
-    Endpoint,
-    {Oban, name: ObanA, repo: Repo},
-    {Oban, name: ObanB, repo: Repo, prefix: "special"},
-    {Oban, name: ObanC, repo: Repo, prefix: "private"}
-  ]
-
-  Supervisor.start_link(children, strategy: :one_for_one, name: MyApp.Supervisor)
-end
-```
+only dispatch new jobs for their prefix.
 
 ### Dynamic Repositories
 
@@ -905,24 +968,24 @@ init, allowing jobs to process as expected.
 
 ## Community
 
-There are a few places to connect and communicate with other Oban users.
+There are a few places to connect and communicate with other Oban users:
 
 - [Request an invitation][invite] and join the *#oban* channel on [Slack][slack]
 - Ask questions and discuss Oban on the [Elixir Forum][forum]
 - Learn about bug reports and upcoming features in the [issue tracker][issues]
-- Follow @sorentwo on [Twitter][twitter]
+- Follow @sorentwo [genserver.social][social] (Mastodon)
 
 [invite]: https://elixir-slackin.herokuapp.com/
 [slack]: https://elixir-lang.slack.com/
 [forum]: https://elixirforum.com/
 [issues]: https://github.com/sorentwo/oban/issues
-[twitter]: https://twitter.com/sorentwo
+[social]: https://genserver.social/sorentwo
 
 ## Contributing
 
-To run the Oban test suite you must have PostgreSQL 10+ running locally with a
-database named `oban_test`. Follow these steps to create the database, create
-the database and run all migrations:
+To run the Oban test suite you must have PostgreSQL 10+ and SQLite3 3.37+
+running. Follow these steps to create the database, create the database and run
+all migrations:
 
 ```bash
 mix test.setup

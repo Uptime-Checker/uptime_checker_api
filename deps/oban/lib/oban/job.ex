@@ -47,6 +47,16 @@ defmodule Oban.Job do
           | :worker
         ]
 
+  @type replace_by_state_option :: [
+          {:available, [replace_option()]}
+          | {:cancelled, [replace_option()]}
+          | {:completed, [replace_option()]}
+          | {:discarded, [replace_option()]}
+          | {:executing, [replace_option()]}
+          | {:retryable, [replace_option()]}
+          | {:scheduled, [replace_option()]}
+        ]
+
   @type schedule_in_option ::
           pos_integer()
           | {pos_integer(),
@@ -69,7 +79,7 @@ defmodule Oban.Job do
           | {:queue, atom() | binary()}
           | {:schedule_in, schedule_in_option()}
           | {:replace_args, boolean()}
-          | {:replace, [replace_option()]}
+          | {:replace, [replace_option() | replace_by_state_option()]}
           | {:scheduled_at, DateTime.t()}
           | {:tags, tags()}
           | {:unique, [unique_option()]}
@@ -84,21 +94,28 @@ defmodule Oban.Job do
           errors: errors(),
           tags: tags(),
           attempt: non_neg_integer(),
-          attempted_by: [binary()],
+          attempted_by: [binary()] | nil,
           max_attempts: pos_integer(),
           meta: map(),
           priority: pos_integer(),
           inserted_at: DateTime.t(),
           scheduled_at: DateTime.t(),
-          attempted_at: DateTime.t(),
-          completed_at: DateTime.t(),
-          discarded_at: DateTime.t(),
-          cancelled_at: DateTime.t(),
-          conf: Oban.Config.t(),
+          attempted_at: DateTime.t() | nil,
+          completed_at: DateTime.t() | nil,
+          discarded_at: DateTime.t() | nil,
+          cancelled_at: DateTime.t() | nil,
+          conf: Oban.Config.t() | nil,
           conflict?: boolean(),
-          replace: [replace_option()],
-          unique: %{fields: [unique_field()], period: unique_period(), states: [unique_state()]},
-          unsaved_error: %{kind: atom(), reason: term(), stacktrace: Exception.stacktrace()}
+          replace: [replace_option() | replace_by_state_option()] | nil,
+          unique:
+            %{fields: [unique_field()], period: unique_period(), states: [unique_state()]} | nil,
+          unsaved_error:
+            %{
+              kind: Exception.kind(),
+              reason: term(),
+              stacktrace: Exception.stacktrace()
+            }
+            | nil
         }
 
   @type changeset :: Ecto.Changeset.t(t())
@@ -171,7 +188,7 @@ defmodule Oban.Job do
       other jobs in the same queue. The lower the number, the higher priority the job.
     * `:queue` — a named queue to push the job into. Jobs may be pushed into any queue, regardless
       of whether jobs are currently being processed for the queue.
-    * `:replace` - a list of keys to replace on a unique conflict
+    * `:replace` - a list of keys to replace per state on a unique conflict
     * `:scheduled_at` - a time in the future after which the job should be executed
     * `:schedule_in` - the number of seconds until the job should be executed or a tuple containing
       a number and unit
@@ -248,12 +265,12 @@ defmodule Oban.Job do
     |> put_scheduling(params[:schedule_in])
     |> put_uniqueness(params[:unique])
     |> put_replace(params[:replace], params[:replace_args])
-    |> validate_subset(:replace, @replace_options)
     |> put_state()
     |> validate_length(:queue, min: 1, max: 128)
     |> validate_length(:worker, min: 1, max: 128)
     |> validate_number(:max_attempts, greater_than: 0)
     |> validate_number(:priority, greater_than: -1, less_than: 4)
+    |> validate_replace()
     |> check_constraint(:attempt, name: :attempt_range)
     |> check_constraint(:max_attempts, name: :positive_max_attempts)
     |> check_constraint(:priority, name: :priority_range)
@@ -318,6 +335,22 @@ defmodule Oban.Job do
     end)
   end
 
+  @doc """
+  Normalize, blame, and format a job's `unsaved_error` into the stored error format.
+
+  Formatted errors are stored in a job's `errors` field.
+  """
+  @doc since: "2.14.0"
+  def format_attempt(%__MODULE__{attempt: attempt, unsaved_error: unsaved}) do
+    %{kind: kind, reason: error, stacktrace: stacktrace} = unsaved
+
+    {blamed, stacktrace} = Exception.blame(kind, error, stacktrace)
+
+    error = Exception.format(kind, blamed, stacktrace)
+
+    %{attempt: attempt, at: DateTime.utc_now(), error: error}
+  end
+
   defp coerce_field(params, field, fun) do
     case Map.get(params, field) do
       value when is_atom(value) and not is_nil(value) ->
@@ -357,6 +390,29 @@ defmodule Oban.Job do
   defguardp is_timestampable(value)
             when is_integer(value) or
                    (is_integer(elem(value, 0)) and elem(value, 1) in @time_units)
+
+  defp put_replace(changeset, replace, replace_args) do
+    with_states = fn fields ->
+      for state <- states(), do: {state, fields}
+    end
+
+    case {replace, replace_args} do
+      {nil, true} ->
+        put_change(changeset, :replace, with_states.([:args]))
+
+      {[field | _] = replace, true} when is_atom(field) ->
+        put_change(changeset, :replace, with_states.([:args | replace]))
+
+      {[field | _] = replace, _} when is_atom(field) ->
+        put_change(changeset, :replace, with_states.(replace))
+
+      {replace, _} when is_list(replace) ->
+        put_change(changeset, :replace, replace)
+
+      _ ->
+        changeset
+    end
+  end
 
   defp put_scheduling(changeset, value) do
     case value do
@@ -407,22 +463,6 @@ defmodule Oban.Job do
     end
   end
 
-  defp put_replace(changeset, replace, replace_args) do
-    case {replace, replace_args} do
-      {nil, true} ->
-        put_change(changeset, :replace, [:args])
-
-      {[_ | _], true} ->
-        put_change(changeset, :replace, [:args | replace])
-
-      {[_ | _], nil} ->
-        put_change(changeset, :replace, replace)
-
-      _ ->
-        changeset
-    end
-  end
-
   defp normalize_tags(%{tags: [_ | _] = tags} = params) do
     normalize = fn string ->
       string
@@ -442,18 +482,6 @@ defmodule Oban.Job do
 
   defp normalize_tags(params), do: params
 
-  def validate_keys(changeset, params, keys) do
-    keys = Enum.map(keys, &to_string/1)
-
-    Enum.reduce(params, changeset, fn {key, _val}, acc ->
-      if to_string(key) in keys do
-        acc
-      else
-        add_error(acc, :base, "unknown option #{inspect(key)} provided")
-      end
-    end)
-  end
-
   defp to_timestamp(seconds) when is_integer(seconds) do
     DateTime.add(DateTime.utc_now(), seconds, :second)
   end
@@ -468,6 +496,48 @@ defmodule Oban.Job do
   defp to_timestamp({days, :days}), do: to_timestamp({days, :day})
   defp to_timestamp({weeks, :week}), do: to_timestamp(weeks * 7 * 24 * 60 * 60)
   defp to_timestamp({weeks, :weeks}), do: to_timestamp({weeks, :week})
+
+  # Validation
+
+  defp validate_keys(changeset, params, keys) do
+    keys = Enum.map(keys, &to_string/1)
+
+    Enum.reduce(params, changeset, fn {key, _val}, acc ->
+      if to_string(key) in keys do
+        acc
+      else
+        add_error(acc, :base, "unknown option #{inspect(key)} provided")
+      end
+    end)
+  end
+
+  defp validate_replace(changeset) do
+    invalid_state = fn replace ->
+      replace
+      |> Keyword.keys()
+      |> Enum.any?(&(&1 not in states()))
+    end
+
+    invalid_field = fn replace ->
+      replace
+      |> Keyword.values()
+      |> List.flatten()
+      |> Enum.any?(&(&1 not in @replace_options))
+    end
+
+    replace = get_change(changeset, :replace)
+
+    cond do
+      is_list(replace) and invalid_state.(replace) ->
+        add_error(changeset, :replace, "has an invalid state")
+
+      is_list(replace) and invalid_field.(replace) ->
+        add_error(changeset, :replace, "has an invalid field")
+
+      true ->
+        changeset
+    end
+  end
 
   defp validate_unique_opts(unique) do
     Enum.reduce_while(unique, :ok, fn {key, val}, _acc ->

@@ -17,6 +17,44 @@ defmodule Cachex.Actions do
   ##############
 
   @doc """
+  Formats a fetched value into a Courier compatible tuple.
+
+  If the value is tagged with `:commit`, `:ignore` or `:error`,
+  it will be left alone; otherwise it will be wrapped and treated
+  as a `:commit` Tuple.
+  """
+  def format_fetch_value(value) do
+    case value do
+      {:error, _value} ->
+        value
+
+      {:commit, _value} ->
+        value
+
+      {:commit, _value, _options} ->
+        value
+
+      {:ignore, _value} ->
+        value
+
+      raw_value ->
+        {:commit, raw_value}
+    end
+  end
+
+  @doc """
+  Normalizes a commit formatted fetch value.
+
+  This is simply compatibility for the options addition in v3.5, without
+  breaking the previous versions of this library.
+  """
+  def normalize_commit({:commit, value}),
+    do: {:commit, value, []}
+
+  def normalize_commit(value),
+    do: value
+
+  @doc """
   Retrieves an entry from a cache.
 
   If the entry does not exist, a `nil` value will be returned. Likewise
@@ -73,33 +111,4 @@ defmodule Cachex.Actions do
 
   def write_op(_tag),
     do: :update
-
-  ##########
-  # Macros #
-  ##########
-
-  @doc """
-  Normalizes a value into a Courier-friendly tagged Tuple.
-
-  If the value is tagged with `:commit`, `:ignore` or `:error`,
-  it will be left alone; otherwise it will be wrapped and treated
-  as a `:commit` Tuple.
-  """
-  defmacro normalize_commit(value) do
-    quote bind_quoted: [value: value] do
-      case value do
-        {:error, _value} ->
-          value
-
-        {:commit, _value} ->
-          value
-
-        {:ignore, _value} ->
-          value
-
-        raw_value ->
-          {:commit, raw_value}
-      end
-    end
-  end
 end

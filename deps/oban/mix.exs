@@ -2,13 +2,13 @@ defmodule Oban.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/sorentwo/oban"
-  @version "2.13.6"
+  @version "2.14.1"
 
   def project do
     [
       app: :oban,
       version: @version,
-      elixir: "~> 1.11",
+      elixir: "~> 1.12",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -28,7 +28,7 @@ defmodule Oban.MixProject do
 
       # Dialyzer
       dialyzer: [
-        plt_add_apps: [:ex_unit],
+        plt_add_apps: [:ex_unit, :postgrex],
         plt_core_path: "_build/#{Mix.env()}",
         flags: [:error_handling, :underspecs]
       ],
@@ -73,6 +73,7 @@ defmodule Oban.MixProject do
       "guides/upgrading/v2.6.md",
       "guides/upgrading/v2.11.md",
       "guides/upgrading/v2.12.md",
+      "guides/upgrading/v2.14.md",
 
       # Recipes
       "guides/recipes/recursive-jobs.md",
@@ -118,6 +119,9 @@ defmodule Oban.MixProject do
         Oban.Registry,
         Oban.Repo
       ],
+      Migrations: [
+        Oban.Migrations.Postgres
+      ],
       Notifiers: [
         Oban.Notifiers.Postgres,
         Oban.Notifiers.PG
@@ -125,6 +129,11 @@ defmodule Oban.MixProject do
       Peers: [
         Oban.Peers.Postgres,
         Oban.Peers.Global
+      ],
+      Engines: [
+        Oban.Engines.Basic,
+        Oban.Engines.Inline,
+        Oban.Engines.Lite
       ]
     ]
   end
@@ -145,11 +154,12 @@ defmodule Oban.MixProject do
   defp deps do
     [
       {:ecto_sql, "~> 3.6"},
+      {:ecto_sqlite3, "~> 0.9", optional: true},
       {:jason, "~> 1.1"},
-      {:postgrex, "~> 0.16"},
+      {:postgrex, "~> 0.16", optional: true},
       {:telemetry, "~> 0.4 or ~> 1.0"},
       {:stream_data, "~> 0.4", only: [:test, :dev]},
-      {:tzdata, "~> 1.0", only: [:test, :dev]},
+      {:tz, "~> 0.24", only: [:test, :dev]},
       {:benchee, "~> 1.0", only: [:test, :dev], runtime: false},
       {:credo, "~> 1.6", only: [:test, :dev], runtime: false},
       {:dialyxir, "~> 1.0", only: [:test, :dev], runtime: false},
@@ -161,8 +171,8 @@ defmodule Oban.MixProject do
   defp aliases do
     [
       bench: "run bench/bench_helper.exs",
-      "test.reset": ["ecto.drop", "test.setup"],
-      "test.setup": ["ecto.create", "ecto.migrate"],
+      "test.reset": ["ecto.drop --quiet", "test.setup"],
+      "test.setup": ["ecto.create --quiet", "ecto.migrate --quiet"],
       "test.ci": [
         "format --check-formatted",
         "deps.unlock --check-unused",

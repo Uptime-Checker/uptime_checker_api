@@ -1,7 +1,7 @@
 defmodule Esbuild.MixProject do
   use Mix.Project
 
-  @version "0.6.0"
+  @version "0.6.1"
   @source_url "https://github.com/phoenixframework/esbuild"
 
   def project do
@@ -24,17 +24,13 @@ defmodule Esbuild.MixProject do
         source_ref: "v#{@version}",
         extras: ["CHANGELOG.md"]
       ],
-      xref: [
-        exclude: [:httpc, :public_key]
-      ],
       aliases: [test: ["esbuild.install --if-missing", "test"]]
     ]
   end
 
   def application do
     [
-      # inets/ssl may be used by Mix tasks but we should not impose them.
-      extra_applications: [:logger],
+      extra_applications: [:logger, :inets, :ssl],
       mod: {Esbuild, []},
       env: [default: []]
     ]

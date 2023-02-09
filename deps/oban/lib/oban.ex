@@ -11,7 +11,7 @@ defmodule Oban do
   use Supervisor
 
   alias Ecto.{Changeset, Multi}
-  alias Oban.{Config, Engine, Job, Midwife, Notifier, Peer, Registry, Telemetry}
+  alias Oban.{Config, Engine, Job, Midwife, Notifier, Peer, Registry, Stager, Telemetry}
   alias Oban.Queue.{Drainer, Producer}
   alias Oban.Queue.Supervisor, as: QueueSupervisor
 
@@ -23,6 +23,7 @@ defmodule Oban do
           {:queue, queue_name()}
           | {:limit, pos_integer()}
           | {:local_only, boolean()}
+          | {:node, String.t()}
 
   @type queue_state :: %{
           :limit => pos_integer(),
@@ -41,14 +42,15 @@ defmodule Oban do
           | {:get_dynamic_repo, nil | (() -> pid() | atom())}
           | {:log, false | Logger.level()}
           | {:name, name()}
-          | {:node, binary()}
+          | {:node, String.t()}
           | {:notifier, module()}
           | {:peer, false | module()}
           | {:plugins, false | [module() | {module() | Keyword.t()}]}
-          | {:prefix, binary()}
+          | {:prefix, String.t()}
           | {:queues, false | [{queue_name(), pos_integer() | Keyword.t()}]}
           | {:repo, module()}
           | {:shutdown_grace_period, timeout()}
+          | {:stage_interval, timeout()}
           | {:testing, :disabled | :inline | :manual}
 
   @type drain_option ::
@@ -86,20 +88,34 @@ defmodule Oban do
 
   ## Options
 
-  These options are required; without them the supervisor won't start
+  These options are required; without them the supervisor won't start:
 
   * `:repo` — specifies the Ecto repo used to insert and retrieve jobs
 
   ### Primary Options
 
-  These options determine what the system does at a high level, i.e. which queues to run.
+  These options determine what the system does at a high level, i.e. which queues to run:
+
+  * `:engine` — facilitates inserting, fetching, and otherwise managing jobs.
+
+    There are three built-in engines: `Oban.Engines.Basic` for Postgres databases,
+    `Oban.Engines.Lite` for SQLite3 databases, and `Oban.Engines.Inline` for simplified testing
+    (only available for `:inline` testing mode).
+
+    When the `Oban.Engines.Lite` engine is used the `:notifier` and `:peer` are automatically set
+    to `PG` and `isolated` mode, respectively.
+
+    Additional engines, such as Oban Pro's `SmartEngine` with advanced functionality for Postgres,
+    are also available as an add-on.
+
+    Defaults to the `Basic` engine for Postgres.
 
   * `:log` — either `false` to disable logging or a standard log level (`:error`, `:warn`,
     `:info`, `:debug`). This determines whether queries are logged or not; overriding the repo's
     configured log level. Defaults to `false`, where no queries are logged.
 
   * `:name` — used for supervisor registration, it must be unique across an entire VM instance.
-    Defaults to `Oban`
+    Defaults to `Oban` when no name is provided.
 
   * `:node` — used to identify the node that the supervision tree is running in. If no value is
     provided it will use the `node` name in a distributed system, or the `hostname` in an isolated
@@ -119,7 +135,7 @@ defmodule Oban do
     Leadership can be disabled by setting `peer: false`, but note that centralized plugins like
     `Cron` won't run without leadership.
 
-    Defaults to the Postgres peer.
+    Defaults to the `Postgres` peer.
 
   * `:plugins` — a list or modules or module/option tuples that are started as children of an Oban
     supervisor. Any supervisable module is a valid plugin, i.e. a `GenServer` or an `Agent`.
@@ -155,18 +171,47 @@ defmodule Oban do
     The default is `5ms` and the minimum is `1ms`, which is likely faster than the database can
     return new jobs to run.
 
-  * `:shutdown_grace_period` - the amount of time a queue will wait for executing jobs to complete
+  * `:shutdown_grace_period` — the amount of time a queue will wait for executing jobs to complete
     before hard shutdown, specified in milliseconds. The default is `15_000`, or 15 seconds.
+
+  * `:stage_interval` — the number of milliseconds between making scheduled jobs available and
+    notifying relevant queues that jobs are available. This is directly tied to the resolution of
+    `scheduled` or `retryable` jobs and how frequently the database is checked for jobs to run. To
+    minimize database load, only `5_000` jobs are staged at each interval.
+
+    Only the leader node stages jobs and notifies queues when the `:notifier's` pubsub
+    notifications are functional. If pubusb messages can't get through then staging switches to a
+    less efficient "local" mode in which all nodes poll for jobs to run.
+
+    Setting the interval to `:infinity` disables staging entirely. The default is `1_000ms`.
 
   ## Example
 
-  To start an `Oban` supervisor within an application's supervision tree:
+  Start a stand-alone `Oban` instance:
+
+      {:ok, pid} = Oban.start_link(repo: MyApp.Repo, queues: [default: 10])
+
+  To start an `Oban` instance within an application's supervision tree:
 
       def start(_type, _args) do
-        children = [MyApp.Repo, {Oban, queues: [default: 50]}]
+        children = [MyApp.Repo, {Oban, repo: MyApp.Repo, queues: [default: 10]}]
 
         Supervisor.start_link(children, strategy: :one_for_one, name: MyApp.Supervisor)
       end
+
+  Start multiple, named `Oban` supervisors within a supervision tree:
+
+        children = [
+          MyApp.Repo,
+          {Oban, name: Oban.A, repo: MyApp.Repo, queues: [default: 10]},
+          {Oban, name: Oban.B, repo: MyApp.Repo, queues: [special: 10]},
+        ]
+
+        Supervisor.start_link(children, strategy: :one_for_one, name: MyApp.Supervisor)
+
+  Start a local `Oban` instance for SQLite:
+
+      {:ok, pid} = Oban.start_link(engine: Oban.Engines.Lite, repo: MyApp.Repo)
 
   ## Node Name
 
@@ -212,10 +257,11 @@ defmodule Oban do
   def init(%Config{plugins: plugins, queues: queues} = conf) do
     children = [
       {Notifier, conf: conf, name: Registry.via(conf.name, Notifier)},
-      {Midwife, conf: conf, name: Registry.via(conf.name, Midwife)}
+      {Midwife, conf: conf, name: Registry.via(conf.name, Midwife)},
+      {Peer, conf: conf, name: Registry.via(conf.name, Peer)},
+      {Stager, conf: conf, name: Registry.via(conf.name, Stager)}
     ]
 
-    children = children ++ peer_child_spec(conf)
     children = children ++ Enum.map(plugins, &plugin_child_spec(&1, conf))
     children = children ++ Enum.map(queues, &QueueSupervisor.child_spec(&1, conf))
     children = children ++ event_child_spec(conf)
@@ -587,6 +633,11 @@ defmodule Oban do
       Oban.start_queue(queue: :media, limit: 5, local_only: true)
       :ok
 
+  Start the `:media` queue on a particular node.
+
+      Oban.start_queue(queue: :media, limit: 5, node: "worker.1")
+      :ok
+
   Start the `:media` queue in a `paused` state.
 
       Oban.start_queue(queue: :media, limit: 5, paused: true)
@@ -618,7 +669,10 @@ defmodule Oban do
   ## Options
 
   * `:queue` - a string or atom specifying the queue to pause, required
+
   * `:local_only` - whether the queue will be paused only on the local node, default: `false`
+
+  * `:node` - restrict pausing to a particular node
 
   Note: by default, Oban does not verify that the given queue exists unless `:local_only`
   is set to `true` as even if the queue does not exist locally, it might be running on
@@ -635,11 +689,16 @@ defmodule Oban do
 
       Oban.pause_queue(queue: :default, local_only: true)
       :ok
+
+  Pause the default queue only on a particular node:
+
+      Oban.pause_queue(queue: :default, node: "worker.1")
+      :ok
   """
   @doc since: "0.2.0"
   @spec pause_queue(name(), opts :: [queue_option()]) :: :ok
   def pause_queue(name \\ __MODULE__, [_ | _] = opts) do
-    validate_queue_opts!(opts, [:queue, :local_only])
+    validate_queue_opts!(opts, [:queue, :local_only, :node])
     validate_queue_exists!(name, opts)
 
     conf = config(name)
@@ -654,7 +713,10 @@ defmodule Oban do
   ## Options
 
   * `:queue` - a string or atom specifying the queue to resume, required
+
   * `:local_only` - whether the queue will be resumed only on the local node, default: `false`
+
+  * `:node` - restrict resuming to a particular node
 
   Note: by default, Oban does not verify that the given queue exists unless `:local_only`
   is set to `true` as even if the queue does not exist locally, it might be running on
@@ -671,11 +733,16 @@ defmodule Oban do
 
       Oban.resume_queue(queue: :default, local_only: true)
       :ok
+
+  Resume the default queue only on a particular node:
+
+      Oban.resume_queue(queue: :default, node: "worker.1")
+      :ok
   """
   @doc since: "0.2.0"
   @spec resume_queue(name(), opts :: [queue_option()]) :: :ok
   def resume_queue(name \\ __MODULE__, [_ | _] = opts) do
-    validate_queue_opts!(opts, [:queue, :local_only])
+    validate_queue_opts!(opts, [:queue, :local_only, :node])
     validate_queue_exists!(name, opts)
 
     conf = config(name)
@@ -690,8 +757,12 @@ defmodule Oban do
   ## Options
 
   * `:queue` - a string or atom specifying the queue to scale, required
+
   * `:limit` — the new concurrency limit, required
+
   * `:local_only` — whether the queue will be scaled only on the local node, default: `false`
+
+  * `:node` - restrict scaling to a particular node
 
   In addition, all engine-specific queue options are passed along after validation.
 
@@ -715,13 +786,18 @@ defmodule Oban do
 
       Oban.scale_queue(queue: :default, limit: 10, local_only: true)
       :ok
+
+  Scale the queue on a particular node:
+
+      Oban.scale_queue(queue: :default, limit: 10, node: "worker.1")
+      :ok
   """
   @doc since: "0.2.0"
   @spec scale_queue(name(), opts :: [queue_option()]) :: :ok
   def scale_queue(name \\ __MODULE__, [_ | _] = opts) do
     conf = config(name)
 
-    validate_queue_opts!(opts, [:queue, :local_only])
+    validate_queue_opts!(opts, [:queue, :local_only, :node])
     validate_engine_meta!(conf, opts)
     validate_queue_exists!(name, opts)
 
@@ -751,20 +827,32 @@ defmodule Oban do
   ## Options
 
   * `:queue` - a string or atom specifying the queue to stop, required
+
   * `:local_only` - whether the queue will be stopped only on the local node, default: `false`
 
+  * `:node` - restrict stopping to a particular node
+
   ## Example
+
+  Stop a running queue on all nodes:
 
       Oban.stop_queue(queue: :default)
       :ok
 
+  Stop the queue only on the local node:
+
       Oban.stop_queue(queue: :media, local_only: true)
+      :ok
+
+  Stop the queue only on a particular node:
+
+      Oban.stop_queue(queue: :media, node: "worker.1")
       :ok
   """
   @doc since: "0.12.0"
   @spec stop_queue(name(), opts :: [queue_option()]) :: :ok
   def stop_queue(name \\ __MODULE__, [_ | _] = opts) do
-    validate_queue_opts!(opts, [:queue, :local_only])
+    validate_queue_opts!(opts, [:queue, :local_only, :node])
     validate_queue_exists!(name, opts)
 
     conf = config(name)
@@ -851,9 +939,11 @@ defmodule Oban do
   @doc since: "2.9.0"
   @spec retry_all_jobs(name(), queryable :: Ecto.Queryable.t()) :: {:ok, non_neg_integer()}
   def retry_all_jobs(name \\ __MODULE__, queryable) do
-    name
-    |> config()
-    |> Engine.retry_all_jobs(queryable)
+    conf = config(name)
+
+    {:ok, jobs} = Engine.retry_all_jobs(conf, queryable)
+
+    {:ok, length(jobs)}
   end
 
   @doc """
@@ -874,9 +964,16 @@ defmodule Oban do
   @doc since: "1.3.0"
   @spec cancel_job(name(), job_id :: pos_integer()) :: :ok
   def cancel_job(name \\ __MODULE__, job_id) when is_integer(job_id) do
+    import Ecto.Query, only: [where: 3]
+
     conf = config(name)
 
-    Engine.cancel_job(conf, %Job{id: job_id})
+    # Cancelling all but an "executing" jobs allows the producer to handle cancellation with a
+    # proper error and telemetry event.
+    query = where(Job, [j], j.id == ^job_id and j.state != "executing")
+
+    Engine.cancel_all_jobs(conf, query)
+
     Notifier.notify(conf, :signal, %{action: :pkill, job_id: job_id})
   end
 
@@ -908,28 +1005,19 @@ defmodule Oban do
   def cancel_all_jobs(name \\ __MODULE__, queryable) do
     conf = config(name)
 
-    case Engine.cancel_all_jobs(conf, queryable) do
-      {:ok, {count, [_ | _] = executing}} ->
-        payload = Enum.map(executing, fn job -> %{action: :pkill, job_id: job.id} end)
+    {:ok, cancelled_jobs} = Engine.cancel_all_jobs(conf, queryable)
 
-        Notifier.notify(conf, :signal, payload)
+    payload =
+      for %{id: id, state: "executing"} <- cancelled_jobs do
+        %{action: :pkill, job_id: id}
+      end
 
-        {:ok, count}
+    Notifier.notify(conf, :signal, payload)
 
-      {:ok, {count, _executing}} ->
-        {:ok, count}
-    end
+    {:ok, length(cancelled_jobs)}
   end
 
   ## Child Spec Helpers
-
-  defp peer_child_spec(conf) do
-    case conf do
-      %{peer: false} -> []
-      %{plugins: []} -> []
-      _ -> [{Peer, conf: conf, name: Registry.via(conf.name, Peer)}]
-    end
-  end
 
   defp plugin_child_spec({module, opts}, conf) do
     name = Registry.via(conf.name, {:plugin, module})
@@ -942,26 +1030,25 @@ defmodule Oban do
     Supervisor.child_spec({module, opts}, id: {:plugin, module})
   end
 
-  defp plugin_child_spec(module, conf) do
-    plugin_child_spec({module, []}, conf)
-  end
-
   defp event_child_spec(conf) do
     time = %{system_time: System.system_time()}
     meta = %{pid: self(), conf: conf}
 
-    init_task = fn -> Telemetry.execute([:oban, :supervisor, :init], time, meta) end
-
-    [Supervisor.child_spec({Task, init_task}, restart: :temporary)]
+    [Task.child_spec(fn -> Telemetry.execute([:oban, :supervisor, :init], time, meta) end)]
   end
 
   ## Signal Helper
 
   defp scope_signal(conf, opts) do
-    if Keyword.get(opts, :local_only) do
-      Config.to_ident(conf)
-    else
-      :any
+    cond do
+      Keyword.get(opts, :local_only) ->
+        Config.to_ident(conf)
+
+      Keyword.has_key?(opts, :node) ->
+        Config.to_ident(%{conf | node: opts[:node]})
+
+      true ->
+        :any
     end
   end
 
@@ -987,6 +1074,13 @@ defmodule Oban do
   defp validate_queue_opts!({:local_only, local_only}) do
     unless is_boolean(local_only) do
       raise ArgumentError, "expected :local_only to be a boolean, got: #{inspect(local_only)}"
+    end
+  end
+
+  defp validate_queue_opts!({:node, node}) do
+    unless (is_atom(node) and not is_nil(node)) or (is_binary(node) and byte_size(node) > 0) do
+      raise ArgumentError,
+            "expected :node to be a binary or atom (except `nil`), got: #{inspect(node)}"
     end
   end
 

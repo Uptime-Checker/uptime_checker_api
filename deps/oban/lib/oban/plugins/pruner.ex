@@ -19,30 +19,35 @@ defmodule Oban.Plugins.Pruner do
 
   > #### 🌟 DynamicPruner {: .info}
   >
-  > This plugin treats all jobs the same and only retains by time. To retain by length or
-  > provide custom rules for specific queues, workers and job states see the `DynamicPruner` plugin
-  > in [Oban Pro](https://getoban.pro/docs/pro/dynamic_pruner.html).
+  > To prune on a cron-style schedule, retain jobs by a limit, or provide overrides for specific
+  > queues, workers, and job states; see Oban Pro's [DynamicPruner][dyn].
 
   ## Options
 
   * `:interval` — the number of milliseconds between pruning attempts. The default is `30_000ms`.
+
   * `:limit` — the maximum number of jobs to prune at one time. The default is 10,000 to prevent
-    request timeouts. Applications that steadily generate more than 10k jobs a minute should increase
-    this value.
+    request timeouts. Applications that steadily generate more than 10k jobs a minute should
+    increase this value.
+
   * `:max_age` — the number of seconds after which a job may be pruned. Defaults to 60s.
 
   ## Instrumenting with Telemetry
 
   The `Oban.Plugins.Pruner` plugin adds the following metadata to the `[:oban, :plugin, :stop]` event:
 
-  * `:pruned_count` - the number of jobs that were pruned from the database
+  * `:pruned_jobs` - the jobs that were deleted from the database
+
+  _Note: jobs only include `id`, `queue`, `state`, and `worker` fields._
+
+  [dyn]: https://getoban.pro/docs/pro/dynamic_pruner.html.
   """
 
   @behaviour Oban.Plugin
 
   use GenServer
 
-  import Ecto.Query, only: [join: 5, limit: 2, lock: 2, or_where: 3, select: 2]
+  import Ecto.Query, only: [join: 5, limit: 2, lock: 2, or_where: 3, select: 3]
 
   alias Oban.{Job, Peer, Plugin, Repo, Validation}
 
@@ -78,7 +83,7 @@ defmodule Oban.Plugins.Pruner do
       {:interval, interval} -> Validation.validate_integer(:interval, interval)
       {:limit, limit} -> Validation.validate_integer(:limit, limit)
       {:max_age, max_age} -> Validation.validate_integer(:max_age, max_age)
-      option -> {:error, "unknown option provided: #{inspect(option)}"}
+      option -> {:unknown, option, State}
     end)
   end
 
@@ -111,8 +116,8 @@ defmodule Oban.Plugins.Pruner do
 
     :telemetry.span([:oban, :plugin], meta, fn ->
       case check_leadership_and_delete_jobs(state) do
-        {:ok, {pruned_count, _}} when is_integer(pruned_count) ->
-          {:ok, Map.put(meta, :pruned_count, pruned_count)}
+        {:ok, extra} when is_map(extra) ->
+          {:ok, Map.merge(meta, extra)}
 
         error ->
           {:error, Map.put(meta, :error, error)}
@@ -130,7 +135,7 @@ defmodule Oban.Plugins.Pruner do
         delete_jobs(state.conf, state.max_age, state.limit)
       end)
     else
-      {:ok, {0, []}}
+      {:ok, %{}}
     end
   end
 
@@ -148,13 +153,16 @@ defmodule Oban.Plugins.Pruner do
       |> or_where([j], j.state == "completed" and j.attempted_at < ^time)
       |> or_where([j], j.state == "cancelled" and j.cancelled_at < ^time)
       |> or_where([j], j.state == "discarded" and j.discarded_at < ^time)
-      |> select([:id])
       |> limit(^limit)
       |> lock("FOR UPDATE SKIP LOCKED")
 
-    Repo.delete_all(
-      conf,
-      join(Job, :inner, [j], x in subquery(subquery), on: j.id == x.id)
-    )
+    query =
+      Job
+      |> join(:inner, [j], x in subquery(subquery), on: j.id == x.id)
+      |> select([_, x], map(x, [:id, :queue, :state, :worker]))
+
+    {pruned_count, pruned} = Repo.delete_all(conf, query)
+
+    %{pruned_count: pruned_count, pruned_jobs: pruned}
   end
 end

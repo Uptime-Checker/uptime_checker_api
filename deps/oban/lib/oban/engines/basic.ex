@@ -1,12 +1,20 @@
 defmodule Oban.Engines.Basic do
-  @moduledoc false
+  @moduledoc """
+  The default engine for use with Postgres databases.
+
+  ## Usage
+
+  This is the default engine, no additional configuration is necessary:
+
+      Oban.start_link(repo: MyApp.Repo, queues: [default: 10])
+  """
 
   @behaviour Oban.Engine
 
   import Ecto.Query
   import DateTime, only: [utc_now: 0]
 
-  alias Ecto.{Changeset, Multi}
+  alias Ecto.Changeset
   alias Oban.{Config, Engine, Job, Repo}
 
   @impl Engine
@@ -58,38 +66,11 @@ defmodule Oban.Engines.Basic do
   end
 
   @impl Engine
-  def insert_job(%Config{} = conf, %Multi{} = multi, name, fun, opts) when is_function(fun, 1) do
-    Multi.run(multi, name, fn repo, changes ->
-      insert_unique(%{conf | repo: repo}, fun.(changes), opts)
-    end)
-  end
-
-  @impl Engine
-  def insert_job(%Config{} = conf, %Multi{} = multi, name, changeset, opts) do
-    Multi.run(multi, name, fn repo, _changes ->
-      insert_unique(%{conf | repo: repo}, changeset, opts)
-    end)
-  end
-
-  @impl Engine
   def insert_all_jobs(%Config{} = conf, changesets, opts) do
-    entries =
-      changesets
-      |> expand(%{})
-      |> Enum.map(&Job.to_map/1)
-
+    jobs = Enum.map(changesets, &Job.to_map/1)
     opts = Keyword.merge(opts, on_conflict: :nothing, returning: true)
 
-    conf
-    |> Repo.insert_all(Job, entries, opts)
-    |> elem(1)
-  end
-
-  @impl Engine
-  def insert_all_jobs(%Config{} = conf, %Multi{} = multi, name, wrapper, opts) do
-    Multi.run(multi, name, fn repo, changes ->
-      {:ok, insert_all_jobs(%{conf | repo: repo}, expand(wrapper, changes), opts)}
-    end)
+    with {_count, jobs} <- Repo.insert_all(conf, Job, jobs, opts), do: jobs
   end
 
   @impl Engine
@@ -150,9 +131,7 @@ defmodule Oban.Engines.Basic do
   def discard_job(%Config{} = conf, %Job{} = job) do
     updates = [
       set: [state: "discarded", discarded_at: utc_now()],
-      push: [
-        errors: %{attempt: job.attempt, at: utc_now(), error: format_blamed(job.unsaved_error)}
-      ]
+      push: [errors: Job.format_attempt(job)]
     ]
 
     Repo.update_all(conf, where(Job, id: ^job.id), updates)
@@ -164,9 +143,7 @@ defmodule Oban.Engines.Basic do
   def error_job(%Config{} = conf, %Job{} = job, seconds) when is_integer(seconds) do
     updates = [
       set: [state: "retryable", scheduled_at: seconds_from_now(seconds)],
-      push: [
-        errors: %{attempt: job.attempt, at: utc_now(), error: format_blamed(job.unsaved_error)}
-      ]
+      push: [errors: Job.format_attempt(job)]
     ]
 
     Repo.update_all(conf, where(Job, id: ^job.id), updates)
@@ -188,67 +165,54 @@ defmodule Oban.Engines.Basic do
 
   @impl Engine
   def cancel_job(%Config{} = conf, %Job{} = job) do
-    updates = [set: [state: "cancelled", cancelled_at: utc_now()]]
-
-    updates =
-      if is_map(job.unsaved_error) do
-        error = %{attempt: job.attempt, at: utc_now(), error: format_blamed(job.unsaved_error)}
-
-        Keyword.put(updates, :push, errors: error)
-      else
-        updates
-      end
+    query = where(Job, id: ^job.id)
 
     query =
-      Job
-      |> where(id: ^job.id)
-      |> where([j], j.state not in ["cancelled", "completed", "discarded"])
+      if is_map(job.unsaved_error) do
+        update(query, [j],
+          set: [state: "cancelled", cancelled_at: ^utc_now()],
+          push: [errors: ^Job.format_attempt(job)]
+        )
+      else
+        query
+        |> where([j], j.state not in ["cancelled", "completed", "discarded"])
+        |> update(set: [state: "cancelled", cancelled_at: ^utc_now()])
+      end
 
-    Repo.update_all(conf, query, updates)
+    Repo.update_all(conf, query, [])
 
     :ok
   end
 
   @impl Engine
   def cancel_all_jobs(%Config{} = conf, queryable) do
-    all_executing = fn _repo, _changes ->
-      query =
-        queryable
-        |> where(state: "executing")
-        |> select([:id])
+    subquery = where(queryable, [j], j.state not in ["cancelled", "completed", "discarded"])
 
-      {:ok, Repo.all(conf, query)}
-    end
+    query =
+      Job
+      |> join(:inner, [j], x in subquery(subquery), on: j.id == x.id)
+      |> select([_, x], map(x, [:id, :queue, :state, :worker]))
 
-    cancel_query =
-      queryable
-      |> where([j], j.state not in ["cancelled", "completed", "discarded"])
-      |> update([j], set: [state: "cancelled", cancelled_at: ^utc_now()])
+    {_, jobs} = Repo.update_all(conf, query, set: [state: "cancelled", cancelled_at: utc_now()])
 
-    multi =
-      Multi.new()
-      |> Multi.run(:executing, all_executing)
-      |> Multi.update_all(:cancelled, cancel_query, [], log: conf.log, prefix: conf.prefix)
-
-    {:ok, %{executing: executing, cancelled: {count, _}}} = Repo.transaction(conf, multi)
-
-    {:ok, {count, executing}}
+    {:ok, jobs}
   end
 
   @impl Engine
   def retry_job(%Config{} = conf, %Job{id: id}) do
-    query = where(Job, [j], j.id == ^id)
-
-    retry_all_jobs(conf, query)
+    retry_all_jobs(conf, where(Job, [j], j.id == ^id))
 
     :ok
   end
 
   @impl Engine
   def retry_all_jobs(%Config{} = conf, queryable) do
+    subquery = where(queryable, [j], j.state not in ["available", "executing"])
+
     query =
-      queryable
-      |> where([j], j.state not in ["available", "executing", "scheduled"])
+      Job
+      |> join(:inner, [j], x in subquery(subquery), on: j.id == x.id)
+      |> select([_, x], map(x, [:id, :queue, :state, :worker]))
       |> update([j],
         set: [
           state: "available",
@@ -260,9 +224,9 @@ defmodule Oban.Engines.Basic do
         ]
       )
 
-    {count, _} = Repo.update_all(conf, query, [])
+    {_, jobs} = Repo.update_all(conf, query, [])
 
-    {:ok, count}
+    {:ok, jobs}
   end
 
   # Validation
@@ -305,37 +269,42 @@ defmodule Oban.Engines.Basic do
   # Insertion
 
   defp insert_unique(conf, changeset, opts) do
-    query_opts = Keyword.put(opts, :on_conflict, :nothing)
+    opts = Keyword.put(opts, :on_conflict, :nothing)
 
     with {:ok, query, lock_key} <- unique_query(changeset),
          :ok <- acquire_lock(conf, lock_key),
-         {:ok, job} <- unprepared_one(conf, query, query_opts),
-         {:ok, job} <- return_or_replace(conf, query_opts, job, changeset) do
+         {:ok, job} <- fetch_job(conf, query, opts),
+         {:ok, job} <- resolve_conflict(conf, job, changeset, opts) do
       {:ok, %Job{job | conflict?: true}}
     else
       {:error, :locked} ->
         {:ok, Changeset.apply_changes(changeset)}
 
       nil ->
-        Repo.insert(conf, changeset, query_opts)
+        Repo.insert(conf, changeset, opts)
 
       error ->
         error
     end
   end
 
-  defp return_or_replace(conf, query_opts, job, changeset) do
-    case Changeset.get_change(changeset, :replace, []) do
-      [] ->
-        {:ok, job}
+  defp resolve_conflict(conf, job, changeset, opts) do
+    case Changeset.fetch_change(changeset, :replace) do
+      {:ok, replace} ->
+        keys = Keyword.get(replace, String.to_existing_atom(job.state), [])
 
-      replace_keys ->
         Repo.update(
           conf,
-          Ecto.Changeset.change(job, Map.take(changeset.changes, replace_keys)),
-          query_opts
+          Changeset.change(job, Map.take(changeset.changes, keys)),
+          opts
         )
+
+      :error ->
+        {:ok, job}
     end
+  rescue
+    error in [Ecto.StaleEntryError] ->
+      {:error, error}
   end
 
   defp unique_query(%{changes: %{unique: %{} = unique}} = changeset) do
@@ -390,9 +359,7 @@ defmodule Oban.Engines.Basic do
   defp since_period(query, :infinity), do: query
 
   defp since_period(query, period) do
-    since = DateTime.add(utc_now(), period * -1, :second)
-
-    where(query, [j], j.inserted_at >= ^since)
+    where(query, [j], j.inserted_at >= ^seconds_from_now(-period))
   end
 
   defp acquire_lock(conf, base_key) do
@@ -408,33 +375,12 @@ defmodule Oban.Engines.Basic do
     end
   end
 
-  # With certain unique option combinations Postgres will decide to use a `generic plan` instead
-  # of a `custom plan`, which *drastically* impacts the unique query performance. Ecto doesn't
-  # provide a way to opt out of prepared statements for a single query, so this function works
-  # around the issue by forcing a raw SQL query.
-  defp unprepared_one(conf, query, opts) do
-    {raw_sql, bindings} = Repo.to_sql(conf, :all, query)
-
-    case Repo.query(conf, raw_sql, bindings, opts) do
-      {:ok, %{columns: columns, rows: [rows]}} -> {:ok, conf.repo.load(Job, {columns, rows})}
-      _ -> nil
+  defp fetch_job(conf, query, opts) do
+    case Repo.one(conf, query, Keyword.put(opts, :prepare, :unnamed)) do
+      nil -> nil
+      job -> {:ok, job}
     end
   end
 
-  # Changeset Helpers
-
-  @doc false
-  def expand(fun, changes) when is_function(fun, 1), do: expand(fun.(changes), changes)
-  def expand(%{changesets: changesets}, _), do: expand(changesets, %{})
-  def expand(changesets, _) when is_list(changesets), do: changesets
-
-  # Other Helpers
-
   defp seconds_from_now(seconds), do: DateTime.add(utc_now(), seconds, :second)
-
-  defp format_blamed(%{kind: kind, reason: error, stacktrace: stacktrace}) do
-    {blamed, stacktrace} = Exception.blame(kind, error, stacktrace)
-
-    Exception.format(kind, blamed, stacktrace)
-  end
 end

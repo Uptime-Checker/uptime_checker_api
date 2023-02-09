@@ -14,10 +14,10 @@ defmodule Cachex.Services.Courier do
   use GenServer
 
   # import spec macros
-  import Cachex.Actions
   import Cachex.Spec
 
   # add some aliases
+  alias Cachex.Actions
   alias Cachex.Actions.Put
   alias Cachex.ExecutionError
 
@@ -86,13 +86,14 @@ defmodule Cachex.Services.Courier do
                   }
               end
 
-            normalized = normalize_commit(result)
+            formatted = Actions.format_fetch_value(result)
+            normalized = Actions.normalize_commit(formatted)
 
-            with {:commit, val} <- normalized do
-              Put.execute(cache, key, val, const(:notify_false))
+            with {:commit, val, options} <- normalized do
+              Put.execute(cache, key, val, [const(:notify_false) | options])
             end
 
-            send(parent, {:notify, key, normalized})
+            send(parent, {:notify, key, formatted})
           end)
 
           [caller]
@@ -123,10 +124,15 @@ defmodule Cachex.Services.Courier do
       GenServer.reply(owner, result)
 
       result =
-        if elem(result, 0) == :commit do
-          put_elem(result, 0, :ok)
-        else
-          result
+        case result do
+          {:commit, value, _} ->
+            {:ok, value}
+
+          {:commit, value} ->
+            {:ok, value}
+
+          value ->
+            value
         end
 
       for caller <- listeners do

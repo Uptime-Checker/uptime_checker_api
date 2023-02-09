@@ -11,7 +11,7 @@ defmodule HTTPoison.Base do
 
         @endpoint "https://api.github.com"
 
-        def process_url(url) do
+        def process_request_url(url) do
           @endpoint <> url
         end
       end
@@ -32,8 +32,8 @@ defmodule HTTPoison.Base do
 
       # Called in order to process the url passed to any request method before
       # actually issuing the request.
-      @spec process_url(binary) :: binary
-      def process_url(url)
+      @spec process_request_url(binary) :: binary
+      def process_request_url(url)
 
       # Called to arbitrarily process the request body before sending it with the
       # request.
@@ -299,7 +299,7 @@ defmodule HTTPoison.Base do
       end
 
       @doc ~S"""
-      Issues an HTTP request using a `Request` struct.
+      Issues an HTTP request using an `HTTPoison.Request` struct.
 
       This function returns `{:ok, response}`, `{:ok, async_response}`, or `{:ok, maybe_redirect}`
       if the request is successful, `{:error, reason}` otherwise.
@@ -723,7 +723,15 @@ defmodule HTTPoison.Base do
     recv_timeout = Keyword.get(options, :recv_timeout)
     stream_to = Keyword.get(options, :stream_to)
     async = Keyword.get(options, :async)
-    ssl = Keyword.get(options, :ssl)
+
+    ssl =
+      if Keyword.get(options, :ssl) do
+        default_ssl_options()
+        |> Keyword.merge(Keyword.get(options, :ssl))
+      else
+        Keyword.get(options, :ssl_override)
+      end
+
     follow_redirect = Keyword.get(options, :follow_redirect)
     max_redirect = Keyword.get(options, :max_redirect)
 
@@ -787,6 +795,19 @@ defmodule HTTPoison.Base do
       if socks5_pass, do: [{:socks5_pass, socks5_pass} | hn_proxy_options], else: hn_proxy_options
 
     hn_proxy_options
+  end
+
+  defp default_ssl_options() do
+    [
+      {:versions, [:"tlsv1.2", :"tlsv1.3"]},
+      {:verify, :verify_peer},
+      {:cacertfile, :certifi.cacertfile()},
+      {:depth, 10},
+      {:customize_hostname_check,
+       [
+         match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
+       ]}
+    ]
   end
 
   defp check_no_proxy(nil, _) do
