@@ -4,8 +4,8 @@ defmodule UptimeChecker.MixProject do
   def project do
     [
       app: :uptime_checker,
-      version: "0.1.0",
-      elixir: "~> 1.12",
+      version: "1.0.0",
+      elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
@@ -81,7 +81,12 @@ defmodule UptimeChecker.MixProject do
     [
       setup: ["deps.get", "ecto.setup"],
       "ecto.set": ["ecto.create", "ecto.migrate"],
-      "ecto.setup": ["ecto.create", "ecto.load --skip-if-loaded", "ecto.migrate", "run priv/repo/seeds.exs"],
+      "ecto.setup": [
+        "ecto.create",
+        "ecto.load --skip-if-loaded",
+        "ecto.migrate",
+        "run priv/repo/seeds.exs"
+      ],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       "ecto.migrate": ["ecto.migrate", "ecto.dump"],
       "ecto.rollback": ["ecto.rollback", "ecto.dump"],
