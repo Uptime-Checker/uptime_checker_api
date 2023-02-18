@@ -3,8 +3,9 @@ defmodule UptimeChecker.Repo.Migrations.CreateChecks do
 
   def change do
     create table(:checks) do
-      add :success, :boolean, default: false, null: false
+      add :status_code, :integer
       add :duration, :integer, default: 0
+      add :success, :boolean, default: false, null: false
 
       add :region_id, references(:regions)
       add :monitor_id, references(:monitors, on_delete: :delete_all)
