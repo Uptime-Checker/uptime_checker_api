@@ -4,7 +4,6 @@ defmodule UptimeChecker.Repo.Migrations.CreateErrorLogs do
   def change do
     create table(:error_logs) do
       add :text, :text
-      add :status_code, :integer
       add :type, :integer
       add :screenshot_url, :string
 
