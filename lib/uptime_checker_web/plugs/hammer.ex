@@ -8,14 +8,20 @@ defmodule UptimeCheckerWeb.Plugs.Hammer do
   def call(conn, _opts) do
     ip = to_string(:inet_parse.ntoa(conn.remote_ip))
 
-    case Hammer.check_rate("session:#{ip}", 60_000, 10) do
-      {:allow, _count} ->
+    case Mix.env() do
+      :dev ->
         conn
 
-      {:deny, _limit} ->
-        conn
-        |> send_resp(:too_many_requests, Jason.encode!(%{error: HttpError.too_many_requests()}))
-        |> halt()
+      _ ->
+        case Hammer.check_rate("session:#{ip}", 60_000, 10) do
+          {:allow, _count} ->
+            conn
+
+          {:deny, _limit} ->
+            conn
+            |> send_resp(:too_many_requests, Jason.encode!(%{error: HttpError.too_many_requests()}))
+            |> halt()
+        end
     end
   end
 end
