@@ -1,8 +1,8 @@
-defmodule UptimeChecker.Repo.Migrations.CreateRegions do
+defmodule UptimeChecker.Repo.Migrations.CreateRegion do
   use Ecto.Migration
 
   def change do
-    create table(:regions) do
+    create table(:region) do
       add :name, :string, null: false
       add :key, :string, null: false
       add :ip_address, :string
@@ -11,6 +11,6 @@ defmodule UptimeChecker.Repo.Migrations.CreateRegions do
       timestamps()
     end
 
-    create unique_index(:regions, [:key])
+    create unique_index(:region, [:key])
   end
 end

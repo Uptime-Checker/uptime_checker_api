@@ -1,8 +1,8 @@
-defmodule UptimeChecker.Repo.Migrations.CreateUserContacts do
+defmodule UptimeChecker.Repo.Migrations.CreateUserContact do
   use Ecto.Migration
 
   def change do
-    create table(:user_contacts) do
+    create table(:user_contact) do
       add :email, :string
       add :number, :string
       add :mode, :integer
@@ -13,14 +13,14 @@ defmodule UptimeChecker.Repo.Migrations.CreateUserContacts do
       add :subscribed, :boolean, default: true, null: false
       add :bounce_count, :integer, default: 0
 
-      add :user_id, references(:users, on_delete: :delete_all)
+      add :user_id, references(:user, on_delete: :delete_all)
 
       timestamps()
     end
 
-    create index(:user_contacts, [:user_id])
-    create unique_index(:user_contacts, [:email, :verified])
-    create unique_index(:user_contacts, [:number, :verified])
-    create unique_index(:user_contacts, [:device_id])
+    create index(:user_contact, [:user_id])
+    create unique_index(:user_contact, [:email, :verified])
+    create unique_index(:user_contact, [:number, :verified])
+    create unique_index(:user_contact, [:device_id])
   end
 end

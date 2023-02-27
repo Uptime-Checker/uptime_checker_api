@@ -16,53 +16,15 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
---
--- Name: oban_job_state; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE public.oban_job_state AS ENUM (
-    'available',
-    'scheduled',
-    'executing',
-    'retryable',
-    'completed',
-    'discarded',
-    'cancelled'
-);
-
-
---
--- Name: oban_jobs_notify(); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.oban_jobs_notify() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-  channel text;
-  notice json;
-BEGIN
-  IF NEW.state = 'available' THEN
-    channel = 'public.oban_insert';
-    notice = json_build_object('queue', NEW.queue);
-
-    PERFORM pg_notify(channel, notice::text);
-  END IF;
-
-  RETURN NULL;
-END;
-$$;
-
-
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
 
 --
--- Name: alarms; Type: TABLE; Schema: public; Owner: -
+-- Name: alarm; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.alarms (
+CREATE TABLE public.alarm (
     id bigint NOT NULL,
     ongoing boolean,
     resolved_at timestamp(0) without time zone,
@@ -76,10 +38,10 @@ CREATE TABLE public.alarms (
 
 
 --
--- Name: alarms_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: alarm_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.alarms_id_seq
+CREATE SEQUENCE public.alarm_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -88,17 +50,17 @@ CREATE SEQUENCE public.alarms_id_seq
 
 
 --
--- Name: alarms_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: alarm_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.alarms_id_seq OWNED BY public.alarms.id;
+ALTER SEQUENCE public.alarm_id_seq OWNED BY public.alarm.id;
 
 
 --
--- Name: assertions; Type: TABLE; Schema: public; Owner: -
+-- Name: assertion; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.assertions (
+CREATE TABLE public.assertion (
     id bigint NOT NULL,
     source integer DEFAULT 1,
     property character varying(255),
@@ -111,10 +73,10 @@ CREATE TABLE public.assertions (
 
 
 --
--- Name: assertions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: assertion_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.assertions_id_seq
+CREATE SEQUENCE public.assertion_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -123,20 +85,21 @@ CREATE SEQUENCE public.assertions_id_seq
 
 
 --
--- Name: assertions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: assertion_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.assertions_id_seq OWNED BY public.assertions.id;
+ALTER SEQUENCE public.assertion_id_seq OWNED BY public.assertion.id;
 
 
 --
--- Name: checks; Type: TABLE; Schema: public; Owner: -
+-- Name: check; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.checks (
+CREATE TABLE public."check" (
     id bigint NOT NULL,
-    success boolean DEFAULT false NOT NULL,
+    status_code integer,
     duration integer DEFAULT 0,
+    success boolean DEFAULT false NOT NULL,
     region_id bigint,
     monitor_id bigint,
     organization_id bigint,
@@ -146,10 +109,10 @@ CREATE TABLE public.checks (
 
 
 --
--- Name: checks_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: check_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.checks_id_seq
+CREATE SEQUENCE public.check_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -158,48 +121,17 @@ CREATE SEQUENCE public.checks_id_seq
 
 
 --
--- Name: checks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: check_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.checks_id_seq OWNED BY public.checks.id;
-
-
---
--- Name: claims; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.claims (
-    id bigint NOT NULL,
-    name character varying(255) NOT NULL,
-    inserted_at timestamp(0) without time zone NOT NULL,
-    updated_at timestamp(0) without time zone NOT NULL
-);
+ALTER SEQUENCE public.check_id_seq OWNED BY public."check".id;
 
 
 --
--- Name: claims_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: daily_report; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.claims_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: claims_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.claims_id_seq OWNED BY public.claims.id;
-
-
---
--- Name: daily_reports; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.daily_reports (
+CREATE TABLE public.daily_report (
     id bigint NOT NULL,
     successful_checks integer DEFAULT 0,
     error_checks integer DEFAULT 0,
@@ -213,10 +145,10 @@ CREATE TABLE public.daily_reports (
 
 
 --
--- Name: daily_reports_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: daily_report_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.daily_reports_id_seq
+CREATE SEQUENCE public.daily_report_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -225,20 +157,19 @@ CREATE SEQUENCE public.daily_reports_id_seq
 
 
 --
--- Name: daily_reports_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: daily_report_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.daily_reports_id_seq OWNED BY public.daily_reports.id;
+ALTER SEQUENCE public.daily_report_id_seq OWNED BY public.daily_report.id;
 
 
 --
--- Name: error_logs; Type: TABLE; Schema: public; Owner: -
+-- Name: error_log; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.error_logs (
+CREATE TABLE public.error_log (
     id bigint NOT NULL,
     text text,
-    status_code integer,
     type integer,
     screenshot_url character varying(255),
     check_id bigint,
@@ -250,10 +181,10 @@ CREATE TABLE public.error_logs (
 
 
 --
--- Name: error_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: error_log_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.error_logs_id_seq
+CREATE SEQUENCE public.error_log_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -262,17 +193,17 @@ CREATE SEQUENCE public.error_logs_id_seq
 
 
 --
--- Name: error_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: error_log_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.error_logs_id_seq OWNED BY public.error_logs.id;
+ALTER SEQUENCE public.error_log_id_seq OWNED BY public.error_log.id;
 
 
 --
--- Name: features; Type: TABLE; Schema: public; Owner: -
+-- Name: feature; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.features (
+CREATE TABLE public.feature (
     id bigint NOT NULL,
     name character varying(255) NOT NULL,
     type integer DEFAULT 1,
@@ -282,10 +213,10 @@ CREATE TABLE public.features (
 
 
 --
--- Name: features_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: feature_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.features_id_seq
+CREATE SEQUENCE public.feature_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -294,17 +225,17 @@ CREATE SEQUENCE public.features_id_seq
 
 
 --
--- Name: features_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: feature_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.features_id_seq OWNED BY public.features.id;
+ALTER SEQUENCE public.feature_id_seq OWNED BY public.feature.id;
 
 
 --
--- Name: guest_users; Type: TABLE; Schema: public; Owner: -
+-- Name: guest_user; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.guest_users (
+CREATE TABLE public.guest_user (
     id bigint NOT NULL,
     email character varying(255) NOT NULL,
     code character varying(255) NOT NULL,
@@ -315,10 +246,10 @@ CREATE TABLE public.guest_users (
 
 
 --
--- Name: guest_users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: guest_user_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.guest_users_id_seq
+CREATE SEQUENCE public.guest_user_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -327,17 +258,17 @@ CREATE SEQUENCE public.guest_users_id_seq
 
 
 --
--- Name: guest_users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: guest_user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.guest_users_id_seq OWNED BY public.guest_users.id;
+ALTER SEQUENCE public.guest_user_id_seq OWNED BY public.guest_user.id;
 
 
 --
--- Name: invitations; Type: TABLE; Schema: public; Owner: -
+-- Name: invitation; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.invitations (
+CREATE TABLE public.invitation (
     id bigint NOT NULL,
     email character varying(255) NOT NULL,
     code character varying(255) NOT NULL,
@@ -352,10 +283,10 @@ CREATE TABLE public.invitations (
 
 
 --
--- Name: invitations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: invitation_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.invitations_id_seq
+CREATE SEQUENCE public.invitation_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -364,185 +295,17 @@ CREATE SEQUENCE public.invitations_id_seq
 
 
 --
--- Name: invitations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: invitation_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.invitations_id_seq OWNED BY public.invitations.id;
-
-
---
--- Name: monitor_alerts; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.monitor_alerts (
-    id bigint NOT NULL,
-    "default" boolean DEFAULT true,
-    user_id bigint,
-    monitor_id bigint,
-    organization_id bigint,
-    integration_id bigint,
-    inserted_at timestamp(0) without time zone NOT NULL,
-    updated_at timestamp(0) without time zone NOT NULL
-);
+ALTER SEQUENCE public.invitation_id_seq OWNED BY public.invitation.id;
 
 
 --
--- Name: monitor_alerts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: monitor; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.monitor_alerts_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: monitor_alerts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.monitor_alerts_id_seq OWNED BY public.monitor_alerts.id;
-
-
---
--- Name: monitor_groups; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.monitor_groups (
-    id bigint NOT NULL,
-    name character varying(255) NOT NULL,
-    organization_id bigint,
-    inserted_at timestamp(0) without time zone NOT NULL,
-    updated_at timestamp(0) without time zone NOT NULL
-);
-
-
---
--- Name: monitor_groups_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.monitor_groups_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: monitor_groups_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.monitor_groups_id_seq OWNED BY public.monitor_groups.id;
-
-
---
--- Name: monitor_integrations; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.monitor_integrations (
-    id bigint NOT NULL,
-    name character varying(255),
-    type integer,
-    config jsonb,
-    organization_id bigint,
-    inserted_at timestamp(0) without time zone NOT NULL,
-    updated_at timestamp(0) without time zone NOT NULL
-);
-
-
---
--- Name: monitor_integrations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.monitor_integrations_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: monitor_integrations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.monitor_integrations_id_seq OWNED BY public.monitor_integrations.id;
-
-
---
--- Name: monitor_region_junction; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.monitor_region_junction (
-    id bigint NOT NULL,
-    down boolean DEFAULT false,
-    last_checked_at timestamp(0) without time zone,
-    monitor_id bigint,
-    region_id bigint,
-    inserted_at timestamp(0) without time zone NOT NULL,
-    updated_at timestamp(0) without time zone NOT NULL
-);
-
-
---
--- Name: monitor_region_junction_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.monitor_region_junction_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: monitor_region_junction_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.monitor_region_junction_id_seq OWNED BY public.monitor_region_junction.id;
-
-
---
--- Name: monitor_status_changes; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.monitor_status_changes (
-    id bigint NOT NULL,
-    status integer DEFAULT 1,
-    changed_at timestamp(0) without time zone,
-    monitor_id bigint,
-    inserted_at timestamp(0) without time zone NOT NULL,
-    updated_at timestamp(0) without time zone NOT NULL
-);
-
-
---
--- Name: monitor_status_changes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.monitor_status_changes_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: monitor_status_changes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.monitor_status_changes_id_seq OWNED BY public.monitor_status_changes.id;
-
-
---
--- Name: monitors; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.monitors (
+CREATE TABLE public.monitor (
     id bigint NOT NULL,
     name character varying(255) NOT NULL,
     url character varying(255) NOT NULL,
@@ -556,17 +319,13 @@ CREATE TABLE public.monitors (
     username text,
     password text,
     "on" boolean DEFAULT true,
+    muted boolean DEFAULT false,
     status integer DEFAULT 1,
     check_ssl boolean DEFAULT false,
     follow_redirects boolean DEFAULT false,
-    resolve_threshold integer DEFAULT 1,
-    error_threshold integer DEFAULT 1,
-    region_threshold integer DEFAULT 1,
     next_check_at timestamp(0) without time zone,
     last_checked_at timestamp(0) without time zone,
     last_failed_at timestamp(0) without time zone,
-    consecutive_failure integer DEFAULT 0,
-    consecutive_recovery integer DEFAULT 0,
     user_id bigint,
     monitor_group_id bigint,
     prev_id bigint,
@@ -577,35 +336,14 @@ CREATE TABLE public.monitors (
 
 
 --
--- Name: monitors_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: monitor_alarm_policy; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.monitors_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: monitors_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.monitors_id_seq OWNED BY public.monitors.id;
-
-
---
--- Name: notifications; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.notifications (
+CREATE TABLE public.monitor_alarm_policy (
     id bigint NOT NULL,
-    type integer,
-    successful boolean DEFAULT true NOT NULL,
-    alarm_id bigint,
+    reason character varying(255),
+    threshold integer DEFAULT 0,
     monitor_id bigint,
-    user_contact_id bigint,
     organization_id bigint,
     inserted_at timestamp(0) without time zone NOT NULL,
     updated_at timestamp(0) without time zone NOT NULL
@@ -613,10 +351,10 @@ CREATE TABLE public.notifications (
 
 
 --
--- Name: notifications_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: monitor_alarm_policy_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.notifications_id_seq
+CREATE SEQUENCE public.monitor_alarm_policy_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -625,55 +363,30 @@ CREATE SEQUENCE public.notifications_id_seq
 
 
 --
--- Name: notifications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: monitor_alarm_policy_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.notifications_id_seq OWNED BY public.notifications.id;
+ALTER SEQUENCE public.monitor_alarm_policy_id_seq OWNED BY public.monitor_alarm_policy.id;
 
 
 --
--- Name: oban_jobs; Type: TABLE; Schema: public; Owner: -
+-- Name: monitor_group; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.oban_jobs (
+CREATE TABLE public.monitor_group (
     id bigint NOT NULL,
-    state public.oban_job_state DEFAULT 'available'::public.oban_job_state NOT NULL,
-    queue text DEFAULT 'default'::text NOT NULL,
-    worker text NOT NULL,
-    args jsonb DEFAULT '{}'::jsonb NOT NULL,
-    errors jsonb[] DEFAULT ARRAY[]::jsonb[] NOT NULL,
-    attempt integer DEFAULT 0 NOT NULL,
-    max_attempts integer DEFAULT 20 NOT NULL,
-    inserted_at timestamp without time zone DEFAULT timezone('UTC'::text, now()) NOT NULL,
-    scheduled_at timestamp without time zone DEFAULT timezone('UTC'::text, now()) NOT NULL,
-    attempted_at timestamp without time zone,
-    completed_at timestamp without time zone,
-    attempted_by text[],
-    discarded_at timestamp without time zone,
-    priority integer DEFAULT 0 NOT NULL,
-    tags character varying(255)[] DEFAULT ARRAY[]::character varying[],
-    meta jsonb DEFAULT '{}'::jsonb,
-    cancelled_at timestamp without time zone,
-    CONSTRAINT attempt_range CHECK (((attempt >= 0) AND (attempt <= max_attempts))),
-    CONSTRAINT positive_max_attempts CHECK ((max_attempts > 0)),
-    CONSTRAINT priority_range CHECK (((priority >= 0) AND (priority <= 3))),
-    CONSTRAINT queue_length CHECK (((char_length(queue) > 0) AND (char_length(queue) < 128))),
-    CONSTRAINT worker_length CHECK (((char_length(worker) > 0) AND (char_length(worker) < 128)))
+    name character varying(255) NOT NULL,
+    organization_id bigint,
+    inserted_at timestamp(0) without time zone NOT NULL,
+    updated_at timestamp(0) without time zone NOT NULL
 );
 
 
 --
--- Name: TABLE oban_jobs; Type: COMMENT; Schema: public; Owner: -
+-- Name: monitor_group_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-COMMENT ON TABLE public.oban_jobs IS '11';
-
-
---
--- Name: oban_jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.oban_jobs_id_seq
+CREATE SEQUENCE public.monitor_group_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -682,29 +395,240 @@ CREATE SEQUENCE public.oban_jobs_id_seq
 
 
 --
--- Name: oban_jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: monitor_group_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.oban_jobs_id_seq OWNED BY public.oban_jobs.id;
+ALTER SEQUENCE public.monitor_group_id_seq OWNED BY public.monitor_group.id;
 
 
 --
--- Name: oban_peers; Type: TABLE; Schema: public; Owner: -
+-- Name: monitor_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE UNLOGGED TABLE public.oban_peers (
-    name text NOT NULL,
-    node text NOT NULL,
-    started_at timestamp without time zone NOT NULL,
-    expires_at timestamp without time zone NOT NULL
+CREATE SEQUENCE public.monitor_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: monitor_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.monitor_id_seq OWNED BY public.monitor.id;
+
+
+--
+-- Name: monitor_integration; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.monitor_integration (
+    id bigint NOT NULL,
+    name character varying(255),
+    type integer,
+    config jsonb,
+    organization_id bigint,
+    inserted_at timestamp(0) without time zone NOT NULL,
+    updated_at timestamp(0) without time zone NOT NULL
 );
 
 
 --
--- Name: organization_user_junction; Type: TABLE; Schema: public; Owner: -
+-- Name: monitor_integration_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.organization_user_junction (
+CREATE SEQUENCE public.monitor_integration_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: monitor_integration_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.monitor_integration_id_seq OWNED BY public.monitor_integration.id;
+
+
+--
+-- Name: monitor_notification; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.monitor_notification (
+    id bigint NOT NULL,
+    type integer,
+    successful boolean DEFAULT true NOT NULL,
+    alarm_id bigint,
+    monitor_id bigint,
+    user_contact_id bigint,
+    organization_id bigint,
+    integration_id bigint,
+    inserted_at timestamp(0) without time zone NOT NULL,
+    updated_at timestamp(0) without time zone NOT NULL
+);
+
+
+--
+-- Name: monitor_notification_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.monitor_notification_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: monitor_notification_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.monitor_notification_id_seq OWNED BY public.monitor_notification.id;
+
+
+--
+-- Name: monitor_notification_policy; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.monitor_notification_policy (
+    id bigint NOT NULL,
+    user_id bigint,
+    monitor_id bigint,
+    organization_id bigint,
+    integration_id bigint,
+    inserted_at timestamp(0) without time zone NOT NULL,
+    updated_at timestamp(0) without time zone NOT NULL
+);
+
+
+--
+-- Name: monitor_notification_policy_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.monitor_notification_policy_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: monitor_notification_policy_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.monitor_notification_policy_id_seq OWNED BY public.monitor_notification_policy.id;
+
+
+--
+-- Name: monitor_region; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.monitor_region (
+    id bigint NOT NULL,
+    down boolean DEFAULT false,
+    last_checked_at timestamp(0) without time zone,
+    monitor_id bigint,
+    region_id bigint,
+    inserted_at timestamp(0) without time zone NOT NULL,
+    updated_at timestamp(0) without time zone NOT NULL
+);
+
+
+--
+-- Name: monitor_region_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.monitor_region_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: monitor_region_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.monitor_region_id_seq OWNED BY public.monitor_region.id;
+
+
+--
+-- Name: monitor_status_change; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.monitor_status_change (
+    id bigint NOT NULL,
+    status integer DEFAULT 1,
+    changed_at timestamp(0) without time zone,
+    monitor_id bigint,
+    inserted_at timestamp(0) without time zone NOT NULL,
+    updated_at timestamp(0) without time zone NOT NULL
+);
+
+
+--
+-- Name: monitor_status_change_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.monitor_status_change_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: monitor_status_change_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.monitor_status_change_id_seq OWNED BY public.monitor_status_change.id;
+
+
+--
+-- Name: organization; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.organization (
+    id bigint NOT NULL,
+    name character varying(255) NOT NULL,
+    slug character varying(255) NOT NULL,
+    inserted_at timestamp(0) without time zone NOT NULL,
+    updated_at timestamp(0) without time zone NOT NULL
+);
+
+
+--
+-- Name: organization_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.organization_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: organization_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.organization_id_seq OWNED BY public.organization.id;
+
+
+--
+-- Name: organization_user; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.organization_user (
     id bigint NOT NULL,
     status integer DEFAULT 1,
     role_id bigint,
@@ -716,10 +640,10 @@ CREATE TABLE public.organization_user_junction (
 
 
 --
--- Name: organization_user_junction_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: organization_user_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.organization_user_junction_id_seq
+CREATE SEQUENCE public.organization_user_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -728,49 +652,17 @@ CREATE SEQUENCE public.organization_user_junction_id_seq
 
 
 --
--- Name: organization_user_junction_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: organization_user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.organization_user_junction_id_seq OWNED BY public.organization_user_junction.id;
-
-
---
--- Name: organizations; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.organizations (
-    id bigint NOT NULL,
-    name character varying(255) NOT NULL,
-    slug character varying(255) NOT NULL,
-    inserted_at timestamp(0) without time zone NOT NULL,
-    updated_at timestamp(0) without time zone NOT NULL
-);
+ALTER SEQUENCE public.organization_user_id_seq OWNED BY public.organization_user.id;
 
 
 --
--- Name: organizations_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: plan; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.organizations_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: organizations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.organizations_id_seq OWNED BY public.organizations.id;
-
-
---
--- Name: plans; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.plans (
+CREATE TABLE public.plan (
     id bigint NOT NULL,
     price double precision NOT NULL,
     type integer DEFAULT 1,
@@ -782,10 +674,10 @@ CREATE TABLE public.plans (
 
 
 --
--- Name: plans_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: plan_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.plans_id_seq
+CREATE SEQUENCE public.plan_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -794,50 +686,17 @@ CREATE SEQUENCE public.plans_id_seq
 
 
 --
--- Name: plans_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: plan_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.plans_id_seq OWNED BY public.plans.id;
-
-
---
--- Name: product_feature_junction; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.product_feature_junction (
-    id bigint NOT NULL,
-    count integer DEFAULT 1,
-    product_id bigint,
-    feature_id bigint,
-    inserted_at timestamp(0) without time zone NOT NULL,
-    updated_at timestamp(0) without time zone NOT NULL
-);
+ALTER SEQUENCE public.plan_id_seq OWNED BY public.plan.id;
 
 
 --
--- Name: product_feature_junction_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: product; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.product_feature_junction_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: product_feature_junction_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.product_feature_junction_id_seq OWNED BY public.product_feature_junction.id;
-
-
---
--- Name: products; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.products (
+CREATE TABLE public.product (
     id bigint NOT NULL,
     name character varying(255) NOT NULL,
     description character varying(255),
@@ -849,10 +708,24 @@ CREATE TABLE public.products (
 
 
 --
--- Name: products_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: product_feature; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.products_id_seq
+CREATE TABLE public.product_feature (
+    id bigint NOT NULL,
+    count integer DEFAULT 1,
+    product_id bigint,
+    feature_id bigint,
+    inserted_at timestamp(0) without time zone NOT NULL,
+    updated_at timestamp(0) without time zone NOT NULL
+);
+
+
+--
+-- Name: product_feature_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.product_feature_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -861,17 +734,36 @@ CREATE SEQUENCE public.products_id_seq
 
 
 --
--- Name: products_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: product_feature_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.products_id_seq OWNED BY public.products.id;
+ALTER SEQUENCE public.product_feature_id_seq OWNED BY public.product_feature.id;
 
 
 --
--- Name: receipts; Type: TABLE; Schema: public; Owner: -
+-- Name: product_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.receipts (
+CREATE SEQUENCE public.product_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: product_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.product_id_seq OWNED BY public.product.id;
+
+
+--
+-- Name: receipt; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.receipt (
     id bigint NOT NULL,
     price double precision NOT NULL,
     currency character varying(255) DEFAULT 'usd'::character varying,
@@ -894,10 +786,10 @@ CREATE TABLE public.receipts (
 
 
 --
--- Name: receipts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: receipt_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.receipts_id_seq
+CREATE SEQUENCE public.receipt_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -906,17 +798,17 @@ CREATE SEQUENCE public.receipts_id_seq
 
 
 --
--- Name: receipts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: receipt_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.receipts_id_seq OWNED BY public.receipts.id;
+ALTER SEQUENCE public.receipt_id_seq OWNED BY public.receipt.id;
 
 
 --
--- Name: regions; Type: TABLE; Schema: public; Owner: -
+-- Name: region; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.regions (
+CREATE TABLE public.region (
     id bigint NOT NULL,
     name character varying(255) NOT NULL,
     key character varying(255) NOT NULL,
@@ -928,10 +820,10 @@ CREATE TABLE public.regions (
 
 
 --
--- Name: regions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: region_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.regions_id_seq
+CREATE SEQUENCE public.region_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -940,49 +832,17 @@ CREATE SEQUENCE public.regions_id_seq
 
 
 --
--- Name: regions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: region_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.regions_id_seq OWNED BY public.regions.id;
-
-
---
--- Name: role_claim_junction; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.role_claim_junction (
-    id bigint NOT NULL,
-    role_id bigint,
-    claim_id bigint,
-    inserted_at timestamp(0) without time zone NOT NULL,
-    updated_at timestamp(0) without time zone NOT NULL
-);
+ALTER SEQUENCE public.region_id_seq OWNED BY public.region.id;
 
 
 --
--- Name: role_claim_junction_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: role; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.role_claim_junction_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: role_claim_junction_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.role_claim_junction_id_seq OWNED BY public.role_claim_junction.id;
-
-
---
--- Name: roles; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.roles (
+CREATE TABLE public.role (
     id bigint NOT NULL,
     name character varying(255) NOT NULL,
     type integer DEFAULT 1,
@@ -992,10 +852,23 @@ CREATE TABLE public.roles (
 
 
 --
--- Name: roles_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: role_claim; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.roles_id_seq
+CREATE TABLE public.role_claim (
+    id bigint NOT NULL,
+    claim character varying(255) NOT NULL,
+    role_id bigint,
+    inserted_at timestamp(0) without time zone NOT NULL,
+    updated_at timestamp(0) without time zone NOT NULL
+);
+
+
+--
+-- Name: role_claim_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.role_claim_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -1004,10 +877,29 @@ CREATE SEQUENCE public.roles_id_seq
 
 
 --
--- Name: roles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: role_claim_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.roles_id_seq OWNED BY public.roles.id;
+ALTER SEQUENCE public.role_claim_id_seq OWNED BY public.role_claim.id;
+
+
+--
+-- Name: role_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.role_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: role_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.role_id_seq OWNED BY public.role.id;
 
 
 --
@@ -1021,10 +913,10 @@ CREATE TABLE public.schema_migrations (
 
 
 --
--- Name: subscriptions; Type: TABLE; Schema: public; Owner: -
+-- Name: subscription; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.subscriptions (
+CREATE TABLE public.subscription (
     id bigint NOT NULL,
     status integer,
     starts_at timestamp(0) without time zone,
@@ -1042,10 +934,10 @@ CREATE TABLE public.subscriptions (
 
 
 --
--- Name: subscriptions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: subscription_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.subscriptions_id_seq
+CREATE SEQUENCE public.subscription_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -1054,57 +946,17 @@ CREATE SEQUENCE public.subscriptions_id_seq
 
 
 --
--- Name: subscriptions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: subscription_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.subscriptions_id_seq OWNED BY public.subscriptions.id;
-
-
---
--- Name: user_contacts; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.user_contacts (
-    id bigint NOT NULL,
-    email character varying(255),
-    number character varying(255),
-    mode integer,
-    device_id character varying(255),
-    verification_code character varying(255),
-    verification_code_expires_at timestamp(0) without time zone,
-    verified boolean DEFAULT false NOT NULL,
-    subscribed boolean DEFAULT true NOT NULL,
-    bounce_count integer DEFAULT 0,
-    user_id bigint,
-    inserted_at timestamp(0) without time zone NOT NULL,
-    updated_at timestamp(0) without time zone NOT NULL
-);
+ALTER SEQUENCE public.subscription_id_seq OWNED BY public.subscription.id;
 
 
 --
--- Name: user_contacts_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: user; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.user_contacts_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: user_contacts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.user_contacts_id_seq OWNED BY public.user_contacts.id;
-
-
---
--- Name: users; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.users (
+CREATE TABLE public."user" (
     id bigint NOT NULL,
     name character varying(255) NOT NULL,
     email character varying(255) NOT NULL,
@@ -1122,10 +974,31 @@ CREATE TABLE public.users (
 
 
 --
--- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: user_contact; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.users_id_seq
+CREATE TABLE public.user_contact (
+    id bigint NOT NULL,
+    email character varying(255),
+    number character varying(255),
+    mode integer,
+    device_id character varying(255),
+    verification_code character varying(255),
+    verification_code_expires_at timestamp(0) without time zone,
+    verified boolean DEFAULT false NOT NULL,
+    subscribed boolean DEFAULT true NOT NULL,
+    bounce_count integer DEFAULT 0,
+    user_id bigint,
+    inserted_at timestamp(0) without time zone NOT NULL,
+    updated_at timestamp(0) without time zone NOT NULL
+);
+
+
+--
+-- Name: user_contact_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.user_contact_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -1134,437 +1007,433 @@ CREATE SEQUENCE public.users_id_seq
 
 
 --
--- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: user_contact_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
+ALTER SEQUENCE public.user_contact_id_seq OWNED BY public.user_contact.id;
 
 
 --
--- Name: alarms id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: user_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.alarms ALTER COLUMN id SET DEFAULT nextval('public.alarms_id_seq'::regclass);
+CREATE SEQUENCE public.user_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
 --
--- Name: assertions id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.assertions ALTER COLUMN id SET DEFAULT nextval('public.assertions_id_seq'::regclass);
+ALTER SEQUENCE public.user_id_seq OWNED BY public."user".id;
 
 
 --
--- Name: checks id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: alarm id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.checks ALTER COLUMN id SET DEFAULT nextval('public.checks_id_seq'::regclass);
+ALTER TABLE ONLY public.alarm ALTER COLUMN id SET DEFAULT nextval('public.alarm_id_seq'::regclass);
 
 
 --
--- Name: claims id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: assertion id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.claims ALTER COLUMN id SET DEFAULT nextval('public.claims_id_seq'::regclass);
+ALTER TABLE ONLY public.assertion ALTER COLUMN id SET DEFAULT nextval('public.assertion_id_seq'::regclass);
 
 
 --
--- Name: daily_reports id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: check id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.daily_reports ALTER COLUMN id SET DEFAULT nextval('public.daily_reports_id_seq'::regclass);
+ALTER TABLE ONLY public."check" ALTER COLUMN id SET DEFAULT nextval('public.check_id_seq'::regclass);
 
 
 --
--- Name: error_logs id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: daily_report id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.error_logs ALTER COLUMN id SET DEFAULT nextval('public.error_logs_id_seq'::regclass);
+ALTER TABLE ONLY public.daily_report ALTER COLUMN id SET DEFAULT nextval('public.daily_report_id_seq'::regclass);
 
 
 --
--- Name: features id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: error_log id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.features ALTER COLUMN id SET DEFAULT nextval('public.features_id_seq'::regclass);
+ALTER TABLE ONLY public.error_log ALTER COLUMN id SET DEFAULT nextval('public.error_log_id_seq'::regclass);
 
 
 --
--- Name: guest_users id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: feature id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.guest_users ALTER COLUMN id SET DEFAULT nextval('public.guest_users_id_seq'::regclass);
+ALTER TABLE ONLY public.feature ALTER COLUMN id SET DEFAULT nextval('public.feature_id_seq'::regclass);
 
 
 --
--- Name: invitations id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: guest_user id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.invitations ALTER COLUMN id SET DEFAULT nextval('public.invitations_id_seq'::regclass);
+ALTER TABLE ONLY public.guest_user ALTER COLUMN id SET DEFAULT nextval('public.guest_user_id_seq'::regclass);
 
 
 --
--- Name: monitor_alerts id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: invitation id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.monitor_alerts ALTER COLUMN id SET DEFAULT nextval('public.monitor_alerts_id_seq'::regclass);
+ALTER TABLE ONLY public.invitation ALTER COLUMN id SET DEFAULT nextval('public.invitation_id_seq'::regclass);
 
 
 --
--- Name: monitor_groups id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: monitor id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.monitor_groups ALTER COLUMN id SET DEFAULT nextval('public.monitor_groups_id_seq'::regclass);
+ALTER TABLE ONLY public.monitor ALTER COLUMN id SET DEFAULT nextval('public.monitor_id_seq'::regclass);
 
 
 --
--- Name: monitor_integrations id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: monitor_alarm_policy id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.monitor_integrations ALTER COLUMN id SET DEFAULT nextval('public.monitor_integrations_id_seq'::regclass);
+ALTER TABLE ONLY public.monitor_alarm_policy ALTER COLUMN id SET DEFAULT nextval('public.monitor_alarm_policy_id_seq'::regclass);
 
 
 --
--- Name: monitor_region_junction id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: monitor_group id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.monitor_region_junction ALTER COLUMN id SET DEFAULT nextval('public.monitor_region_junction_id_seq'::regclass);
+ALTER TABLE ONLY public.monitor_group ALTER COLUMN id SET DEFAULT nextval('public.monitor_group_id_seq'::regclass);
 
 
 --
--- Name: monitor_status_changes id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: monitor_integration id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.monitor_status_changes ALTER COLUMN id SET DEFAULT nextval('public.monitor_status_changes_id_seq'::regclass);
+ALTER TABLE ONLY public.monitor_integration ALTER COLUMN id SET DEFAULT nextval('public.monitor_integration_id_seq'::regclass);
 
 
 --
--- Name: monitors id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: monitor_notification id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.monitors ALTER COLUMN id SET DEFAULT nextval('public.monitors_id_seq'::regclass);
+ALTER TABLE ONLY public.monitor_notification ALTER COLUMN id SET DEFAULT nextval('public.monitor_notification_id_seq'::regclass);
 
 
 --
--- Name: notifications id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: monitor_notification_policy id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.notifications ALTER COLUMN id SET DEFAULT nextval('public.notifications_id_seq'::regclass);
+ALTER TABLE ONLY public.monitor_notification_policy ALTER COLUMN id SET DEFAULT nextval('public.monitor_notification_policy_id_seq'::regclass);
 
 
 --
--- Name: oban_jobs id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: monitor_region id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.oban_jobs ALTER COLUMN id SET DEFAULT nextval('public.oban_jobs_id_seq'::regclass);
+ALTER TABLE ONLY public.monitor_region ALTER COLUMN id SET DEFAULT nextval('public.monitor_region_id_seq'::regclass);
 
 
 --
--- Name: organization_user_junction id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: monitor_status_change id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.organization_user_junction ALTER COLUMN id SET DEFAULT nextval('public.organization_user_junction_id_seq'::regclass);
+ALTER TABLE ONLY public.monitor_status_change ALTER COLUMN id SET DEFAULT nextval('public.monitor_status_change_id_seq'::regclass);
 
 
 --
--- Name: organizations id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: organization id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.organizations ALTER COLUMN id SET DEFAULT nextval('public.organizations_id_seq'::regclass);
+ALTER TABLE ONLY public.organization ALTER COLUMN id SET DEFAULT nextval('public.organization_id_seq'::regclass);
 
 
 --
--- Name: plans id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: organization_user id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.plans ALTER COLUMN id SET DEFAULT nextval('public.plans_id_seq'::regclass);
+ALTER TABLE ONLY public.organization_user ALTER COLUMN id SET DEFAULT nextval('public.organization_user_id_seq'::regclass);
 
 
 --
--- Name: product_feature_junction id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: plan id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.product_feature_junction ALTER COLUMN id SET DEFAULT nextval('public.product_feature_junction_id_seq'::regclass);
+ALTER TABLE ONLY public.plan ALTER COLUMN id SET DEFAULT nextval('public.plan_id_seq'::regclass);
 
 
 --
--- Name: products id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: product id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.products ALTER COLUMN id SET DEFAULT nextval('public.products_id_seq'::regclass);
+ALTER TABLE ONLY public.product ALTER COLUMN id SET DEFAULT nextval('public.product_id_seq'::regclass);
 
 
 --
--- Name: receipts id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: product_feature id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.receipts ALTER COLUMN id SET DEFAULT nextval('public.receipts_id_seq'::regclass);
+ALTER TABLE ONLY public.product_feature ALTER COLUMN id SET DEFAULT nextval('public.product_feature_id_seq'::regclass);
 
 
 --
--- Name: regions id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: receipt id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.regions ALTER COLUMN id SET DEFAULT nextval('public.regions_id_seq'::regclass);
+ALTER TABLE ONLY public.receipt ALTER COLUMN id SET DEFAULT nextval('public.receipt_id_seq'::regclass);
 
 
 --
--- Name: role_claim_junction id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: region id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.role_claim_junction ALTER COLUMN id SET DEFAULT nextval('public.role_claim_junction_id_seq'::regclass);
+ALTER TABLE ONLY public.region ALTER COLUMN id SET DEFAULT nextval('public.region_id_seq'::regclass);
 
 
 --
--- Name: roles id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: role id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.roles ALTER COLUMN id SET DEFAULT nextval('public.roles_id_seq'::regclass);
+ALTER TABLE ONLY public.role ALTER COLUMN id SET DEFAULT nextval('public.role_id_seq'::regclass);
 
 
 --
--- Name: subscriptions id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: role_claim id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.subscriptions ALTER COLUMN id SET DEFAULT nextval('public.subscriptions_id_seq'::regclass);
+ALTER TABLE ONLY public.role_claim ALTER COLUMN id SET DEFAULT nextval('public.role_claim_id_seq'::regclass);
 
 
 --
--- Name: user_contacts id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: subscription id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.user_contacts ALTER COLUMN id SET DEFAULT nextval('public.user_contacts_id_seq'::regclass);
+ALTER TABLE ONLY public.subscription ALTER COLUMN id SET DEFAULT nextval('public.subscription_id_seq'::regclass);
 
 
 --
--- Name: users id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: user id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
+ALTER TABLE ONLY public."user" ALTER COLUMN id SET DEFAULT nextval('public.user_id_seq'::regclass);
 
 
 --
--- Name: alarms alarms_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: user_contact id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.alarms
-    ADD CONSTRAINT alarms_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.user_contact ALTER COLUMN id SET DEFAULT nextval('public.user_contact_id_seq'::regclass);
 
 
 --
--- Name: assertions assertions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: alarm alarm_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.assertions
-    ADD CONSTRAINT assertions_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.alarm
+    ADD CONSTRAINT alarm_pkey PRIMARY KEY (id);
 
 
 --
--- Name: checks checks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: assertion assertion_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.checks
-    ADD CONSTRAINT checks_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.assertion
+    ADD CONSTRAINT assertion_pkey PRIMARY KEY (id);
 
 
 --
--- Name: claims claims_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: check check_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.claims
-    ADD CONSTRAINT claims_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public."check"
+    ADD CONSTRAINT check_pkey PRIMARY KEY (id);
 
 
 --
--- Name: daily_reports daily_reports_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: daily_report daily_report_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.daily_reports
-    ADD CONSTRAINT daily_reports_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.daily_report
+    ADD CONSTRAINT daily_report_pkey PRIMARY KEY (id);
 
 
 --
--- Name: error_logs error_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: error_log error_log_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.error_logs
-    ADD CONSTRAINT error_logs_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.error_log
+    ADD CONSTRAINT error_log_pkey PRIMARY KEY (id);
 
 
 --
--- Name: features features_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: feature feature_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.features
-    ADD CONSTRAINT features_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.feature
+    ADD CONSTRAINT feature_pkey PRIMARY KEY (id);
 
 
 --
--- Name: guest_users guest_users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: guest_user guest_user_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.guest_users
-    ADD CONSTRAINT guest_users_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.guest_user
+    ADD CONSTRAINT guest_user_pkey PRIMARY KEY (id);
 
 
 --
--- Name: invitations invitations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: invitation invitation_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.invitations
-    ADD CONSTRAINT invitations_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.invitation
+    ADD CONSTRAINT invitation_pkey PRIMARY KEY (id);
 
 
 --
--- Name: monitor_alerts monitor_alerts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor_alarm_policy monitor_alarm_policy_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.monitor_alerts
-    ADD CONSTRAINT monitor_alerts_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.monitor_alarm_policy
+    ADD CONSTRAINT monitor_alarm_policy_pkey PRIMARY KEY (id);
 
 
 --
--- Name: monitor_groups monitor_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor_group monitor_group_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.monitor_groups
-    ADD CONSTRAINT monitor_groups_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.monitor_group
+    ADD CONSTRAINT monitor_group_pkey PRIMARY KEY (id);
 
 
 --
--- Name: monitor_integrations monitor_integrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor_integration monitor_integration_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.monitor_integrations
-    ADD CONSTRAINT monitor_integrations_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.monitor_integration
+    ADD CONSTRAINT monitor_integration_pkey PRIMARY KEY (id);
 
 
 --
--- Name: monitor_region_junction monitor_region_junction_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor_notification monitor_notification_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.monitor_region_junction
-    ADD CONSTRAINT monitor_region_junction_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.monitor_notification
+    ADD CONSTRAINT monitor_notification_pkey PRIMARY KEY (id);
 
 
 --
--- Name: monitor_status_changes monitor_status_changes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor_notification_policy monitor_notification_policy_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.monitor_status_changes
-    ADD CONSTRAINT monitor_status_changes_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.monitor_notification_policy
+    ADD CONSTRAINT monitor_notification_policy_pkey PRIMARY KEY (id);
 
 
 --
--- Name: monitors monitors_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor monitor_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.monitors
-    ADD CONSTRAINT monitors_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.monitor
+    ADD CONSTRAINT monitor_pkey PRIMARY KEY (id);
 
 
 --
--- Name: monitors monitors_unique_previous_id; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor_region monitor_region_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.monitors
-    ADD CONSTRAINT monitors_unique_previous_id UNIQUE (prev_id, organization_id) DEFERRABLE INITIALLY DEFERRED;
+ALTER TABLE ONLY public.monitor_region
+    ADD CONSTRAINT monitor_region_pkey PRIMARY KEY (id);
 
 
 --
--- Name: notifications notifications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor_status_change monitor_status_change_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.notifications
-    ADD CONSTRAINT notifications_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.monitor_status_change
+    ADD CONSTRAINT monitor_status_change_pkey PRIMARY KEY (id);
 
 
 --
--- Name: oban_jobs oban_jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor monitor_unique_previous_id; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.oban_jobs
-    ADD CONSTRAINT oban_jobs_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.monitor
+    ADD CONSTRAINT monitor_unique_previous_id UNIQUE (prev_id, organization_id) DEFERRABLE INITIALLY DEFERRED;
 
 
 --
--- Name: oban_peers oban_peers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: organization organization_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.oban_peers
-    ADD CONSTRAINT oban_peers_pkey PRIMARY KEY (name);
+ALTER TABLE ONLY public.organization
+    ADD CONSTRAINT organization_pkey PRIMARY KEY (id);
 
 
 --
--- Name: organization_user_junction organization_user_junction_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: organization_user organization_user_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.organization_user_junction
-    ADD CONSTRAINT organization_user_junction_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.organization_user
+    ADD CONSTRAINT organization_user_pkey PRIMARY KEY (id);
 
 
 --
--- Name: organizations organizations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: plan plan_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.organizations
-    ADD CONSTRAINT organizations_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.plan
+    ADD CONSTRAINT plan_pkey PRIMARY KEY (id);
 
 
 --
--- Name: plans plans_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: product_feature product_feature_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.plans
-    ADD CONSTRAINT plans_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.product_feature
+    ADD CONSTRAINT product_feature_pkey PRIMARY KEY (id);
 
 
 --
--- Name: product_feature_junction product_feature_junction_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: product product_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.product_feature_junction
-    ADD CONSTRAINT product_feature_junction_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.product
+    ADD CONSTRAINT product_pkey PRIMARY KEY (id);
 
 
 --
--- Name: products products_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: receipt receipt_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.products
-    ADD CONSTRAINT products_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.receipt
+    ADD CONSTRAINT receipt_pkey PRIMARY KEY (id);
 
 
 --
--- Name: receipts receipts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: region region_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.receipts
-    ADD CONSTRAINT receipts_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.region
+    ADD CONSTRAINT region_pkey PRIMARY KEY (id);
 
 
 --
--- Name: regions regions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: role_claim role_claim_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.regions
-    ADD CONSTRAINT regions_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.role_claim
+    ADD CONSTRAINT role_claim_pkey PRIMARY KEY (id);
 
 
 --
--- Name: role_claim_junction role_claim_junction_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: role role_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.role_claim_junction
-    ADD CONSTRAINT role_claim_junction_pkey PRIMARY KEY (id);
-
-
---
--- Name: roles roles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.roles
-    ADD CONSTRAINT roles_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.role
+    ADD CONSTRAINT role_pkey PRIMARY KEY (id);
 
 
 --
@@ -1576,1114 +1445,1123 @@ ALTER TABLE ONLY public.schema_migrations
 
 
 --
--- Name: subscriptions subscriptions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: subscription subscription_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.subscriptions
-    ADD CONSTRAINT subscriptions_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.subscription
+    ADD CONSTRAINT subscription_pkey PRIMARY KEY (id);
 
 
 --
--- Name: user_contacts user_contacts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: user_contact user_contact_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.user_contacts
-    ADD CONSTRAINT user_contacts_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.user_contact
+    ADD CONSTRAINT user_contact_pkey PRIMARY KEY (id);
 
 
 --
--- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: user user_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.users
-    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public."user"
+    ADD CONSTRAINT user_pkey PRIMARY KEY (id);
 
 
 --
--- Name: alarms_monitor_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: alarm_monitor_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX alarms_monitor_id_index ON public.alarms USING btree (monitor_id);
+CREATE INDEX alarm_monitor_id_index ON public.alarm USING btree (monitor_id);
 
 
 --
--- Name: alarms_organization_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: alarm_organization_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX alarms_organization_id_index ON public.alarms USING btree (organization_id);
+CREATE INDEX alarm_organization_id_index ON public.alarm USING btree (organization_id);
 
 
 --
--- Name: alarms_triggered_by_check_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: alarm_triggered_by_check_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX alarms_triggered_by_check_id_index ON public.alarms USING btree (triggered_by_check_id);
+CREATE UNIQUE INDEX alarm_triggered_by_check_id_index ON public.alarm USING btree (triggered_by_check_id);
 
 
 --
--- Name: assertions_monitor_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: assertion_monitor_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX assertions_monitor_id_index ON public.assertions USING btree (monitor_id);
+CREATE INDEX assertion_monitor_id_index ON public.assertion USING btree (monitor_id);
 
 
 --
--- Name: assertions_source_value_monitor_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: assertion_source_value_monitor_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX assertions_source_value_monitor_id_index ON public.assertions USING btree (source, value, monitor_id);
+CREATE UNIQUE INDEX assertion_source_value_monitor_id_index ON public.assertion USING btree (source, value, monitor_id);
 
 
 --
--- Name: checks_monitor_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: check_monitor_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX checks_monitor_id_index ON public.checks USING btree (monitor_id);
+CREATE INDEX check_monitor_id_index ON public."check" USING btree (monitor_id);
 
 
 --
--- Name: checks_organization_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: check_organization_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX checks_organization_id_index ON public.checks USING btree (organization_id);
+CREATE INDEX check_organization_id_index ON public."check" USING btree (organization_id);
 
 
 --
--- Name: checks_region_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: check_region_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX checks_region_id_index ON public.checks USING btree (region_id);
+CREATE INDEX check_region_id_index ON public."check" USING btree (region_id);
 
 
 --
--- Name: claims_name_index; Type: INDEX; Schema: public; Owner: -
+-- Name: daily_report_date_monitor_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX claims_name_index ON public.claims USING btree (name);
+CREATE UNIQUE INDEX daily_report_date_monitor_id_index ON public.daily_report USING btree (date, monitor_id);
 
 
 --
--- Name: daily_reports_date_monitor_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: daily_report_monitor_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX daily_reports_date_monitor_id_index ON public.daily_reports USING btree (date, monitor_id);
+CREATE INDEX daily_report_monitor_id_index ON public.daily_report USING btree (monitor_id);
 
 
 --
--- Name: daily_reports_monitor_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: daily_report_organization_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX daily_reports_monitor_id_index ON public.daily_reports USING btree (monitor_id);
+CREATE INDEX daily_report_organization_id_index ON public.daily_report USING btree (organization_id);
 
 
 --
--- Name: daily_reports_organization_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: error_log_assertion_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX daily_reports_organization_id_index ON public.daily_reports USING btree (organization_id);
+CREATE INDEX error_log_assertion_id_index ON public.error_log USING btree (assertion_id);
 
 
 --
--- Name: error_logs_assertion_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: error_log_check_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX error_logs_assertion_id_index ON public.error_logs USING btree (assertion_id);
+CREATE INDEX error_log_check_id_index ON public.error_log USING btree (check_id);
 
 
 --
--- Name: error_logs_check_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: error_log_monitor_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX error_logs_check_id_index ON public.error_logs USING btree (check_id);
+CREATE INDEX error_log_monitor_id_index ON public.error_log USING btree (monitor_id);
 
 
 --
--- Name: error_logs_monitor_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: feature_name_type_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX error_logs_monitor_id_index ON public.error_logs USING btree (monitor_id);
+CREATE UNIQUE INDEX feature_name_type_index ON public.feature USING btree (name, type);
 
 
 --
--- Name: features_name_type_index; Type: INDEX; Schema: public; Owner: -
+-- Name: guest_user_code_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX features_name_type_index ON public.features USING btree (name, type);
+CREATE UNIQUE INDEX guest_user_code_index ON public.guest_user USING btree (code);
 
 
 --
--- Name: guest_users_code_index; Type: INDEX; Schema: public; Owner: -
+-- Name: guest_user_expires_at_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX guest_users_code_index ON public.guest_users USING btree (code);
+CREATE INDEX guest_user_expires_at_index ON public.guest_user USING btree (expires_at);
 
 
 --
--- Name: guest_users_expires_at_index; Type: INDEX; Schema: public; Owner: -
+-- Name: invitation_code_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX guest_users_expires_at_index ON public.guest_users USING btree (expires_at);
+CREATE UNIQUE INDEX invitation_code_index ON public.invitation USING btree (code);
 
 
 --
--- Name: invitations_code_index; Type: INDEX; Schema: public; Owner: -
+-- Name: invitation_email_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX invitations_code_index ON public.invitations USING btree (code);
+CREATE INDEX invitation_email_index ON public.invitation USING btree (email);
 
 
 --
--- Name: invitations_email_index; Type: INDEX; Schema: public; Owner: -
+-- Name: invitation_email_organization_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX invitations_email_index ON public.invitations USING btree (email);
+CREATE UNIQUE INDEX invitation_email_organization_id_index ON public.invitation USING btree (email, organization_id);
 
 
 --
--- Name: invitations_email_organization_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: invitation_expires_at_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX invitations_email_organization_id_index ON public.invitations USING btree (email, organization_id);
+CREATE INDEX invitation_expires_at_index ON public.invitation USING btree (expires_at);
 
 
 --
--- Name: invitations_expires_at_index; Type: INDEX; Schema: public; Owner: -
+-- Name: invitation_invited_by_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX invitations_expires_at_index ON public.invitations USING btree (expires_at);
+CREATE INDEX invitation_invited_by_user_id_index ON public.invitation USING btree (invited_by_user_id);
 
 
 --
--- Name: invitations_invited_by_user_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: invitation_organization_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX invitations_invited_by_user_id_index ON public.invitations USING btree (invited_by_user_id);
+CREATE INDEX invitation_organization_id_index ON public.invitation USING btree (organization_id);
 
 
 --
--- Name: invitations_organization_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: invitation_role_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX invitations_organization_id_index ON public.invitations USING btree (organization_id);
+CREATE INDEX invitation_role_id_index ON public.invitation USING btree (role_id);
 
 
 --
--- Name: invitations_role_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_alarm_policy_monitor_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX invitations_role_id_index ON public.invitations USING btree (role_id);
+CREATE INDEX monitor_alarm_policy_monitor_id_index ON public.monitor_alarm_policy USING btree (monitor_id);
 
 
 --
--- Name: monitor_alerts_integration_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_alarm_policy_organization_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX monitor_alerts_integration_id_index ON public.monitor_alerts USING btree (integration_id);
+CREATE INDEX monitor_alarm_policy_organization_id_index ON public.monitor_alarm_policy USING btree (organization_id);
 
 
 --
--- Name: monitor_alerts_monitor_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_alarm_policy_reason_monitor_id_organization_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX monitor_alerts_monitor_id_index ON public.monitor_alerts USING btree (monitor_id);
+CREATE UNIQUE INDEX monitor_alarm_policy_reason_monitor_id_organization_id_index ON public.monitor_alarm_policy USING btree (reason, monitor_id, organization_id);
 
 
 --
--- Name: monitor_alerts_organization_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_group_name_organization_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX monitor_alerts_organization_id_index ON public.monitor_alerts USING btree (organization_id);
+CREATE UNIQUE INDEX monitor_group_name_organization_id_index ON public.monitor_group USING btree (name, organization_id);
 
 
 --
--- Name: monitor_alerts_user_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_group_organization_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX monitor_alerts_user_id_index ON public.monitor_alerts USING btree (user_id);
+CREATE INDEX monitor_group_organization_id_index ON public.monitor_group USING btree (organization_id);
 
 
 --
--- Name: monitor_groups_name_organization_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_integration_organization_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX monitor_groups_name_organization_id_index ON public.monitor_groups USING btree (name, organization_id);
+CREATE INDEX monitor_integration_organization_id_index ON public.monitor_integration USING btree (organization_id);
 
 
 --
--- Name: monitor_groups_organization_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_integration_type_organization_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX monitor_groups_organization_id_index ON public.monitor_groups USING btree (organization_id);
+CREATE UNIQUE INDEX monitor_integration_type_organization_id_index ON public.monitor_integration USING btree (type, organization_id);
 
 
 --
--- Name: monitor_integrations_organization_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_last_checked_at_next_check_at_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX monitor_integrations_organization_id_index ON public.monitor_integrations USING btree (organization_id);
+CREATE INDEX monitor_last_checked_at_next_check_at_index ON public.monitor USING btree (last_checked_at, next_check_at);
 
 
 --
--- Name: monitor_integrations_type_organization_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_monitor_group_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX monitor_integrations_type_organization_id_index ON public.monitor_integrations USING btree (type, organization_id);
+CREATE INDEX monitor_monitor_group_id_index ON public.monitor USING btree (monitor_group_id);
 
 
 --
--- Name: monitor_region_junction_last_checked_at_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_next_check_at_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX monitor_region_junction_last_checked_at_index ON public.monitor_region_junction USING btree (last_checked_at);
+CREATE INDEX monitor_next_check_at_index ON public.monitor USING btree (next_check_at);
 
 
 --
--- Name: monitor_region_junction_monitor_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_notification_alarm_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX monitor_region_junction_monitor_id_index ON public.monitor_region_junction USING btree (monitor_id);
+CREATE INDEX monitor_notification_alarm_id_index ON public.monitor_notification USING btree (alarm_id);
 
 
 --
--- Name: monitor_region_junction_region_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_notification_alarm_id_type_user_contact_id_integration_; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX monitor_region_junction_region_id_index ON public.monitor_region_junction USING btree (region_id);
+CREATE UNIQUE INDEX monitor_notification_alarm_id_type_user_contact_id_integration_ ON public.monitor_notification USING btree (alarm_id, type, user_contact_id, integration_id);
 
 
 --
--- Name: monitor_region_junction_region_id_monitor_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_notification_integration_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX monitor_region_junction_region_id_monitor_id_index ON public.monitor_region_junction USING btree (region_id, monitor_id);
+CREATE INDEX monitor_notification_integration_id_index ON public.monitor_notification USING btree (integration_id);
 
 
 --
--- Name: monitor_status_changes_monitor_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_notification_monitor_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX monitor_status_changes_monitor_id_index ON public.monitor_status_changes USING btree (monitor_id);
+CREATE INDEX monitor_notification_monitor_id_index ON public.monitor_notification USING btree (monitor_id);
 
 
 --
--- Name: monitors_last_checked_at_next_check_at_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_notification_organization_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX monitors_last_checked_at_next_check_at_index ON public.monitors USING btree (last_checked_at, next_check_at);
+CREATE INDEX monitor_notification_organization_id_index ON public.monitor_notification USING btree (organization_id);
 
 
 --
--- Name: monitors_monitor_group_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_notification_policy_integration_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX monitors_monitor_group_id_index ON public.monitors USING btree (monitor_group_id);
+CREATE INDEX monitor_notification_policy_integration_id_index ON public.monitor_notification_policy USING btree (integration_id);
 
 
 --
--- Name: monitors_next_check_at_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_notification_policy_monitor_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX monitors_next_check_at_index ON public.monitors USING btree (next_check_at);
+CREATE INDEX monitor_notification_policy_monitor_id_index ON public.monitor_notification_policy USING btree (monitor_id);
 
 
 --
--- Name: monitors_on_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_notification_policy_organization_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX monitors_on_index ON public.monitors USING btree ("on");
+CREATE INDEX monitor_notification_policy_organization_id_index ON public.monitor_notification_policy USING btree (organization_id);
 
 
 --
--- Name: monitors_organization_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_notification_policy_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX monitors_organization_id_index ON public.monitors USING btree (organization_id);
+CREATE INDEX monitor_notification_policy_user_id_index ON public.monitor_notification_policy USING btree (user_id);
 
 
 --
--- Name: monitors_status_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_notification_policy_user_id_monitor_id_integration_id_o; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX monitors_status_index ON public.monitors USING btree (status);
+CREATE UNIQUE INDEX monitor_notification_policy_user_id_monitor_id_integration_id_o ON public.monitor_notification_policy USING btree (user_id, monitor_id, integration_id, organization_id);
 
 
 --
--- Name: monitors_url_organization_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_notification_user_contact_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX monitors_url_organization_id_index ON public.monitors USING btree (url, organization_id);
+CREATE INDEX monitor_notification_user_contact_id_index ON public.monitor_notification USING btree (user_contact_id);
 
 
 --
--- Name: monitors_user_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_on_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX monitors_user_id_index ON public.monitors USING btree (user_id);
+CREATE INDEX monitor_on_index ON public.monitor USING btree ("on");
 
 
 --
--- Name: notifications_alarm_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_organization_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX notifications_alarm_id_index ON public.notifications USING btree (alarm_id);
+CREATE INDEX monitor_organization_id_index ON public.monitor USING btree (organization_id);
 
 
 --
--- Name: notifications_alarm_id_type_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_region_last_checked_at_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX notifications_alarm_id_type_index ON public.notifications USING btree (alarm_id, type);
+CREATE INDEX monitor_region_last_checked_at_index ON public.monitor_region USING btree (last_checked_at);
 
 
 --
--- Name: notifications_monitor_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_region_monitor_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX notifications_monitor_id_index ON public.notifications USING btree (monitor_id);
+CREATE INDEX monitor_region_monitor_id_index ON public.monitor_region USING btree (monitor_id);
 
 
 --
--- Name: notifications_organization_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_region_region_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX notifications_organization_id_index ON public.notifications USING btree (organization_id);
+CREATE INDEX monitor_region_region_id_index ON public.monitor_region USING btree (region_id);
 
 
 --
--- Name: notifications_user_contact_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_region_region_id_monitor_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX notifications_user_contact_id_index ON public.notifications USING btree (user_contact_id);
+CREATE UNIQUE INDEX monitor_region_region_id_monitor_id_index ON public.monitor_region USING btree (region_id, monitor_id);
 
 
 --
--- Name: oban_jobs_args_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_status_change_monitor_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX oban_jobs_args_index ON public.oban_jobs USING gin (args);
+CREATE INDEX monitor_status_change_monitor_id_index ON public.monitor_status_change USING btree (monitor_id);
 
 
 --
--- Name: oban_jobs_meta_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_status_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX oban_jobs_meta_index ON public.oban_jobs USING gin (meta);
+CREATE INDEX monitor_status_index ON public.monitor USING btree (status);
 
 
 --
--- Name: oban_jobs_state_queue_priority_scheduled_at_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_url_organization_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX oban_jobs_state_queue_priority_scheduled_at_id_index ON public.oban_jobs USING btree (state, queue, priority, scheduled_at, id);
+CREATE UNIQUE INDEX monitor_url_organization_id_index ON public.monitor USING btree (url, organization_id);
 
 
 --
--- Name: organization_user_junction_organization_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: monitor_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX organization_user_junction_organization_id_index ON public.organization_user_junction USING btree (organization_id);
+CREATE INDEX monitor_user_id_index ON public.monitor USING btree (user_id);
 
 
 --
--- Name: organization_user_junction_role_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: organization_slug_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX organization_user_junction_role_id_index ON public.organization_user_junction USING btree (role_id);
+CREATE UNIQUE INDEX organization_slug_index ON public.organization USING btree (slug);
 
 
 --
--- Name: organization_user_junction_user_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: organization_user_organization_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX organization_user_junction_user_id_index ON public.organization_user_junction USING btree (user_id);
+CREATE INDEX organization_user_organization_id_index ON public.organization_user USING btree (organization_id);
 
 
 --
--- Name: organization_user_junction_user_id_organization_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: organization_user_role_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX organization_user_junction_user_id_organization_id_index ON public.organization_user_junction USING btree (user_id, organization_id);
+CREATE INDEX organization_user_role_id_index ON public.organization_user USING btree (role_id);
 
 
 --
--- Name: organizations_slug_index; Type: INDEX; Schema: public; Owner: -
+-- Name: organization_user_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX organizations_slug_index ON public.organizations USING btree (slug);
+CREATE INDEX organization_user_user_id_index ON public.organization_user USING btree (user_id);
 
 
 --
--- Name: plans_external_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: organization_user_user_id_organization_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX plans_external_id_index ON public.plans USING btree (external_id);
+CREATE UNIQUE INDEX organization_user_user_id_organization_id_index ON public.organization_user USING btree (user_id, organization_id);
 
 
 --
--- Name: plans_price_type_index; Type: INDEX; Schema: public; Owner: -
+-- Name: plan_external_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX plans_price_type_index ON public.plans USING btree (price, type);
+CREATE UNIQUE INDEX plan_external_id_index ON public.plan USING btree (external_id);
 
 
 --
--- Name: plans_product_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: plan_price_type_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX plans_product_id_index ON public.plans USING btree (product_id);
+CREATE UNIQUE INDEX plan_price_type_index ON public.plan USING btree (price, type);
 
 
 --
--- Name: product_feature_junction_feature_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: plan_product_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX product_feature_junction_feature_id_index ON public.product_feature_junction USING btree (feature_id);
+CREATE INDEX plan_product_id_index ON public.plan USING btree (product_id);
 
 
 --
--- Name: product_feature_junction_product_id_feature_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: product_external_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX product_feature_junction_product_id_feature_id_index ON public.product_feature_junction USING btree (product_id, feature_id);
+CREATE UNIQUE INDEX product_external_id_index ON public.product USING btree (external_id);
 
 
 --
--- Name: product_feature_junction_product_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: product_feature_feature_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX product_feature_junction_product_id_index ON public.product_feature_junction USING btree (product_id);
+CREATE INDEX product_feature_feature_id_index ON public.product_feature USING btree (feature_id);
 
 
 --
--- Name: products_external_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: product_feature_product_id_feature_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX products_external_id_index ON public.products USING btree (external_id);
+CREATE UNIQUE INDEX product_feature_product_id_feature_id_index ON public.product_feature USING btree (product_id, feature_id);
 
 
 --
--- Name: products_name_index; Type: INDEX; Schema: public; Owner: -
+-- Name: product_feature_product_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX products_name_index ON public.products USING btree (name);
+CREATE INDEX product_feature_product_id_index ON public.product_feature USING btree (product_id);
 
 
 --
--- Name: products_tier_index; Type: INDEX; Schema: public; Owner: -
+-- Name: product_name_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX products_tier_index ON public.products USING btree (tier);
+CREATE UNIQUE INDEX product_name_index ON public.product USING btree (name);
 
 
 --
--- Name: receipts_external_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: product_tier_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX receipts_external_id_index ON public.receipts USING btree (external_id);
+CREATE UNIQUE INDEX product_tier_index ON public.product USING btree (tier);
 
 
 --
--- Name: receipts_organization_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: receipt_external_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX receipts_organization_id_index ON public.receipts USING btree (organization_id);
+CREATE UNIQUE INDEX receipt_external_id_index ON public.receipt USING btree (external_id);
 
 
 --
--- Name: receipts_plan_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: receipt_organization_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX receipts_plan_id_index ON public.receipts USING btree (plan_id);
+CREATE INDEX receipt_organization_id_index ON public.receipt USING btree (organization_id);
 
 
 --
--- Name: receipts_product_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: receipt_plan_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX receipts_product_id_index ON public.receipts USING btree (product_id);
+CREATE INDEX receipt_plan_id_index ON public.receipt USING btree (plan_id);
 
 
 --
--- Name: receipts_subscription_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: receipt_product_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX receipts_subscription_id_index ON public.receipts USING btree (subscription_id);
+CREATE INDEX receipt_product_id_index ON public.receipt USING btree (product_id);
 
 
 --
--- Name: regions_key_index; Type: INDEX; Schema: public; Owner: -
+-- Name: receipt_subscription_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX regions_key_index ON public.regions USING btree (key);
+CREATE INDEX receipt_subscription_id_index ON public.receipt USING btree (subscription_id);
 
 
 --
--- Name: role_claim_junction_claim_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: region_key_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX role_claim_junction_claim_id_index ON public.role_claim_junction USING btree (claim_id);
+CREATE UNIQUE INDEX region_key_index ON public.region USING btree (key);
 
 
 --
--- Name: role_claim_junction_claim_id_role_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: role_claim_claim_role_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX role_claim_junction_claim_id_role_id_index ON public.role_claim_junction USING btree (claim_id, role_id);
+CREATE UNIQUE INDEX role_claim_claim_role_id_index ON public.role_claim USING btree (claim, role_id);
 
 
 --
--- Name: role_claim_junction_role_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: role_claim_role_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX role_claim_junction_role_id_index ON public.role_claim_junction USING btree (role_id);
+CREATE INDEX role_claim_role_id_index ON public.role_claim USING btree (role_id);
 
 
 --
--- Name: roles_type_index; Type: INDEX; Schema: public; Owner: -
+-- Name: role_type_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX roles_type_index ON public.roles USING btree (type);
+CREATE UNIQUE INDEX role_type_index ON public.role USING btree (type);
 
 
 --
--- Name: subscriptions_expires_at_index; Type: INDEX; Schema: public; Owner: -
+-- Name: subscription_expires_at_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX subscriptions_expires_at_index ON public.subscriptions USING btree (expires_at);
+CREATE INDEX subscription_expires_at_index ON public.subscription USING btree (expires_at);
 
 
 --
--- Name: subscriptions_external_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: subscription_external_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX subscriptions_external_id_index ON public.subscriptions USING btree (external_id);
+CREATE UNIQUE INDEX subscription_external_id_index ON public.subscription USING btree (external_id);
 
 
 --
--- Name: subscriptions_organization_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: subscription_organization_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX subscriptions_organization_id_index ON public.subscriptions USING btree (organization_id);
+CREATE INDEX subscription_organization_id_index ON public.subscription USING btree (organization_id);
 
 
 --
--- Name: subscriptions_plan_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: subscription_plan_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX subscriptions_plan_id_index ON public.subscriptions USING btree (plan_id);
+CREATE INDEX subscription_plan_id_index ON public.subscription USING btree (plan_id);
 
 
 --
--- Name: subscriptions_product_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: subscription_product_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX subscriptions_product_id_index ON public.subscriptions USING btree (product_id);
+CREATE INDEX subscription_product_id_index ON public.subscription USING btree (product_id);
 
 
 --
--- Name: subscriptions_status_index; Type: INDEX; Schema: public; Owner: -
+-- Name: subscription_status_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX subscriptions_status_index ON public.subscriptions USING btree (status);
+CREATE INDEX subscription_status_index ON public.subscription USING btree (status);
 
 
 --
 -- Name: uq_monitor_on_alarm; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX uq_monitor_on_alarm ON public.alarms USING btree (monitor_id, ongoing) WHERE (ongoing = true);
+CREATE UNIQUE INDEX uq_monitor_on_alarm ON public.alarm USING btree (monitor_id, ongoing) WHERE (ongoing = true);
 
 
 --
 -- Name: uq_superadmin_on_org_user; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX uq_superadmin_on_org_user ON public.organization_user_junction USING btree (role_id, user_id) WHERE (role_id = 1);
+CREATE UNIQUE INDEX uq_superadmin_on_org_user ON public.organization_user USING btree (role_id, user_id) WHERE (role_id = 1);
 
 
 --
--- Name: user_contacts_device_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: user_contact_device_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX user_contacts_device_id_index ON public.user_contacts USING btree (device_id);
+CREATE UNIQUE INDEX user_contact_device_id_index ON public.user_contact USING btree (device_id);
 
 
 --
--- Name: user_contacts_email_verified_index; Type: INDEX; Schema: public; Owner: -
+-- Name: user_contact_email_verified_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX user_contacts_email_verified_index ON public.user_contacts USING btree (email, verified);
+CREATE UNIQUE INDEX user_contact_email_verified_index ON public.user_contact USING btree (email, verified);
 
 
 --
--- Name: user_contacts_number_verified_index; Type: INDEX; Schema: public; Owner: -
+-- Name: user_contact_number_verified_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX user_contacts_number_verified_index ON public.user_contacts USING btree (number, verified);
+CREATE UNIQUE INDEX user_contact_number_verified_index ON public.user_contact USING btree (number, verified);
 
 
 --
--- Name: user_contacts_user_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: user_contact_user_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX user_contacts_user_id_index ON public.user_contacts USING btree (user_id);
+CREATE INDEX user_contact_user_id_index ON public.user_contact USING btree (user_id);
 
 
 --
--- Name: users_email_index; Type: INDEX; Schema: public; Owner: -
+-- Name: user_email_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX users_email_index ON public.users USING btree (email);
+CREATE UNIQUE INDEX user_email_index ON public."user" USING btree (email);
 
 
 --
--- Name: users_last_login_at_index; Type: INDEX; Schema: public; Owner: -
+-- Name: user_last_login_at_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX users_last_login_at_index ON public.users USING btree (last_login_at);
+CREATE INDEX user_last_login_at_index ON public."user" USING btree (last_login_at);
 
 
 --
--- Name: users_organization_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: user_organization_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX users_organization_id_index ON public.users USING btree (organization_id);
+CREATE INDEX user_organization_id_index ON public."user" USING btree (organization_id);
 
 
 --
--- Name: users_payment_customer_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: user_payment_customer_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX users_payment_customer_id_index ON public.users USING btree (payment_customer_id);
+CREATE UNIQUE INDEX user_payment_customer_id_index ON public."user" USING btree (payment_customer_id);
 
 
 --
--- Name: users_provider_uid_index; Type: INDEX; Schema: public; Owner: -
+-- Name: user_provider_uid_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX users_provider_uid_index ON public.users USING btree (provider_uid);
+CREATE UNIQUE INDEX user_provider_uid_index ON public."user" USING btree (provider_uid);
 
 
 --
--- Name: users_role_id_index; Type: INDEX; Schema: public; Owner: -
+-- Name: user_role_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX users_role_id_index ON public.users USING btree (role_id);
+CREATE INDEX user_role_id_index ON public."user" USING btree (role_id);
 
 
 --
--- Name: oban_jobs oban_notify; Type: TRIGGER; Schema: public; Owner: -
+-- Name: alarm alarm_monitor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-CREATE TRIGGER oban_notify AFTER INSERT ON public.oban_jobs FOR EACH ROW EXECUTE FUNCTION public.oban_jobs_notify();
+ALTER TABLE ONLY public.alarm
+    ADD CONSTRAINT alarm_monitor_id_fkey FOREIGN KEY (monitor_id) REFERENCES public.monitor(id) ON DELETE CASCADE;
 
 
 --
--- Name: alarms alarms_monitor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: alarm alarm_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.alarms
-    ADD CONSTRAINT alarms_monitor_id_fkey FOREIGN KEY (monitor_id) REFERENCES public.monitors(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.alarm
+    ADD CONSTRAINT alarm_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organization(id) ON DELETE CASCADE;
 
 
 --
--- Name: alarms alarms_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: alarm alarm_resolved_by_check_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.alarms
-    ADD CONSTRAINT alarms_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.alarm
+    ADD CONSTRAINT alarm_resolved_by_check_id_fkey FOREIGN KEY (resolved_by_check_id) REFERENCES public."check"(id);
 
 
 --
--- Name: alarms alarms_resolved_by_check_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: alarm alarm_triggered_by_check_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.alarms
-    ADD CONSTRAINT alarms_resolved_by_check_id_fkey FOREIGN KEY (resolved_by_check_id) REFERENCES public.checks(id);
+ALTER TABLE ONLY public.alarm
+    ADD CONSTRAINT alarm_triggered_by_check_id_fkey FOREIGN KEY (triggered_by_check_id) REFERENCES public."check"(id);
 
 
 --
--- Name: alarms alarms_triggered_by_check_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: assertion assertion_monitor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.alarms
-    ADD CONSTRAINT alarms_triggered_by_check_id_fkey FOREIGN KEY (triggered_by_check_id) REFERENCES public.checks(id);
+ALTER TABLE ONLY public.assertion
+    ADD CONSTRAINT assertion_monitor_id_fkey FOREIGN KEY (monitor_id) REFERENCES public.monitor(id) ON DELETE CASCADE;
 
 
 --
--- Name: assertions assertions_monitor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: check check_monitor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.assertions
-    ADD CONSTRAINT assertions_monitor_id_fkey FOREIGN KEY (monitor_id) REFERENCES public.monitors(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public."check"
+    ADD CONSTRAINT check_monitor_id_fkey FOREIGN KEY (monitor_id) REFERENCES public.monitor(id) ON DELETE CASCADE;
 
 
 --
--- Name: checks checks_monitor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: check check_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.checks
-    ADD CONSTRAINT checks_monitor_id_fkey FOREIGN KEY (monitor_id) REFERENCES public.monitors(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public."check"
+    ADD CONSTRAINT check_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organization(id) ON DELETE CASCADE;
 
 
 --
--- Name: checks checks_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: check check_region_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.checks
-    ADD CONSTRAINT checks_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public."check"
+    ADD CONSTRAINT check_region_id_fkey FOREIGN KEY (region_id) REFERENCES public.region(id);
 
 
 --
--- Name: checks checks_region_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: daily_report daily_report_monitor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.checks
-    ADD CONSTRAINT checks_region_id_fkey FOREIGN KEY (region_id) REFERENCES public.regions(id);
+ALTER TABLE ONLY public.daily_report
+    ADD CONSTRAINT daily_report_monitor_id_fkey FOREIGN KEY (monitor_id) REFERENCES public.monitor(id) ON DELETE CASCADE;
 
 
 --
--- Name: daily_reports daily_reports_monitor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: daily_report daily_report_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.daily_reports
-    ADD CONSTRAINT daily_reports_monitor_id_fkey FOREIGN KEY (monitor_id) REFERENCES public.monitors(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.daily_report
+    ADD CONSTRAINT daily_report_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organization(id) ON DELETE CASCADE;
 
 
 --
--- Name: daily_reports daily_reports_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: error_log error_log_assertion_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.daily_reports
-    ADD CONSTRAINT daily_reports_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.error_log
+    ADD CONSTRAINT error_log_assertion_id_fkey FOREIGN KEY (assertion_id) REFERENCES public.assertion(id);
 
 
 --
--- Name: error_logs error_logs_assertion_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: error_log error_log_check_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.error_logs
-    ADD CONSTRAINT error_logs_assertion_id_fkey FOREIGN KEY (assertion_id) REFERENCES public.assertions(id);
+ALTER TABLE ONLY public.error_log
+    ADD CONSTRAINT error_log_check_id_fkey FOREIGN KEY (check_id) REFERENCES public."check"(id) ON DELETE CASCADE;
 
 
 --
--- Name: error_logs error_logs_check_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: error_log error_log_monitor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.error_logs
-    ADD CONSTRAINT error_logs_check_id_fkey FOREIGN KEY (check_id) REFERENCES public.checks(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.error_log
+    ADD CONSTRAINT error_log_monitor_id_fkey FOREIGN KEY (monitor_id) REFERENCES public.monitor(id) ON DELETE CASCADE;
 
 
 --
--- Name: error_logs error_logs_monitor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: invitation invitation_invited_by_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.error_logs
-    ADD CONSTRAINT error_logs_monitor_id_fkey FOREIGN KEY (monitor_id) REFERENCES public.monitors(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.invitation
+    ADD CONSTRAINT invitation_invited_by_user_id_fkey FOREIGN KEY (invited_by_user_id) REFERENCES public."user"(id);
 
 
 --
--- Name: invitations invitations_invited_by_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: invitation invitation_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.invitations
-    ADD CONSTRAINT invitations_invited_by_user_id_fkey FOREIGN KEY (invited_by_user_id) REFERENCES public.users(id);
+ALTER TABLE ONLY public.invitation
+    ADD CONSTRAINT invitation_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organization(id) ON DELETE CASCADE;
 
 
 --
--- Name: invitations invitations_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: invitation invitation_role_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.invitations
-    ADD CONSTRAINT invitations_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.invitation
+    ADD CONSTRAINT invitation_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.role(id);
 
 
 --
--- Name: invitations invitations_role_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor_alarm_policy monitor_alarm_policy_monitor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.invitations
-    ADD CONSTRAINT invitations_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.roles(id);
+ALTER TABLE ONLY public.monitor_alarm_policy
+    ADD CONSTRAINT monitor_alarm_policy_monitor_id_fkey FOREIGN KEY (monitor_id) REFERENCES public.monitor(id) ON DELETE CASCADE;
 
 
 --
--- Name: monitor_alerts monitor_alerts_integration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor_alarm_policy monitor_alarm_policy_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.monitor_alerts
-    ADD CONSTRAINT monitor_alerts_integration_id_fkey FOREIGN KEY (integration_id) REFERENCES public.monitor_integrations(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.monitor_alarm_policy
+    ADD CONSTRAINT monitor_alarm_policy_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organization(id) ON DELETE CASCADE;
 
 
 --
--- Name: monitor_alerts monitor_alerts_monitor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor_group monitor_group_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.monitor_alerts
-    ADD CONSTRAINT monitor_alerts_monitor_id_fkey FOREIGN KEY (monitor_id) REFERENCES public.monitors(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.monitor_group
+    ADD CONSTRAINT monitor_group_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organization(id) ON DELETE CASCADE;
 
 
 --
--- Name: monitor_alerts monitor_alerts_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor_integration monitor_integration_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.monitor_alerts
-    ADD CONSTRAINT monitor_alerts_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.monitor_integration
+    ADD CONSTRAINT monitor_integration_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organization(id) ON DELETE CASCADE;
 
 
 --
--- Name: monitor_alerts monitor_alerts_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor monitor_monitor_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.monitor_alerts
-    ADD CONSTRAINT monitor_alerts_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.monitor
+    ADD CONSTRAINT monitor_monitor_group_id_fkey FOREIGN KEY (monitor_group_id) REFERENCES public.monitor_group(id);
 
 
 --
--- Name: monitor_groups monitor_groups_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor_notification monitor_notification_alarm_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.monitor_groups
-    ADD CONSTRAINT monitor_groups_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.monitor_notification
+    ADD CONSTRAINT monitor_notification_alarm_id_fkey FOREIGN KEY (alarm_id) REFERENCES public.alarm(id) ON DELETE CASCADE;
 
 
 --
--- Name: monitor_integrations monitor_integrations_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor_notification monitor_notification_integration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.monitor_integrations
-    ADD CONSTRAINT monitor_integrations_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.monitor_notification
+    ADD CONSTRAINT monitor_notification_integration_id_fkey FOREIGN KEY (integration_id) REFERENCES public.monitor_integration(id) ON DELETE CASCADE;
 
 
 --
--- Name: monitor_region_junction monitor_region_junction_monitor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor_notification monitor_notification_monitor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.monitor_region_junction
-    ADD CONSTRAINT monitor_region_junction_monitor_id_fkey FOREIGN KEY (monitor_id) REFERENCES public.monitors(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.monitor_notification
+    ADD CONSTRAINT monitor_notification_monitor_id_fkey FOREIGN KEY (monitor_id) REFERENCES public.monitor(id) ON DELETE CASCADE;
 
 
 --
--- Name: monitor_region_junction monitor_region_junction_region_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor_notification monitor_notification_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.monitor_region_junction
-    ADD CONSTRAINT monitor_region_junction_region_id_fkey FOREIGN KEY (region_id) REFERENCES public.regions(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.monitor_notification
+    ADD CONSTRAINT monitor_notification_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organization(id) ON DELETE CASCADE;
 
 
 --
--- Name: monitor_status_changes monitor_status_changes_monitor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor_notification_policy monitor_notification_policy_integration_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.monitor_status_changes
-    ADD CONSTRAINT monitor_status_changes_monitor_id_fkey FOREIGN KEY (monitor_id) REFERENCES public.monitors(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.monitor_notification_policy
+    ADD CONSTRAINT monitor_notification_policy_integration_id_fkey FOREIGN KEY (integration_id) REFERENCES public.monitor_integration(id) ON DELETE CASCADE;
 
 
 --
--- Name: monitors monitors_monitor_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor_notification_policy monitor_notification_policy_monitor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.monitors
-    ADD CONSTRAINT monitors_monitor_group_id_fkey FOREIGN KEY (monitor_group_id) REFERENCES public.monitor_groups(id);
+ALTER TABLE ONLY public.monitor_notification_policy
+    ADD CONSTRAINT monitor_notification_policy_monitor_id_fkey FOREIGN KEY (monitor_id) REFERENCES public.monitor(id) ON DELETE CASCADE;
 
 
 --
--- Name: monitors monitors_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor_notification_policy monitor_notification_policy_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.monitors
-    ADD CONSTRAINT monitors_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.monitor_notification_policy
+    ADD CONSTRAINT monitor_notification_policy_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organization(id) ON DELETE CASCADE;
 
 
 --
--- Name: monitors monitors_prev_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor_notification_policy monitor_notification_policy_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.monitors
-    ADD CONSTRAINT monitors_prev_id_fkey FOREIGN KEY (prev_id) REFERENCES public.monitors(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.monitor_notification_policy
+    ADD CONSTRAINT monitor_notification_policy_user_id_fkey FOREIGN KEY (user_id) REFERENCES public."user"(id) ON DELETE CASCADE;
 
 
 --
--- Name: monitors monitors_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor_notification monitor_notification_user_contact_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.monitors
-    ADD CONSTRAINT monitors_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+ALTER TABLE ONLY public.monitor_notification
+    ADD CONSTRAINT monitor_notification_user_contact_id_fkey FOREIGN KEY (user_contact_id) REFERENCES public.user_contact(id) ON DELETE CASCADE;
 
 
 --
--- Name: notifications notifications_alarm_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor monitor_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.notifications
-    ADD CONSTRAINT notifications_alarm_id_fkey FOREIGN KEY (alarm_id) REFERENCES public.alarms(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.monitor
+    ADD CONSTRAINT monitor_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organization(id) ON DELETE CASCADE;
 
 
 --
--- Name: notifications notifications_monitor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor monitor_prev_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.notifications
-    ADD CONSTRAINT notifications_monitor_id_fkey FOREIGN KEY (monitor_id) REFERENCES public.monitors(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.monitor
+    ADD CONSTRAINT monitor_prev_id_fkey FOREIGN KEY (prev_id) REFERENCES public.monitor(id) ON DELETE CASCADE;
 
 
 --
--- Name: notifications notifications_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor_region monitor_region_monitor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.notifications
-    ADD CONSTRAINT notifications_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.monitor_region
+    ADD CONSTRAINT monitor_region_monitor_id_fkey FOREIGN KEY (monitor_id) REFERENCES public.monitor(id) ON DELETE CASCADE;
 
 
 --
--- Name: notifications notifications_user_contact_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor_region monitor_region_region_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.notifications
-    ADD CONSTRAINT notifications_user_contact_id_fkey FOREIGN KEY (user_contact_id) REFERENCES public.user_contacts(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.monitor_region
+    ADD CONSTRAINT monitor_region_region_id_fkey FOREIGN KEY (region_id) REFERENCES public.region(id) ON DELETE CASCADE;
 
 
 --
--- Name: organization_user_junction organization_user_junction_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor_status_change monitor_status_change_monitor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.organization_user_junction
-    ADD CONSTRAINT organization_user_junction_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.monitor_status_change
+    ADD CONSTRAINT monitor_status_change_monitor_id_fkey FOREIGN KEY (monitor_id) REFERENCES public.monitor(id) ON DELETE CASCADE;
 
 
 --
--- Name: organization_user_junction organization_user_junction_role_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: monitor monitor_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.organization_user_junction
-    ADD CONSTRAINT organization_user_junction_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.roles(id);
+ALTER TABLE ONLY public.monitor
+    ADD CONSTRAINT monitor_user_id_fkey FOREIGN KEY (user_id) REFERENCES public."user"(id);
 
 
 --
--- Name: organization_user_junction organization_user_junction_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: organization_user organization_user_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.organization_user_junction
-    ADD CONSTRAINT organization_user_junction_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.organization_user
+    ADD CONSTRAINT organization_user_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organization(id) ON DELETE CASCADE;
 
 
 --
--- Name: plans plans_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: organization_user organization_user_role_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.plans
-    ADD CONSTRAINT plans_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.organization_user
+    ADD CONSTRAINT organization_user_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.role(id);
 
 
 --
--- Name: product_feature_junction product_feature_junction_feature_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: organization_user organization_user_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.product_feature_junction
-    ADD CONSTRAINT product_feature_junction_feature_id_fkey FOREIGN KEY (feature_id) REFERENCES public.features(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.organization_user
+    ADD CONSTRAINT organization_user_user_id_fkey FOREIGN KEY (user_id) REFERENCES public."user"(id) ON DELETE CASCADE;
 
 
 --
--- Name: product_feature_junction product_feature_junction_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: plan plan_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.product_feature_junction
-    ADD CONSTRAINT product_feature_junction_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.plan
+    ADD CONSTRAINT plan_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.product(id) ON DELETE CASCADE;
 
 
 --
--- Name: receipts receipts_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: product_feature product_feature_feature_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.receipts
-    ADD CONSTRAINT receipts_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.product_feature
+    ADD CONSTRAINT product_feature_feature_id_fkey FOREIGN KEY (feature_id) REFERENCES public.feature(id) ON DELETE CASCADE;
 
 
 --
--- Name: receipts receipts_plan_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: product_feature product_feature_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.receipts
-    ADD CONSTRAINT receipts_plan_id_fkey FOREIGN KEY (plan_id) REFERENCES public.plans(id);
+ALTER TABLE ONLY public.product_feature
+    ADD CONSTRAINT product_feature_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.product(id) ON DELETE CASCADE;
 
 
 --
--- Name: receipts receipts_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: receipt receipt_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.receipts
-    ADD CONSTRAINT receipts_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id);
+ALTER TABLE ONLY public.receipt
+    ADD CONSTRAINT receipt_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organization(id) ON DELETE CASCADE;
 
 
 --
--- Name: receipts receipts_subscription_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: receipt receipt_plan_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.receipts
-    ADD CONSTRAINT receipts_subscription_id_fkey FOREIGN KEY (subscription_id) REFERENCES public.subscriptions(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.receipt
+    ADD CONSTRAINT receipt_plan_id_fkey FOREIGN KEY (plan_id) REFERENCES public.plan(id);
 
 
 --
--- Name: role_claim_junction role_claim_junction_claim_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: receipt receipt_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.role_claim_junction
-    ADD CONSTRAINT role_claim_junction_claim_id_fkey FOREIGN KEY (claim_id) REFERENCES public.claims(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.receipt
+    ADD CONSTRAINT receipt_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.product(id);
 
 
 --
--- Name: role_claim_junction role_claim_junction_role_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: receipt receipt_subscription_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.role_claim_junction
-    ADD CONSTRAINT role_claim_junction_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.roles(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.receipt
+    ADD CONSTRAINT receipt_subscription_id_fkey FOREIGN KEY (subscription_id) REFERENCES public.subscription(id) ON DELETE CASCADE;
 
 
 --
--- Name: subscriptions subscriptions_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: role_claim role_claim_role_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.subscriptions
-    ADD CONSTRAINT subscriptions_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.role_claim
+    ADD CONSTRAINT role_claim_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.role(id) ON DELETE CASCADE;
 
 
 --
--- Name: subscriptions subscriptions_plan_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: subscription subscription_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.subscriptions
-    ADD CONSTRAINT subscriptions_plan_id_fkey FOREIGN KEY (plan_id) REFERENCES public.plans(id);
+ALTER TABLE ONLY public.subscription
+    ADD CONSTRAINT subscription_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organization(id) ON DELETE CASCADE;
 
 
 --
--- Name: subscriptions subscriptions_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: subscription subscription_plan_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.subscriptions
-    ADD CONSTRAINT subscriptions_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.products(id);
+ALTER TABLE ONLY public.subscription
+    ADD CONSTRAINT subscription_plan_id_fkey FOREIGN KEY (plan_id) REFERENCES public.plan(id);
 
 
 --
--- Name: user_contacts user_contacts_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: subscription subscription_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.user_contacts
-    ADD CONSTRAINT user_contacts_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.subscription
+    ADD CONSTRAINT subscription_product_id_fkey FOREIGN KEY (product_id) REFERENCES public.product(id);
 
 
 --
--- Name: users users_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: user_contact user_contact_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.users
-    ADD CONSTRAINT users_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.user_contact
+    ADD CONSTRAINT user_contact_user_id_fkey FOREIGN KEY (user_id) REFERENCES public."user"(id) ON DELETE CASCADE;
 
 
 --
--- Name: users users_role_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: user user_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.users
-    ADD CONSTRAINT users_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.roles(id);
+ALTER TABLE ONLY public."user"
+    ADD CONSTRAINT user_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organization(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user user_role_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."user"
+    ADD CONSTRAINT user_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.role(id);
 
 
 --
@@ -2703,8 +2581,8 @@ INSERT INTO public."schema_migrations" (version) VALUES (20220720224930);
 INSERT INTO public."schema_migrations" (version) VALUES (20220720224940);
 INSERT INTO public."schema_migrations" (version) VALUES (20220720224942);
 INSERT INTO public."schema_migrations" (version) VALUES (20220720225105);
+INSERT INTO public."schema_migrations" (version) VALUES (20220720225114);
 INSERT INTO public."schema_migrations" (version) VALUES (20220720225122);
-INSERT INTO public."schema_migrations" (version) VALUES (20220725212517);
 INSERT INTO public."schema_migrations" (version) VALUES (20220804153037);
 INSERT INTO public."schema_migrations" (version) VALUES (20220804201541);
 INSERT INTO public."schema_migrations" (version) VALUES (20220820122318);
@@ -2714,7 +2592,6 @@ INSERT INTO public."schema_migrations" (version) VALUES (20220820154516);
 INSERT INTO public."schema_migrations" (version) VALUES (20220820154520);
 INSERT INTO public."schema_migrations" (version) VALUES (20220820154535);
 INSERT INTO public."schema_migrations" (version) VALUES (20220820155528);
-INSERT INTO public."schema_migrations" (version) VALUES (20220913212327);
 INSERT INTO public."schema_migrations" (version) VALUES (20220913212347);
 INSERT INTO public."schema_migrations" (version) VALUES (20220916212622);
 INSERT INTO public."schema_migrations" (version) VALUES (20220916213008);

@@ -48,12 +48,12 @@ config :uptime_checker, UptimeChecker.Guardian,
 # Quantum for cron
 config :uptime_checker, UptimeChecker.Module.Scheduler,
   jobs: [
-    check_monitor: [
-      # Every every 10 seconds
-      schedule: {:extended, "*/10"},
-      task: {UptimeChecker.Cron.CheckMonitor, :work, []},
-      run_strategy: {Quantum.RunStrategy.All, :cluster}
-    ],
+    # check_monitor: [
+    #   # Every every 10 seconds
+    #   schedule: {:extended, "*/10"},
+    #   task: {UptimeChecker.Cron.CheckMonitor, :work, []},
+    #   run_strategy: {Quantum.RunStrategy.All, :cluster}
+    # ],
     error_check: [
       # Every every 1 hour
       schedule: "0 * * * *",

@@ -1,8 +1,8 @@
-defmodule UptimeChecker.Repo.Migrations.CreateGuestUsers do
+defmodule UptimeChecker.Repo.Migrations.CreateGuestUser do
   use Ecto.Migration
 
   def change do
-    create table(:guest_users) do
+    create table(:guest_user) do
       add :email, :string, null: false
       add :code, :string, null: false
       add :expires_at, :utc_datetime, null: false
@@ -10,7 +10,7 @@ defmodule UptimeChecker.Repo.Migrations.CreateGuestUsers do
       timestamps()
     end
 
-    create unique_index(:guest_users, [:code])
-    create index(:guest_users, [:expires_at])
+    create unique_index(:guest_user, [:code])
+    create index(:guest_user, [:expires_at])
   end
 end
